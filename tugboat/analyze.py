@@ -151,10 +151,22 @@ def analyze_yaml(manifest: str) -> list[ExtendedDiagnostic]:
 def _get_line_column(node: CommentedBase, loc: Sequence[int | str]) -> tuple[int, int]:
     last_known_pos = node.lc.line, node.lc.col
     for part in loc:
+        try:
+            pos = node.lc.key(part)
+        except KeyError:
+            break
+
+        if pos:
+            last_known_pos = pos
+
+        try:
+            node = node[part]  # type: ignore[reportIndexIssue]
+        except (KeyError, IndexError):
+            break
+
         if not hasattr(node, "lc"):
             break
-        last_known_pos = node.lc.key(part)
-        node = node[part]  # type: ignore[reportIndexIssue]
+
     return last_known_pos
 
 

@@ -105,6 +105,7 @@ class TestGetLineColumn:
                     - - name: baz
                         data: 123
                     - name: qux
+                      var: {}
                 """
             )
         )
@@ -116,6 +117,8 @@ class TestGetLineColumn:
             (("spec", "name"), (2, 2)),
             (("spec", "steps"), (4, 2)),
             (("spec", "steps", 0, 0, "data"), (6, 8)),
+            (("spec", "foo"), (1, 0)),
+            (("spec", "steps", 1, "var", "foo"), (8, 6)),
         ],
     )
     def test(self, document, loc, expected):
