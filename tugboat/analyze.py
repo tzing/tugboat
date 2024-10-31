@@ -1,19 +1,165 @@
 from __future__ import annotations
 
 import logging
+import textwrap
 import typing
+from typing import Any, Literal, TypedDict
 
+import ruamel.yaml
 from pydantic import ValidationError
+from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.error import MarkedYAMLError
 
 from tugboat.core import get_plugin_manager
 from tugboat.schemas import Manifest
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
+
+    from ruamel.yaml.comments import CommentedBase
 
     from tugboat.core import Diagnostic
 
 logger = logging.getLogger(__name__)
+
+_yaml_parser = None
+
+
+class ExtendedDiagnostic(TypedDict):
+    """
+    A diagnostic reported by the checker.
+
+    This extends the :py:class:`Diagnostic` type by adding extra fields, with
+    all members normalized.
+    """
+
+    line: int
+    """
+    Line number of the diagnostic in the source file.
+    Note that the line number is cumulative across all documents in the YAML file.
+    """
+
+    column: int
+    """
+    Column number of the diagnostic in the source file.
+    """
+
+    type: Literal["error", "failure", "skipped"]
+    """The type of diagnostic."""
+
+    code: str
+    """The code of the diagnostic."""
+
+    manifest: str | None
+    """The manifest name that caused the diagnostic."""
+
+    loc: tuple[str | int, ...]
+    """The location of the diagnostic in the manifest."""
+
+    summary: str
+    """The summary of the diagnostic."""
+
+    msg: str
+    """The detailed message of the diagnostic."""
+
+    input: Any | None
+    """The input that caused the diagnostic."""
+
+    fix: str | None
+    """The fix to the diagnostic."""
+
+
+def analyze_yaml(manifest: str) -> list[ExtendedDiagnostic]:
+    """
+    Analyze a YAML manifest and report diagnostics.
+
+    This function internally uses :py:func:`analyze_raw` to analyze the manifest.
+    The manifest is first parsed into a Python dictionary before being analyzed.
+
+    Parameters
+    ----------
+    manifest : str
+        The YAML manifest to analyze.
+
+    Returns
+    -------
+    list[Diagnostic]
+        The diagnostics reported by the analyzers.
+    """
+    global _yaml_parser
+
+    if not _yaml_parser:
+        _yaml_parser = ruamel.yaml.YAML()
+
+    try:
+        documents = _yaml_parser.load_all(manifest)
+        documents = list(documents)  # force evaluation
+    except MarkedYAMLError as e:
+        return [
+            {
+                "line": e.problem_mark.line + 1,
+                "column": e.problem_mark.column + 1,
+                "type": "error",
+                "code": "F002",
+                "manifest": None,
+                "loc": (),
+                "summary": "Malformed YAML document",
+                "msg": e.problem,
+                "input": None,
+                "fix": None,
+            }
+        ]
+
+    diagnostics = []
+    for document in documents:
+        if not isinstance(document, CommentedMap):
+            return [
+                {
+                    "line": document.lc.line + 1,
+                    "column": document.lc.col + 1,
+                    "type": "error",
+                    "code": "F003",
+                    "manifest": None,
+                    "loc": (),
+                    "summary": "Malformed document structure",
+                    "msg": "The YAML document should be a mapping",
+                    "input": None,
+                    "fix": None,
+                }
+            ]
+
+        for diag in analyze_raw(document):
+            line, column = _get_line_column(document, diag.get("loc", ()))
+            diagnostics.append(
+                {
+                    "line": line + 1,
+                    "column": column + 1,
+                    "type": diag.get("type", "failure"),
+                    "code": diag["code"],
+                    "manifest": _get_manifest_name(document),
+                    "loc": diag.get("loc", ()),
+                    "summary": diag.get("summary") or _get_summary(diag["msg"]),
+                    "msg": diag["msg"],
+                    "input": diag.get("input"),
+                    "fix": diag.get("fix"),
+                }
+            )
+
+    return diagnostics
+
+
+def _get_line_column(node: CommentedBase, loc: Sequence[int | str]) -> tuple[int, int]:
+    last_known_pos = node.lc.line, node.lc.col
+    for part in loc:
+        if not hasattr(node, "lc"):
+            break
+        last_known_pos = node.lc.key(part)
+        node = node[part]  # type: ignore[reportIndexIssue]
+    return last_known_pos
+
+
+def _get_summary(msg: str) -> str:
+    return msg.strip().splitlines()[0].split(". ")[0]
 
 
 def analyze_raw(manifest: dict) -> list[Diagnostic]:
@@ -60,7 +206,7 @@ def analyze_raw(manifest: dict) -> list[Diagnostic]:
         return [
             {
                 "type": "error",
-                "code": "E001",
+                "code": "F001",
                 "loc": (),
                 "summary": "Internal error while analyzing manifest",
                 "msg": f"An error occurred while parsing the manifest: {e}",
@@ -84,7 +230,7 @@ def analyze_raw(manifest: dict) -> list[Diagnostic]:
         return [
             {
                 "type": "error",
-                "code": "E001",
+                "code": "F001",
                 "loc": (),
                 "summary": "Internal error while analyzing manifest",
                 "msg": f"Expected a Manifest object, got {type(manifest_obj)}",
@@ -100,7 +246,7 @@ def analyze_raw(manifest: dict) -> list[Diagnostic]:
         return [
             {
                 "type": "error",
-                "code": "E001",
+                "code": "F001",
                 "loc": (),
                 "summary": "Internal error while analyzing manifest",
                 "msg": f"An error occurred while analyzing the manifest: {e}",
@@ -108,6 +254,11 @@ def analyze_raw(manifest: dict) -> list[Diagnostic]:
         ]
 
     logger.debug("Got %d diagnostics for manifest '%s'", len(diagnostics), name)
+
+    # normalize the diagnostics
+    for diagnostic in diagnostics:
+        diagnostic.setdefault("code", "UNKNOWN")
+        diagnostic["msg"] = textwrap.dedent(diagnostic["msg"]).strip()
 
     # sort the diagnostics
     def _sort_key(diagnostic: Diagnostic) -> tuple:

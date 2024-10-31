@@ -1,8 +1,125 @@
+import textwrap
+
+import pytest
+import ruamel.yaml
 from pydantic import BaseModel
 
-from tugboat.analyze import analyze_raw
+from tugboat.analyze import _get_line_column, analyze_raw, analyze_yaml
 from tugboat.core import hookimpl
 from tugboat.schemas import Manifest
+
+
+class TestAnalyzeYaml:
+    def test_standard(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(
+            "tugboat.analyze.analyze_raw",
+            lambda _: [
+                {
+                    "code": "T01",
+                    "loc": ("spec", "foo"),
+                    "msg": "Test diagnostic. This is a long message.",
+                }
+            ],
+        )
+
+        diagnostics = analyze_yaml(
+            """
+            apiVersion: v1
+            kind: Test
+            metadata:
+              generateName: test-
+            spec:
+              foo: bar
+            """
+        )
+        assert diagnostics == [
+            {
+                "line": 7,
+                "column": 15,
+                "type": "failure",
+                "code": "T01",
+                "manifest": "test-",
+                "loc": ("spec", "foo"),
+                "summary": "Test diagnostic",
+                "msg": "Test diagnostic. This is a long message.",
+                "input": None,
+                "fix": None,
+            }
+        ]
+
+    def test_yaml_error(self):
+        diagnostics = analyze_yaml(
+            """
+            test: "foo
+            """
+        )
+        assert diagnostics == [
+            {
+                "line": 3,
+                "column": 13,
+                "type": "error",
+                "code": "F002",
+                "manifest": None,
+                "loc": (),
+                "summary": "Malformed YAML document",
+                "msg": "found unexpected end of stream",
+                "input": None,
+                "fix": None,
+            }
+        ]
+
+    def test_yaml_input_error(self):
+        diagnostics = analyze_yaml(
+            """
+            - foo
+            - bar
+            """
+        )
+        assert diagnostics == [
+            {
+                "line": 2,
+                "column": 13,
+                "type": "error",
+                "code": "F003",
+                "manifest": None,
+                "loc": (),
+                "summary": "Malformed document structure",
+                "msg": "The YAML document should be a mapping",
+                "input": None,
+                "fix": None,
+            }
+        ]
+
+
+class TestGetLineColumn:
+    @pytest.fixture
+    def document(self):
+        yaml = ruamel.yaml.YAML()
+        return yaml.load(
+            textwrap.dedent(
+                """
+                spec:
+                  name: sample
+
+                  steps:
+                    - - name: baz
+                        data: 123
+                    - name: qux
+                """
+            )
+        )
+
+    @pytest.mark.parametrize(
+        ("loc", "expected"),
+        [
+            (("spec",), (1, 0)),
+            (("spec", "name"), (2, 2)),
+            (("spec", "steps"), (4, 2)),
+            (("spec", "steps", 0, 0, "data"), (6, 8)),
+        ],
+    )
+    def test(self, document, loc, expected):
+        assert _get_line_column(document, loc) == expected
 
 
 class TestAnalyzeRaw:
@@ -30,9 +147,16 @@ class TestAnalyzeRaw:
         yield {"code": "T01", "loc": (), "msg": "Test 1"}
         yield {"code": "T04", "loc": ("spec", "foo"), "msg": "Test 2"}
         yield {"code": "T02", "loc": ("spec", "foo"), "msg": "Test 3"}
-        yield {"code": "T03", "loc": ("spec"), "msg": "Test 4"}
+        yield {
+            "code": "T03",
+            "loc": ("spec"),
+            "msg": """
+                Test 4. This is a long message that should be wrapped across
+                multiple lines to test the formatting.
+                """,
+        }
 
-    def test_success(self, plugin_manager):
+    def test_standard(self, plugin_manager):
         plugin_manager.register(self)
 
         diagnostics = analyze_raw(
@@ -44,10 +168,27 @@ class TestAnalyzeRaw:
             }
         )
         assert diagnostics == [
-            {"code": "T01", "loc": (), "msg": "Test 1"},
-            {"code": "T03", "loc": ("spec"), "msg": "Test 4"},
-            {"code": "T02", "loc": ("spec", "foo"), "msg": "Test 3"},
-            {"code": "T04", "loc": ("spec", "foo"), "msg": "Test 2"},
+            {
+                "code": "T01",
+                "loc": (),
+                "msg": "Test 1",
+            },
+            {
+                "code": "T03",
+                "loc": ("spec"),
+                "msg": "Test 4. This is a long message that should be wrapped across\n"
+                "multiple lines to test the formatting.",
+            },
+            {
+                "code": "T02",
+                "loc": ("spec", "foo"),
+                "msg": "Test 3",
+            },
+            {
+                "code": "T04",
+                "loc": ("spec", "foo"),
+                "msg": "Test 2",
+            },
         ]
 
     def test_parse_manifest_validation_error(self, plugin_manager):
@@ -83,7 +224,7 @@ class TestAnalyzeRaw:
         assert diagnostics == [
             {
                 "type": "error",
-                "code": "E001",
+                "code": "F001",
                 "loc": (),
                 "summary": "Internal error while analyzing manifest",
                 "msg": "An error occurred while parsing the manifest: Test exception",
@@ -120,7 +261,7 @@ class TestAnalyzeRaw:
         assert diagnostics == [
             {
                 "type": "error",
-                "code": "E001",
+                "code": "F001",
                 "loc": (),
                 "summary": "Internal error while analyzing manifest",
                 "msg": "Expected a Manifest object, got <class 'str'>",
@@ -141,7 +282,7 @@ class TestAnalyzeRaw:
         assert diagnostics == [
             {
                 "type": "error",
-                "code": "E001",
+                "code": "F001",
                 "loc": (),
                 "summary": "Internal error while analyzing manifest",
                 "msg": "An error occurred while analyzing the manifest: Test exception",
