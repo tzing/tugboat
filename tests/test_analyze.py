@@ -194,24 +194,37 @@ class TestAnalyzeRaw:
             },
         ]
 
+    def test_not_kubernetes_manifest(self, plugin_manager):
+        plugin_manager.register(self)
+
+        diagnostics = analyze_raw({"foo": "bar"})
+        assert diagnostics == [
+            {
+                "type": "skipped",
+                "code": "M001",
+                "loc": (),
+                "summary": "Not a Kubernetes manifest",
+                "msg": "The input does not look like a Kubernetes manifest",
+            }
+        ]
+
     def test_parse_manifest_validation_error(self, plugin_manager):
         plugin_manager.register(self)
 
         diagnostics = analyze_raw(
             {
                 "apiVersion": "v1",
-                "kind": 1234,
+                "kind": "Test",
                 "metadata": {"name": "test"},
-                "spec": {"foo": "bar"},
             }
         )
         assert diagnostics == [
             {
                 "type": "failure",
-                "code": "M001",
-                "loc": ("kind",),
-                "msg": "Input should be a valid string",
-                "input": 1234,
+                "code": "M004",
+                "loc": ("spec",),
+                "summary": "Missing required field",
+                "msg": "Field 'spec' is required but missing",
             }
         ]
 
@@ -247,8 +260,9 @@ class TestAnalyzeRaw:
             {
                 "type": "skipped",
                 "code": "M002",
-                "loc": (),
+                "loc": ("kind",),
                 "msg": "Manifest of kind 'Unrecognized' is not supported",
+                "input": "Unrecognized",
             }
         ]
 

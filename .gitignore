@@ -162,4 +162,4 @@ cython_debug/
 #.idea/
 
 # Test fixtures
-/tests/fixtures/argo-workflows/
+/tests/fixtures/argo-workflows

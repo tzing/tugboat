@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.error import MarkedYAMLError
 
+from tugboat.analyzers.pydantic import translate_pydantic_error
 from tugboat.core import get_plugin_manager
 from tugboat.schemas import Manifest
 
@@ -194,6 +195,19 @@ def analyze_raw(manifest: dict) -> list[Diagnostic]:
     """
     pm = get_plugin_manager()
 
+    # early exit if the manifest is not a Kubernetes manifest
+    if not is_kubernetes_manifest(manifest):
+        return [
+            {
+                "type": "skipped",
+                "code": "M001",
+                "loc": (),
+                "summary": "Not a Kubernetes manifest",
+                "msg": "The input does not look like a Kubernetes manifest",
+            }
+        ]
+
+    # get the manifest name
     name = _get_manifest_name(manifest)
     logger.debug("Analyzing manifest '%s' of kind '%s'", name, manifest.get("kind"))
 
@@ -201,18 +215,7 @@ def analyze_raw(manifest: dict) -> list[Diagnostic]:
     try:
         manifest_obj = pm.hook.parse_manifest(manifest=manifest)
     except ValidationError as e:
-        output = []
-        for error in e.errors():
-            output.append(
-                {
-                    "type": "failure",
-                    "code": "M001",
-                    "loc": error["loc"],
-                    "msg": error["msg"],
-                    "input": error["input"],
-                }
-            )
-        return output
+        return list(map(translate_pydantic_error, e.errors()))
     except Exception as e:
         logger.exception("Error during execution of parse_manifest hook")
         return [
@@ -233,8 +236,9 @@ def analyze_raw(manifest: dict) -> list[Diagnostic]:
             {
                 "type": "skipped",
                 "code": "M002",
-                "loc": (),
+                "loc": ("kind",),
                 "msg": f"Manifest of kind '{kind}' is not supported",
+                "input": kind,
             }
         ]
 
@@ -292,3 +296,8 @@ def _get_manifest_name(manifest: dict) -> str | None:
         return name
     if name := metadata.get("generateName"):
         return name
+
+
+def is_kubernetes_manifest(d: dict) -> bool:
+    """Returns True if the dictionary *looks like* a Kubernetes manifest."""
+    return "apiVersion" in d and "kind" in d
