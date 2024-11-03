@@ -6,8 +6,13 @@ from tugboat.core import get_plugin_manager
 
 
 @pytest.fixture(scope="session")
-def argo_example_dir() -> Path:
-    directory = Path(__file__).parent / "fixtures" / "argo-workflows" / "examples"
+def fixture_dir() -> Path:
+    return Path(__file__).parent / "fixtures"
+
+
+@pytest.fixture(scope="session")
+def argo_example_dir(fixture_dir: Path) -> Path:
+    directory = fixture_dir / "argo-workflows" / "examples"
     if not directory.is_dir():
         pytest.skip("Argo examples directory not found")
     return directory
