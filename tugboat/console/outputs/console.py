@@ -6,8 +6,10 @@ import typing
 
 import click
 
+from tugboat.console.utils import format_loc
+
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Callable, Iterator
     from pathlib import Path
     from typing import IO
 
@@ -122,7 +124,3 @@ def get_content_near(file: Path, target_line: int) -> Iterator[tuple[int, str]]:
 @functools.lru_cache(1)
 def read_file(path: Path) -> str:
     return path.read_text()
-
-
-def format_loc(loc: Sequence[str | int]) -> str:
-    return "." + ".".join(map(str, loc))
