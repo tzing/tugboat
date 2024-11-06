@@ -1,10 +1,11 @@
 import enum
-from typing import Any, Literal
+from typing import Literal
 
-from dirty_equals import DirtyEquals, IsPartialDict
+from dirty_equals import IsPartialDict
 from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
 from pydantic_core import ErrorDetails
 
+from tests.utils import ContainsSubStrings
 from tugboat.analyzers.pydantic import (
     _extract_expects,
     _guess_string_problems,
@@ -222,11 +223,3 @@ def _get_error(model: type[BaseModel], input: dict) -> ErrorDetails:
     except ValidationError as exc:
         return exc.errors()[0]
     raise RuntimeError("No error raised")
-
-
-class ContainsSubStrings(DirtyEquals[str]):
-    def __init__(self, *text: str):
-        self.texts = text
-
-    def equals(self, other: Any) -> bool:
-        return all(text in other for text in self.texts)

@@ -1,4 +1,7 @@
+import json
+import logging
 import textwrap
+from pathlib import Path
 
 import pytest
 import ruamel.yaml
@@ -7,6 +10,8 @@ from pydantic import BaseModel
 from tugboat.analyze import _get_line_column, analyze_raw, analyze_yaml
 from tugboat.core import hookimpl
 from tugboat.schemas import Manifest
+
+logger = logging.getLogger(__name__)
 
 
 class TestAnalyzeYaml:
@@ -305,3 +310,26 @@ class TestAnalyzeRaw:
                 "msg": "An error occurred while analyzing the manifest: Test exception",
             }
         ]
+
+
+class TestArgoExamples:
+    """
+    Make sure our schemas are valid for (almost) all examples from Argo.
+    """
+
+    def test(self, argo_example_dir: Path):
+        for file_path in argo_example_dir.glob("**/*.yaml"):
+            # skip known false positives
+            if file_path.name in ("webhdfs-input-output-artifacts.yaml",):
+                continue
+
+            # analyze
+            diagnostics = analyze_yaml(file_path.read_text())
+
+            # skip warnings
+            diagnostics = list(filter(lambda d: d["type"] != "skipped", diagnostics))
+
+            # fail on errors
+            if any(diagnostics):
+                logger.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+                pytest.fail(f"Found issue with {file_path}")

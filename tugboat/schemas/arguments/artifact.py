@@ -38,7 +38,7 @@ class Artifact(_BaseModel):
     oss: OssArtifact | None = None
     path: str | None = None
     raw: RawArtifact | None = None
-    recurseMode: bool = False
+    recurseMode: bool | None = None
     s3: S3Artifact | None = None
     subPath: str | None = None
 

@@ -69,6 +69,9 @@ def get_plugin_manager() -> pluggy.PluginManager:
     pm.add_hookspecs(tugboat.hookspecs.core)
     pm.add_hookspecs(tugboat.hookspecs.workflow)
 
-    # TODO hook implementations
+    # hook implementations
+    import tugboat.analyzers.workflow
+
+    pm.register(tugboat.analyzers.workflow)
 
     return pm

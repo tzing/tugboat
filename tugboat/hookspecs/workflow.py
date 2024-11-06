@@ -12,14 +12,26 @@ if typing.TYPE_CHECKING:
 
 
 @hookspec
-def analyze_workflow(workflow: Workflow | WorkflowTemplate) -> Iterable[Diagnostic]:  # type: ignore[reportReturnType]
+def analyze_workflow(workflow: Workflow) -> Iterable[Diagnostic]:  # type: ignore[reportReturnType]
     """
-    Analyze a workflow or a workflow template.
+    Analyze a workflow.
 
     Parameters
     ----------
-    workflow : Workflow | WorkflowTemplate
+    workflow : Workflow
         The workflow to analyze.
+    """
+
+
+@hookspec
+def analyze_workflow_template(workflow_template: WorkflowTemplate) -> Iterable[Diagnostic]:  # type: ignore[reportReturnType]
+    """
+    Analyze a workflow template.
+
+    Parameters
+    ----------
+    workflow_template : WorkflowTemplate
+        The workflow template to analyze.
     """
 
 
@@ -27,6 +39,8 @@ def analyze_workflow(workflow: Workflow | WorkflowTemplate) -> Iterable[Diagnost
 def analyze_template(template: Template, workflow: Workflow | WorkflowTemplate) -> Iterable[Diagnostic]:  # type: ignore[reportReturnType]
     """
     Analyze a template.
+
+    This hook is called for each template in a workflow or workflow template, but not including the 'templateDefaults'.
 
     Parameters
     ----------

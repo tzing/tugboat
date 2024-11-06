@@ -5,10 +5,11 @@ It contains the translation function for the pydantic error to the tugboat diagn
 
 from __future__ import annotations
 
-import contextlib
 import typing
 
 from rapidfuzz.process import extractOne
+
+from tugboat.analyzers.utils import get_context_name
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
@@ -59,22 +60,13 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnostic:
             }
 
         case "extra_forbidden":
-            context_name = "current context"  # fallback
-
-            _, *parents = reversed(error["loc"])
-            with contextlib.suppress(StopIteration):
-                # find the first string in the parents
-                parent = next(filter(lambda x: isinstance(x, str), parents))
-                context_name = f"the '{parent}' section"
-
-            msg = f"Field '{field}' is not valid within {context_name}."
-
+            *parents, _ = error["loc"]
             return {
                 "type": "failure",
                 "code": "M005",
                 "loc": error["loc"],
                 "summary": "Found redundant field",
-                "msg": msg,
+                "msg": f"Field '{field}' is not valid within {get_context_name(parents)}.",
                 "input": field,
             }
 

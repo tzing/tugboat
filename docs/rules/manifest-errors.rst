@@ -26,10 +26,10 @@ This error code is triggered when the parser encounters a manifest kind that is 
 The input manifest does not conform to the expected format.
 
 This error code is triggered when the parser encounters a general error in the manifest file.
-If the parser identifies a more specific issue, a more precise error code, such as :ref:`M004 <error.m004>`, will be used instead.
+If the parser identifies a more specific issue, a more precise error code, such as :ref:`M004 <code.m004>`, will be used instead.
 
 
-.. _error.m004:
+.. _code.m004:
 
 ``M004`` - Missing required field
 ---------------------------------
@@ -49,6 +49,7 @@ For instance, the following manifest lacks the required ``source`` field within 
        - name: hello
          script:
            image: alpine:latest
+           # <-- expected 'source' field here but missing
 
 
 ``M005`` - Found redundant field
@@ -70,6 +71,7 @@ For instance, the following manifest contains an extra field, ``extraField``, wi
          container:
            image: alpine:latest
    extraField: value
+   #^^^^^^^^^^^^^^^^ unexpected field here
 
 
 ``M006`` - Mutually exclusive fields
@@ -89,10 +91,12 @@ For instance, the following manifest contains both ``script`` and ``container`` 
      templates:
        - name: hello
          script:
+         #^^^^^ 'script' and 'container' fields are mutually exclusive
            image: alpine:latest
            source: |
              echo 'Hello, world!'
          container:
+         #^^^^^^^^
            image: alpine:latest
 
 
@@ -111,6 +115,7 @@ The following manifest contains a number in ``entrypoint`` field, which is expec
      generateName: hello-
    spec:
      entrypoint: 1234
+     #           ^^^^ expected a string here
 
 
 ``M008`` - Invalid field value
@@ -132,3 +137,37 @@ For instance, the following manifest contains an invalid value for the ``imagePu
          container:
            image: alpine:latest
            imagePullPolicy: InvalidValue
+           #                ^^^^^^^^^^^^ invalid value here
+
+
+``M009`` - Manifest name too long
+---------------------------------
+
+The name of the manifest is too long.
+
+.. code-block:: yaml
+
+   apiVersion: argoproj.io/v1alpha1
+   kind: WorkflowTemplate
+   metadata:
+     generateName: an-extreme-long-name-which-exceeds-the-maximum-name-length-
+     #             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     #             name too long for WorkflowTemplate
+   spec:
+     ...
+
+
+``M010`` - Invalid manifest name
+--------------------------------
+
+Found invalid characters in the manifest name.
+
+.. code-block:: yaml
+
+   apiVersion: argoproj.io/v1alpha1
+   kind: Workflow
+   metadata:
+     name: invalid_name
+     #     ^^^^^^^^^^^^ invalid characters '_' in the name
+   spec:
+     ...
