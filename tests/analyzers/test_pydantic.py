@@ -1,6 +1,7 @@
 import enum
 from typing import Literal
 
+import pytest
 from dirty_equals import IsPartialDict
 from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
 from pydantic_core import ErrorDetails
@@ -9,6 +10,7 @@ from tests.utils import ContainsSubStrings
 from tugboat.analyzers.pydantic import (
     _extract_expects,
     _guess_string_problems,
+    get_type_name,
     to_sexagesimal,
     translate_pydantic_error,
 )
@@ -140,7 +142,7 @@ class TestTranslatePydanticError:
             "loc": ("x",),
             "summary": "Input should be a valid string",
             "msg": (
-                "Field 'x' should be a valid string, got NoneType.\n"
+                "Field 'x' should be a valid string, got null.\n"
                 "Try using quotes for strings to fix this issue."
             ),
             "input": None,
@@ -215,6 +217,25 @@ class TestToSexagesimal:
         assert to_sexagesimal(1) == "1"
         assert to_sexagesimal(1342) == "22:22"
         assert to_sexagesimal(-4321) == "-1:12:1"
+
+
+class TestGetTypeName:
+    @pytest.mark.parametrize(
+        ("input_", "expected"),
+        [
+            (1234, "integer"),
+            (3.14, "floating point number"),
+            ("foo", "string"),
+            (True, "boolean"),
+            ({"x": 1}, "mapping"),
+            ([1, 2, 3], "sequence"),
+            ((1, 2, 3), "sequence"),
+            (None, "null"),
+            (IsPartialDict({}), "IsPartialDict"),
+        ],
+    )
+    def test(self, input_, expected):
+        assert get_type_name(input_) == expected
 
 
 def _get_error(model: type[BaseModel], input: dict) -> ErrorDetails:

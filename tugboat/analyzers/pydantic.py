@@ -6,6 +6,7 @@ It contains the translation function for the pydantic error to the tugboat diagn
 from __future__ import annotations
 
 import typing
+from collections.abc import Mapping, Sequence
 
 from rapidfuzz.process import extractOne
 
@@ -181,16 +182,18 @@ def to_sexagesimal(value: int) -> str:
 
 
 def get_type_name(value: Any) -> str:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "boolean"
     if isinstance(value, int):
         return "integer"
     if isinstance(value, str):
         return "string"
-    if isinstance(value, bool):
-        return "boolean"
     if isinstance(value, float):
         return "floating point number"
-    if isinstance(value, dict):
+    if isinstance(value, Mapping):
         return "mapping"
-    if isinstance(value, list):
+    if isinstance(value, Sequence):
         return "sequence"
     return type(value).__name__
