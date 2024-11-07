@@ -64,7 +64,7 @@ class TestRequireAll:
             {
                 "type": "failure",
                 "code": "M004",
-                "loc": ("spec",),
+                "loc": ("spec", "foo"),
                 "summary": "Missing required field 'foo'",
                 "msg": "Field 'foo' is required in the 'spec' section but missing",
             },

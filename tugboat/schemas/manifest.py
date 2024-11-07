@@ -21,7 +21,7 @@ class Metadata(BaseModel):
     Kubernetes manifest metadata.
     """
 
-    name: str | None = Field(None, min_length=1, max_length=63)
-    generateName: str | None = Field(None, min_length=1, max_length=63)
+    name: str | None = Field(None, min_length=1, max_length=253)
+    generateName: str | None = Field(None, min_length=1, max_length=248)
     labels: dict = Field(default_factory=dict)
     annotations: dict = Field(default_factory=dict)

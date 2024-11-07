@@ -29,3 +29,4 @@ To install Tugboat, run the following command to install the latest version from
    rules/fatal-errors
    rules/manifest-errors
    rules/workflow
+   rules/workflow-template

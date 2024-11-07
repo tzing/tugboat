@@ -5,7 +5,6 @@ import ruamel.yaml
 from dirty_equals import IsPartialDict
 
 import tugboat.analyze
-from tests.utils import ContainsSubStrings
 from tugboat.core import hookimpl
 from tugboat.schemas import Workflow, WorkflowTemplate
 
@@ -119,7 +118,7 @@ class TestAnalyze:
             {
                 "apiVersion": "argoproj.io/v1alpha1",
                 "kind": "WorkflowTemplate",
-                "metadata": {"generateName": "steps-"},
+                "metadata": {"name": "test"},
                 "spec": {
                     "templates": [
                         {
@@ -176,57 +175,57 @@ class TestAnalyze:
 
 
 class TestRules:
-    def test_check_manifest(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_SPEC_MUTUALLY_EXCLUSIVE)
+    def test_check_metadata_1(self):
+        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_NAME)
         logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
-        assert IsPartialDict({"code": "M006"}) in diagnostics
-        assert IsPartialDict({"code": "M010", "fix": "test-workflow-"}) in diagnostics
+        assert (
+            IsPartialDict(
+                {"code": "M010", "loc": ("metadata", "name"), "fix": "invalid-name"}
+            )
+            in diagnostics
+        )
+
+    def test_check_metadata_2(self):
+        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_GENERATE_NAME)
+        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        assert (
+            IsPartialDict({"code": "M010", "loc": ("metadata", "generateName")})
+            in diagnostics
+        )
+
+    def test_check_spec_1(self):
+        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_NAME)
+        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        assert (
+            IsPartialDict({"code": "M006", "loc": ("spec", "workflowTemplateRef")})
+            in diagnostics
+        )
+
+    def test_check_spec_2(self):
+        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_GENERATE_NAME)
+        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        assert (
+            IsPartialDict({"code": "M004", "loc": ("spec", "entrypoint")})
+            in diagnostics
+        )
 
     def test_check_entrypoint(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MISSING_ENTRYPOINT)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
-        assert IsPartialDict({"code": "M004"}) in diagnostics
-        assert IsPartialDict({"code": "M010"}) in diagnostics
-
-    def test_check_entrypoint_exists(self):
         diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_ENTRYPOINT)
         logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
         assert (
-            IsPartialDict(
-                {
-                    "code": "WF001",
-                    "msg": ContainsSubStrings(
-                        "Entrypoint 'main' is not defined in any template.",
-                        "Defined entrypoints: 'hello' and 'world'.",
-                    ),
-                }
-            )
-            in diagnostics
-        )
-
-    def test_check_workflow_argument_parameters(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_ENTRYPOINT)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
-        assert (
-            IsPartialDict(
-                {
-                    "code": "M005",
-                    "loc": ("spec", "arguments", "parameters", 0, "default"),
-                }
-            )
+            IsPartialDict({"code": "WF001", "loc": ("spec", "entrypoint")})
             in diagnostics
         )
         assert (
-            IsPartialDict(
-                {
-                    "code": "M006",
-                    "loc": ("spec", "arguments", "parameters", 0, "valueFrom"),
-                }
-            )
+            IsPartialDict({"code": "WF002", "loc": ("spec", "templates", 0)})
+            in diagnostics
+        )
+        assert (
+            IsPartialDict({"code": "WF002", "loc": ("spec", "templates", 2)})
             in diagnostics
         )
 
-    def test_check_workflow_argument_parameter_names(self):
+    def test_check_argument_parameters(self):
         diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_ARGUMENTS)
         logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
         assert (
@@ -241,26 +240,20 @@ class TestRules:
             )
             in diagnostics
         )
-
-    def test_check_template_names(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATED_TEMPLATE_NAMES)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
         assert (
-            IsPartialDict({"code": "M004", "loc": ("spec", "templates", 3)})
-            in diagnostics
-        )
-        assert (
-            IsPartialDict({"code": "WF002", "loc": ("spec", "templates", 0)})
-            in diagnostics
-        )
-        assert (
-            IsPartialDict({"code": "WF002", "loc": ("spec", "templates", 2)})
+            IsPartialDict(
+                {
+                    "code": "M005",
+                    "loc": ("spec", "arguments", "parameters", 1, "default"),
+                }
+            )
             in diagnostics
         )
 
-    def test_check_workflow_argument_artifacts(self):
+    def test_check_argument_artifacts(self):
         diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_ARGUMENTS)
         logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+
         assert (
             IsPartialDict(
                 {
@@ -280,9 +273,6 @@ class TestRules:
             in diagnostics
         )
 
-    def test_check_workflow_argument_artifact_names(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_ARGUMENTS)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
         assert (
             IsPartialDict(
                 {"code": "WF004", "loc": ("spec", "arguments", "artifacts", 0)}
@@ -297,77 +287,47 @@ class TestRules:
         )
 
 
-MANIFEST_SPEC_MUTUALLY_EXCLUSIVE = """
+MANIFEST_MALFORMED_NAME = """
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
-  generateName: test_workflow-  # <-- M010
+  name: invalid_name  # M009
 spec:
-  templates:
-    - name: main
-      container:
-        image: busybox
-  workflowTemplateRef:
+  templates: []
+  workflowTemplateRef:  # M006
     name: test
 """
 
-MANIFEST_MISSING_ENTRYPOINT = """
+
+MANIFEST_MALFORMED_GENERATE_NAME = """
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
-  name: test_workflow  # <-- M010
+  generateName: invalid_name_  # M010
 spec:
-  templates:
-    - name: main
-      container:
-        image: busybox
+  templates: []
 """
+
 
 MANIFEST_INVALID_ENTRYPOINT = """
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
-  generateName: test-
+  name: test
 spec:
-  entrypoint: main  # <-- WF001
+  entrypoint: main  # WT001
   templates:
-    - name: hello
+    - name: hello  # WT002
       container:
         image: busybox
     - name: world
       container:
         image: busybox
-  arguments:
-    parameters:
-      - name: message-1
-        value: hello
-        default: world  # <-- M005
-        valueFrom: # <-- M006
-          configMapKeyRef:
-            name: test-config
-            key: key
+    - name: hello  # WT002
+      container:
+        image: busybox
 """
 
-MANIFEST_DUPLICATED_TEMPLATE_NAMES = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  entrypoint: hello
-  templates:
-    - name: hello  # <-- WF002
-      container:
-        image: busybox
-    - name: world
-      container:
-        image: busybox
-    - name: hello  # <-- WF002
-      container:
-        image: busybox
-    - container:  # <-- M004
-        image: busybox
-"""
 
 MANIFEST_MALFORMED_ARGUMENTS = """
 apiVersion: argoproj.io/v1alpha1
@@ -377,15 +337,20 @@ metadata:
 spec:
   arguments:
     parameters:
-      - name: message  # <-- WF003
-      - name: message  # <-- WF003
+      - name: message  # WF003
+        valueFrom:
+          configMapKeyRef:
+            name: my-config
+            key: my-key
+      - name: message  # WF003
+        default: foo
     artifacts:
-      - name: data  # <-- WF004
+      - name: data  # WF004
         raw:
           data: hello
-      - name: data  # <-- WF004
-        raw:  # <-- M006
+      - name: data  # WF004
+        raw:  # M006
           data: world
-        s3:  # <-- M006
+        s3:  # M006
           key: my-file
 """

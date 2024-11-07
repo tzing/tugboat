@@ -47,7 +47,7 @@ def require_all(
             yield {
                 "type": "failure",
                 "code": "M004",
-                "loc": tuple(loc),
+                "loc": (*loc, field),
                 "summary": f"Missing required field '{field}'",
                 "msg": f"Field '{field}' is required in {get_context_name(loc)} but missing",
             }

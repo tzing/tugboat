@@ -71,7 +71,9 @@ def get_plugin_manager() -> pluggy.PluginManager:
 
     # hook implementations
     import tugboat.analyzers.workflow
+    import tugboat.analyzers.workflow_template
 
     pm.register(tugboat.analyzers.workflow)
+    pm.register(tugboat.analyzers.workflow_template)
 
     return pm
