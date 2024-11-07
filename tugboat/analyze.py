@@ -96,10 +96,14 @@ def analyze_yaml(manifest: str) -> list[ExtendedDiagnostic]:
         documents = _yaml_parser.load_all(manifest)
         documents = list(documents)  # force evaluation
     except MarkedYAMLError as e:
+        line = column = 1
+        if e.problem_mark:
+            line = e.problem_mark.line + 1
+            column = e.problem_mark.column + 1
         return [
             {
-                "line": e.problem_mark.line + 1,
-                "column": e.problem_mark.column + 1,
+                "line": line,
+                "column": column,
                 "type": "error",
                 "code": "F002",
                 "manifest": None,
@@ -113,6 +117,9 @@ def analyze_yaml(manifest: str) -> list[ExtendedDiagnostic]:
 
     diagnostics = []
     for document in documents:
+        if document is None:
+            continue
+
         if not isinstance(document, CommentedMap):
             return [
                 {
