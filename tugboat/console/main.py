@@ -82,11 +82,10 @@ def main(
 
     for subpath in path:
         if subpath.is_dir():
-            target_files += find_yaml(subpath)
+            target_files += sorted(find_yaml(subpath))
         else:
             target_files.append(subpath)
 
-    target_files = sorted(target_files)
     logger.info("Found %d YAML files to analyze.", len(target_files))
 
     if not target_files:
@@ -117,7 +116,7 @@ def main(
     # finalize
     summary, is_failed = summarize(diagnostics)
 
-    print(summary)
+    print(summary, file=sys.stderr)
 
     if is_failed:
         sys.exit(2)
