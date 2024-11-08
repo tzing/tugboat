@@ -10,6 +10,7 @@ import cloup
 import colorlog
 
 from tugboat.analyze import analyze_yaml
+from tugboat.version import __version__
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -60,6 +61,7 @@ logger = logging.getLogger(__name__)
         help="Print more information.",
     ),
 )
+@cloup.version_option(__version__)
 def main(
     path: Sequence[Path],
     color: bool | None,

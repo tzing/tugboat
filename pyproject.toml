@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "argo-tugboat"
-version = "0.1.0"
+version = "0.1.0-post"
 description = "Streamline your Argo Workflows with precision and confidence"
 authors = ["Tzu-Ting <tzingshih@gmail.com>"]
 license = "Apache-2.0"
@@ -31,6 +31,15 @@ tugboat = "tugboat.console:main"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.bumpver]
+current_version = "0.1.0-post"
+version_pattern = "MAJOR.MINOR.PATCH[-TAG]"
+commit = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = ['version = "{version}"']
+"tugboat/version.py" = ['__version__ = "{version}"']
 
 [tool.coverage.report]
 exclude_lines = ["pragma: no cover", "if typing.TYPE_CHECKING"]
