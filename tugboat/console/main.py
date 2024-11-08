@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
     ),
     cloup.option(
         "--output-format",
-        type=cloup.Choice(["console"]),
+        type=cloup.Choice(["console", "junit"]),
         default="console",
         show_default=True,
         help="Output serialization format.",
@@ -181,8 +181,10 @@ def generate_report(
 
         report(diagnostics, output_stream, color)
 
-    else:
-        raise NotImplementedError
+    elif output_format == "junit":
+        from tugboat.console.outputs.junit import report
+
+        report(diagnostics, output_stream)
 
     # close the output stream
     if output_file:
