@@ -122,7 +122,7 @@ def check_entrypoint(workflow: Workflow | WorkflowTemplate) -> Iterable[Diagnost
 
     # if the spec has an entrypoint, check that it exists
     if workflow.spec.entrypoint and workflow.spec.entrypoint not in entrypoints:
-        suggestion, _, _ = extractOne(workflow.spec.entrypoint, entrypoints)
+        suggestion, _, _ = extractOne(workflow.spec.entrypoint, entrypoints.keys())
         entrypoints_ = sorted(entrypoints)
         yield {
             "code": "WF001",
