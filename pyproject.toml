@@ -4,8 +4,15 @@ version = "0.1.0-post"
 description = "Streamline your Argo Workflows with precision and confidence"
 authors = ["Tzu-Ting <tzingshih@gmail.com>"]
 license = "Apache-2.0"
-readme = "README.md"
+readme = "readme.pkg.rst"
+repository = "https://github.com/tzing/tugboat"
+documentation = "https://argo-tugboat.readthedocs.io/en/"
 packages = [{ include = "tugboat" }]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Quality Assurance",
+    "Typing :: Typed",
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
