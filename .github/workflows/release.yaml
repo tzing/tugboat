@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  pypi-publish:
+    name: Release package to PyPI
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Check version
+        run: |
+          export PACKAGE_VERSION="$(poetry version --short)"
+          export TAG_VERSION="${GITHUB_REF_NAME:1}"
+
+          echo "package version: $PACKAGE_VERSION"
+          echo "github ref: $TAG_VERSION"
+
+          [[ "x$PACKAGE_VERSION" == "x$TAG_VERSION" ]]
+      - run: poetry build
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
