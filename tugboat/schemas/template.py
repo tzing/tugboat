@@ -78,6 +78,30 @@ class ContainerTemplate(_ContainerEntry):
     .. _container: https://argo-workflows.readthedocs.io/en/latest/fields/#container
     """
 
+    model_config = ConfigDict(extra="forbid")
+
+    # acknowledged fields
+    env: list[Any] | None = None
+    envFrom: list[Any] | None = None
+    lifecycle: Any | None = None
+    livenessProbe: Any | None = None
+    name: str | None = None
+    ports: list[Any] | None = None
+    readinessProbe: Any | None = None
+    resizePolicy: list[Any] | None = None
+    resources: Any | None = None
+    restartPolicy: Literal["Always"] | None = None
+    securityContext: Any | None = None
+    startupProbe: Any | None = None
+    stdin: bool | None = None
+    stdinOnce: bool | None = None
+    terminationMessagePath: str | None = None
+    terminationMessagePolicy: Literal["File", "FallbackToLogsOnError"] | None = None
+    tty: bool | None = None
+    volumeDevices: list[Any] | None = None
+    volumeMounts: list[Any] | None = None
+    workingDir: str | None = None
+
 
 class ScriptTemplate(_ContainerEntry):
     """
