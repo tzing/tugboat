@@ -60,6 +60,8 @@ def check_input_parameters(template: Template, workflow: Workflow | WorkflowTemp
         if param.name:
             parameters.setdefault(param.name, []).append(loc)
 
+        # TODO check expression
+
         if param.valueFrom:
             yield from require_exactly_one(
                 model=param.valueFrom,
@@ -87,7 +89,7 @@ def check_input_parameters(template: Template, workflow: Workflow | WorkflowTemp
         if len(locs) > 1:
             for loc in locs:
                 yield {
-                    "code": "WF003",
+                    "code": "TPL002",
                     "loc": loc,
                     "summary": "Duplicated parameter name",
                     "msg": f"Parameter name '{name}' is duplicated.",
