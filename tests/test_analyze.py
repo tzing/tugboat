@@ -320,7 +320,12 @@ class TestArgoExamples:
     def test(self, argo_example_dir: Path):
         for file_path in argo_example_dir.glob("**/*.yaml"):
             # skip known false positives
-            if file_path.name in ("webhdfs-input-output-artifacts.yaml",):
+            if file_path.name in (
+                # invalid schema
+                "exit-handler-step-level.yaml",
+                "template-on-exit.yaml",
+                "webhdfs-input-output-artifacts.yaml",
+            ):
                 continue
 
             # analyze
