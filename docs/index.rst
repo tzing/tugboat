@@ -100,5 +100,6 @@ The command will output the following:
 
    rules/fatal-errors
    rules/manifest-errors
+   rules/template
    rules/workflow
    rules/workflow-template

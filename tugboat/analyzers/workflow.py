@@ -141,7 +141,7 @@ def check_entrypoint(workflow: Workflow | WorkflowTemplate) -> Iterable[Diagnost
         if len(locs) > 1:
             for loc in locs:
                 yield {
-                    "code": "WF002",
+                    "code": "TPL001",
                     "loc": loc,
                     "summary": "Duplicated template name",
                     "msg": f"Template name '{name}' is duplicated.",
@@ -208,7 +208,7 @@ def check_argument_parameters(
         if len(locs) > 1:
             for loc in locs:
                 yield {
-                    "code": "WF003",
+                    "code": "WT002",
                     "loc": loc,
                     "summary": "Duplicated parameter name",
                     "msg": f"Parameter name '{name}' is duplicated.",
@@ -267,7 +267,7 @@ def check_argument_artifacts(
         if len(locs) > 1:
             for loc in locs:
                 yield {
-                    "code": "WF004",
+                    "code": "WT003",
                     "loc": loc,
                     "summary": "Duplicated artifact name",
                     "msg": f"Artifact name '{name}' is duplicated.",
