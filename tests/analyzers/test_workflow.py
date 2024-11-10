@@ -1,7 +1,6 @@
 import json
 import logging
 
-import ruamel.yaml
 from dirty_equals import IsPartialDict
 
 import tugboat.analyze
@@ -9,7 +8,6 @@ from tugboat.core import hookimpl
 from tugboat.schemas import Workflow, WorkflowTemplate
 
 logger = logging.getLogger(__name__)
-yaml = ruamel.yaml.YAML(typ="safe")
 
 
 class TestParseManifest:
@@ -217,11 +215,11 @@ class TestRules:
             in diagnostics
         )
         assert (
-            IsPartialDict({"code": "WF002", "loc": ("spec", "templates", 0)})
+            IsPartialDict({"code": "TPL001", "loc": ("spec", "templates", 0)})
             in diagnostics
         )
         assert (
-            IsPartialDict({"code": "WF002", "loc": ("spec", "templates", 2)})
+            IsPartialDict({"code": "TPL001", "loc": ("spec", "templates", 2)})
             in diagnostics
         )
 
@@ -230,13 +228,13 @@ class TestRules:
         logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
         assert (
             IsPartialDict(
-                {"code": "WF003", "loc": ("spec", "arguments", "parameters", 0)}
+                {"code": "WT002", "loc": ("spec", "arguments", "parameters", 0)}
             )
             in diagnostics
         )
         assert (
             IsPartialDict(
-                {"code": "WF003", "loc": ("spec", "arguments", "parameters", 1)}
+                {"code": "WT002", "loc": ("spec", "arguments", "parameters", 1)}
             )
             in diagnostics
         )
@@ -275,13 +273,13 @@ class TestRules:
 
         assert (
             IsPartialDict(
-                {"code": "WF004", "loc": ("spec", "arguments", "artifacts", 0)}
+                {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 0)}
             )
             in diagnostics
         )
         assert (
             IsPartialDict(
-                {"code": "WF004", "loc": ("spec", "arguments", "artifacts", 1)}
+                {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 1)}
             )
             in diagnostics
         )
@@ -317,13 +315,13 @@ metadata:
 spec:
   entrypoint: main  # WT001
   templates:
-    - name: hello  # WT002
+    - name: hello  # TPL001
       container:
         image: busybox
     - name: world
       container:
         image: busybox
-    - name: hello  # WT002
+    - name: hello  # TPL001
       container:
         image: busybox
 """
@@ -337,18 +335,18 @@ metadata:
 spec:
   arguments:
     parameters:
-      - name: message  # WF003
+      - name: message  # WT002
         valueFrom:
           configMapKeyRef:
             name: my-config
             key: my-key
-      - name: message  # WF003
+      - name: message  # WT002
         default: foo
     artifacts:
-      - name: data  # WF004
+      - name: data  # WT003
         raw:
           data: hello
-      - name: data  # WF004
+      - name: data  # WT003
         raw:  # M006
           data: world
         s3:  # M006

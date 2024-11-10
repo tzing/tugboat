@@ -29,33 +29,7 @@ For instance, the following workflow specifies an entrypoint that does not exist
            image: alpine:latest
 
 
-``WT002`` - Duplicated template name
-------------------------------------
-
-The workflow template contains multiple templates with the same name.
-
-In the following example, the template ``hello`` is duplicated:
-
-.. code-block:: yaml
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: WorkflowTemplate
-   metadata:
-     name: demo
-     generateName: demo-
-   spec:
-     templates:
-       - name: hello
-         #     ^^^^^ This template is duplicated
-         container:
-           image: alpine:latest
-       - name: hello
-         #     ^^^^^ This template is duplicated
-         container:
-           image: alpine:latest
-
-
-``WT003`` - Duplicated parameter name
+``WT002`` - Duplicated parameter name
 -------------------------------------
 
 The workflow template contains multiple argument parameters with the same name.
@@ -79,7 +53,7 @@ In the following example, the template ``message`` is duplicated:
            value: "Hello, Tugboat!"
 
 
-``WT004`` - Duplicated artifact name
+``WT003`` - Duplicated artifact name
 ------------------------------------
 
 The workflow template contains multiple argument artifacts with the same name.
@@ -106,7 +80,7 @@ In the following example, the artifact ``message`` is duplicated:
                 Hello, Tugboat!
 
 
-``WT005`` - Use strict name
+``WT004`` - Use strict name
 ---------------------------
 
 This error occurs when a workflow template uses the ``metadata.generateName`` field instead of the ``metadata.name`` field.

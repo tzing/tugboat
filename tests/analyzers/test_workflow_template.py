@@ -1,13 +1,11 @@
 import json
 import logging
 
-import ruamel.yaml
 from dirty_equals import IsPartialDict
 
 import tugboat.analyze
 
 logger = logging.getLogger(__name__)
-yaml = ruamel.yaml.YAML(typ="safe")
 
 
 class TestRules:
@@ -19,7 +17,7 @@ class TestRules:
     def test_check_metadata_2(self):
         diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_USE_GENERATE_NAME)
         logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
-        assert IsPartialDict({"code": "WT005"}) in diagnostics
+        assert IsPartialDict({"code": "WT004"}) in diagnostics
 
     def test_check_spec(self):
         diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_USE_GENERATE_NAME)
@@ -30,7 +28,7 @@ class TestRules:
         diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_ENTRYPOINT)
         logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
         assert IsPartialDict({"code": "WT001"}) in diagnostics
-        assert IsPartialDict({"code": "WT002"}) in diagnostics
+        assert IsPartialDict({"code": "TPL001"}) in diagnostics
 
     def test_check_arguments(self):
         diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_ARGUMENTS)
@@ -38,26 +36,26 @@ class TestRules:
 
         assert (
             IsPartialDict(
-                {"code": "WT003", "loc": ("spec", "arguments", "parameters", 0)}
+                {"code": "WT002", "loc": ("spec", "arguments", "parameters", 0)}
             )
             in diagnostics
         )
         assert (
             IsPartialDict(
-                {"code": "WT003", "loc": ("spec", "arguments", "parameters", 1)}
+                {"code": "WT002", "loc": ("spec", "arguments", "parameters", 1)}
             )
             in diagnostics
         )
 
         assert (
             IsPartialDict(
-                {"code": "WT004", "loc": ("spec", "arguments", "artifacts", 0)}
+                {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 0)}
             )
             in diagnostics
         )
         assert (
             IsPartialDict(
-                {"code": "WT004", "loc": ("spec", "arguments", "artifacts", 1)}
+                {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 1)}
             )
             in diagnostics
         )
@@ -111,13 +109,13 @@ metadata:
 spec:
   entrypoint: main  # WT001
   templates:
-    - name: hello  # WT002
+    - name: hello  # TPL001
       container:
         image: busybox
     - name: world
       container:
         image: busybox
-    - name: hello  # WT002
+    - name: hello  # TPL001
       container:
         image: busybox
 """
@@ -130,20 +128,20 @@ metadata:
 spec:
   arguments:
     parameters:
-      - name: message  # WT003
+      - name: message  # WT002
         valueFrom:
           configMapKeyRef:
             name: my-config
             key: my-key
-      - name: message  # WT003
+      - name: message  # WT002
         default: foo
     artifacts:
-      - name: data  # WT004
+      - name: data  # WT003
         raw:  # M006
           data: world
         s3:  # M006
           key: my-file
-      - name: data  # WT004
+      - name: data  # WT003
         raw:
           data: hello
 """

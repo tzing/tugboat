@@ -32,7 +32,7 @@ def check_metadata(workflow_template: WorkflowTemplate) -> Iterable[Diagnostic]:
 
     if workflow_template.metadata.generateName:
         yield {
-            "code": "WT005",
+            "code": "WT004",
             "loc": ("metadata", "generateName"),
             "summary": "Use strict name",
             "msg": "Use a strict name instead of a generateName.",
@@ -56,8 +56,6 @@ def check_entrypoint(workflow_template: WorkflowTemplate) -> Iterable[Diagnostic
         match diagnostic["code"]:
             case "WF001":
                 diagnostic["code"] = "WT001"
-            case "WF002":
-                diagnostic["code"] = "WT002"
         yield diagnostic
 
 
@@ -70,8 +68,8 @@ def check_arguments(
         tugboat.analyzers.workflow.check_argument_artifacts(workflow_template),
     ):
         match diagnostic["code"]:
-            case "WF003":
+            case "WT002":
+                diagnostic["code"] = "WT002"
+            case "WT003":
                 diagnostic["code"] = "WT003"
-            case "WF004":
-                diagnostic["code"] = "WT004"
         yield diagnostic
