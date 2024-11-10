@@ -25,6 +25,10 @@ jobs:
           cache: poetry
       - name: Install dependencies
         run: poetry install
+      - uses: actions/checkout@v4
+        with:
+          repository: argoproj/argo-workflows
+          path: tests/fixtures/argo-workflows
       - name: PyTest
         run: poetry run pytest
 
