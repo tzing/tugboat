@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import typing
 
-from tugboat.analyzers.utils import get_context_name, join_with_and, join_with_or
+from tugboat.utils import get_context_name, join_with_and, join_with_or
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

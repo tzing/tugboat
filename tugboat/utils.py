@@ -46,6 +46,7 @@ join_with_or = functools.partial(join_items, conjunction="or")
 
 
 def get_context_name(loc: Sequence[str | int]) -> str:
+    """Get the parent context name for a location."""
     if not isinstance(loc, tuple):
         loc = tuple(loc)
     return _get_context_name(loc)

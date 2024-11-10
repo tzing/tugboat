@@ -10,7 +10,7 @@ from collections.abc import Mapping, Sequence
 
 from rapidfuzz.process import extractOne
 
-from tugboat.analyzers.utils import get_context_name
+from tugboat.utils import get_context_name
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
