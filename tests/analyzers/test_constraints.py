@@ -3,7 +3,12 @@ from unittest.mock import Mock
 from pydantic import BaseModel
 
 from tests.utils import ContainsSubStrings
-from tugboat.analyzers.constraints import accept_none, require_all, require_exactly_one
+from tugboat.analyzers.constraints import (
+    accept_none,
+    mutually_exclusive,
+    require_all,
+    require_exactly_one,
+)
 
 
 class TestAcceptNone:
@@ -43,6 +48,47 @@ class TestAcceptNone:
                 "msg": "Field 'bar' is not valid within the 'spec' section.",
                 "input": "bar",
             }
+        ]
+
+
+class TestMutuallyExclusive:
+
+    def test_pass(self):
+        model = Mock(BaseModel, foo=None, bar="bar")
+        diagnostics = list(
+            mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
+        )
+        assert diagnostics == []
+
+    def test_none(self):
+        model = Mock(BaseModel, foo=None, bar=None)
+        diagnostics = list(
+            mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
+        )
+        assert diagnostics == []
+
+    def test_too_many(self):
+        model = Mock(BaseModel, foo="foo", bar="bar")
+        diagnostics = list(
+            mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
+        )
+        assert diagnostics == [
+            {
+                "type": "failure",
+                "code": "M006",
+                "loc": ("spec", "foo"),
+                "summary": "Mutually exclusive field set",
+                "msg": "Field 'foo' and 'bar' are mutually exclusive.",
+                "input": "foo",
+            },
+            {
+                "type": "failure",
+                "code": "M006",
+                "loc": ("spec", "bar"),
+                "summary": "Mutually exclusive field set",
+                "msg": "Field 'foo' and 'bar' are mutually exclusive.",
+                "input": "bar",
+            },
         ]
 
 
