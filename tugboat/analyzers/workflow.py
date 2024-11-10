@@ -113,12 +113,8 @@ def check_entrypoint(workflow: Workflow | WorkflowTemplate) -> Iterable[Diagnost
     # count the number of times each name appears
     entrypoints = {}
     for idx, template in enumerate(workflow.spec.templates or []):
-        loc = ("spec", "templates", idx)
-        # ensure that the template has a name
-        yield from require_all(model=template, loc=loc, fields=["name"])
-        # if the template has a name, add it to the entrypoints
         if template.name:
-            entrypoints.setdefault(template.name, []).append(loc)
+            entrypoints.setdefault(template.name, []).append(("spec", "templates", idx))
 
     # if the spec has an entrypoint, check that it exists
     if workflow.spec.entrypoint and workflow.spec.entrypoint not in entrypoints:

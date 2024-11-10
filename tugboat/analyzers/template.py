@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing
 
-from tugboat.analyzers.constraints import (
+from tugboat.constraints import (
     accept_none,
     mutually_exclusive,
     require_all,
@@ -19,6 +19,11 @@ if typing.TYPE_CHECKING:
 
 @hookimpl
 def analyze_template(template: Template) -> Iterable[Diagnostic]:
+    yield from require_all(
+        model=template,
+        loc=(),
+        fields=["name"],
+    )
     yield from require_exactly_one(
         model=template,
         loc=(),
