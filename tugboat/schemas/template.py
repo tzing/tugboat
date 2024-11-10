@@ -63,22 +63,14 @@ class Template(BaseModel):
 # container / script
 # ----------------------------------------------------------------------------
 class _ContainerEntry(BaseModel):
+
+    model_config = ConfigDict(extra="forbid")
+
     image: str
 
-    args: list[str] | None = None
     command: list[str] | None = None
     imagePullPolicy: Literal["Always", "Never", "IfNotPresent"] | None = None
     workingDir: str | None = None
-
-
-class ContainerTemplate(_ContainerEntry):
-    """
-    A single application `container`_ that you want to run within a pod.
-
-    .. _container: https://argo-workflows.readthedocs.io/en/latest/fields/#container
-    """
-
-    model_config = ConfigDict(extra="forbid")
 
     # acknowledged fields
     env: list[Any] | None = None
@@ -100,7 +92,16 @@ class ContainerTemplate(_ContainerEntry):
     tty: bool | None = None
     volumeDevices: list[Any] | None = None
     volumeMounts: list[Any] | None = None
-    workingDir: str | None = None
+
+
+class ContainerTemplate(_ContainerEntry):
+    """
+    A single application `container`_ that you want to run within a pod.
+
+    .. _container: https://argo-workflows.readthedocs.io/en/latest/fields/#container
+    """
+
+    args: list[str] | None = None
 
 
 class ScriptTemplate(_ContainerEntry):
