@@ -2,8 +2,6 @@ import io
 import re
 from pathlib import Path
 
-import pytest
-
 from tugboat.console.outputs.junit import report
 
 

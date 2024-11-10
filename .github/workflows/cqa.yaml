@@ -1,0 +1,66 @@
+name: Code quality
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    name: Unit test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.12"
+          - "3.13"
+    steps:
+      - name: Get poetry
+        run: pipx install poetry
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: poetry
+      - name: Install dependencies
+        run: poetry install
+      - name: Add Argo Workflow to test fixtures
+        uses: actions/checkout@v4
+        with:
+          repository: argoproj/argo-workflows
+          path: tests/fixtures/argo-workflows
+      - name: PyTest
+        run: poetry run pytest
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get poetry
+        run: pipx install poetry
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: poetry
+      - name: Install dependencies
+        run: poetry install
+      - name: Coding style check
+        run: poetry run ruff check
+
+  type:
+    name: Type check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get poetry
+        run: pipx install poetry
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: poetry
+      - name: Install dependencies
+        run: poetry install
+      - name: Type check
+        run: poetry run pyright
