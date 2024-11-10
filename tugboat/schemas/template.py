@@ -124,13 +124,22 @@ class Step(BaseModel):
     .. _Step: https://argo-workflows.readthedocs.io/en/latest/fields/#workflowstep
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     name: str
 
     arguments: Arguments | None = None
     template: str | None = None
     templateRef: TemplateRef | None = None
     when: str | None = None
+
+    # acknowledged fields
+    continueOn: Any | None = None
+    hooks: Any | None = None
+    inline: Template | None = None
+    withItems: list[Any] | None = None
     withParam: str | None = None
+    withSequence: Any | None = None
 
 
 class TemplateRef(BaseModel):

@@ -17,11 +17,16 @@ class TestArgoExamples:
     """
 
     def test_workflow(self, argo_example_dir: Path):
-        # webhdfs-input-output-artifacts.yaml: found `overwrite` field on artifact which is not documented
         manifests = load_manifests(
             dir_path=argo_example_dir,
             expected_kinds=["Workflow"],
-            exclude_files=["webhdfs-input-output-artifacts.yaml"],
+            exclude_files=[
+                # These manifests use deprecated `onExit` field
+                "exit-handler-step-level.yaml",
+                "template-on-exit.yaml",
+                # webhdfs-input-output-artifacts.yaml: found `overwrite` field on artifact which is not documented
+                "webhdfs-input-output-artifacts.yaml",
+            ],
         )
 
         for file, resource in manifests:
