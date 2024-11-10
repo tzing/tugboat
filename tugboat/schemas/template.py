@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -14,12 +14,49 @@ class Template(BaseModel):
     .. _Template: https://argo-workflows.readthedocs.io/en/latest/fields/#template
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     name: str | None = None
     container: ContainerTemplate | None = None
     inputs: Arguments | None = None
     outputs: Arguments | None = None
     script: ScriptTemplate | None = None
     steps: list[list[Step]] | None = None
+
+    # acknowledged fields
+    activeDeadlineSeconds: int | str | None = None
+    affinity: Any | None = None
+    archiveLocation: Any | None = None
+    automountServiceAccountToken: bool | None = None
+    containerSet: Any | None = None
+    daemon: bool | None = None
+    dag: Any | None = None
+    data: Any | None = None
+    executor: Any | None = None
+    failFast: bool | None = None
+    hostAliases: list[Any] | None = None
+    http: Any | None = None
+    initContainers: list[Any] | None = None
+    memoize: Any | None = None
+    metadata: Any | None = None
+    metrics: Any | None = None
+    nodeSelector: dict[str, str] | None = None
+    parallelism: int | None = None
+    plugins: Any | None = None
+    podSpecPatch: str | None = None
+    priority: int | None = None
+    priorityClassName: str | None = None
+    resource: Any | None = None
+    retryStrategy: Any | None = None
+    schedulerName: str | None = None
+    securityContext: Any | None = None
+    serviceAccountName: str | None = None
+    sidecars: list[Any] | None = None
+    suspend: Any | None = None
+    synchronization: Any | None = None
+    timeout: str | None = None
+    tolerations: list[Any] | None = None
+    volumes: list[Any] | None = None
 
 
 # ----------------------------------------------------------------------------
