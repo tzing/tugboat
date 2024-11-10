@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import typing
 
-from tugboat.analyzers.constraints import require_exactly_one
+from tugboat.analyzers.constraints import (
+    accept_none,
+    mutually_exclusive,
+    require_all,
+    require_exactly_one,
+)
 from tugboat.core import hookimpl
 
 if typing.TYPE_CHECKING:
@@ -19,10 +24,72 @@ def analyze_template(template: Template) -> Iterable[Diagnostic]:
         loc=(),
         fields=[
             "container",
+            "containerSet",
             "dag",
             "data",
             "http",
+            "resource",
             "script",
             "steps",
+            "suspend",
         ],
     )
+
+
+@hookimpl(specname="analyze_template")
+def check_input_parameters(template: Template, workflow: Workflow | WorkflowTemplate):
+    if not template.inputs:
+        return
+
+    # check fields for each parameter; also count the number of times each name appears
+    parameters = {}
+    for idx, param in enumerate(template.inputs.parameters or []):
+        loc = ("inputs", "parameters", idx)
+
+        yield from require_all(
+            model=param,
+            loc=loc,
+            fields=["name"],
+        )
+        yield from mutually_exclusive(
+            model=param,
+            loc=loc,
+            fields=["value", "valueFrom"],
+        )
+
+        if param.name:
+            parameters.setdefault(param.name, []).append(loc)
+
+        if param.valueFrom:
+            yield from require_exactly_one(
+                model=param.valueFrom,
+                loc=(*loc, "valueFrom"),
+                fields=[
+                    "configMapKeyRef",
+                    "expression",
+                    "parameter",
+                ],
+            )
+            yield from accept_none(
+                model=param.valueFrom,
+                loc=(*loc, "valueFrom"),
+                fields=[
+                    "event",
+                    "jqFilter",
+                    "jsonPath",
+                    "path",
+                    "supplied",
+                ],
+            )
+
+    # report duplicates
+    for name, locs in parameters.items():
+        if len(locs) > 1:
+            for loc in locs:
+                yield {
+                    "code": "WF003",
+                    "loc": loc,
+                    "summary": "Duplicated parameter name",
+                    "msg": f"Parameter name '{name}' is duplicated.",
+                    "input": name,
+                }
