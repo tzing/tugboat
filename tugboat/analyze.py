@@ -17,7 +17,7 @@ from tugboat.schemas import Manifest
 from tugboat.utils import get_context_name
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Sequence
+    from collections.abc import Iterable, Iterator
     from typing import Any
 
     from pydantic_core import ErrorDetails
