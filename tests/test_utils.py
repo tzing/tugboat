@@ -1,6 +1,6 @@
 import pytest
 
-from tugboat.analyzers.utils import get_context_name, join_items, prepend_loc
+from tugboat.utils import get_context_name, join_items, prepend_loc
 
 
 class TestPrependLoc:

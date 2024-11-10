@@ -5,11 +5,11 @@ import typing
 
 from rapidfuzz.process import extractOne
 
-from tugboat.analyzers.constraints import accept_none, require_all, require_exactly_one
 from tugboat.analyzers.kubernetes import check_resource_name
-from tugboat.analyzers.utils import join_with_and, prepend_loc
+from tugboat.constraints import accept_none, require_all, require_exactly_one
 from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.schemas import Workflow, WorkflowTemplate
+from tugboat.utils import join_with_and, prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
