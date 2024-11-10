@@ -3,7 +3,7 @@ from unittest.mock import Mock
 from pydantic import BaseModel
 
 from tests.utils import ContainsSubStrings
-from tugboat.analyzers.constraints import (
+from tugboat.constraints import (
     accept_none,
     mutually_exclusive,
     require_all,

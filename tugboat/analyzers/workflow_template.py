@@ -4,8 +4,8 @@ import itertools
 import typing
 
 import tugboat.analyzers.workflow
-from tugboat.analyzers.constraints import require_exactly_one
 from tugboat.analyzers.kubernetes import check_resource_name
+from tugboat.constraints import require_exactly_one
 from tugboat.core import hookimpl
 
 if typing.TYPE_CHECKING:

@@ -1,5 +1,5 @@
 """
-This module provides some generic constraints that can be used on models.
+This module provides some generic constraints that can be used on linting models.
 """
 
 from __future__ import annotations
