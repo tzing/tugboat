@@ -93,6 +93,37 @@ class TestRules:
             in diagnostics
         )
 
+    def test_check_output_parameters(self):
+        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
+        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        assert (
+            IsPartialDict(
+                {
+                    "code": "TPL004",
+                    "loc": ("spec", "templates", 0, "outputs", "parameters", 0),
+                }
+            )
+            in diagnostics
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "TPL004",
+                    "loc": ("spec", "templates", 0, "outputs", "parameters", 1),
+                }
+            )
+            in diagnostics
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "M004",
+                    "loc": ("spec", "templates", 0, "outputs", "parameters", 1),
+                }
+            )
+            in diagnostics
+        )
+
 
 MANIFEST_AMBIGUOUS_TYPE = """
 apiVersion: argoproj.io/v1alpha1
@@ -129,4 +160,10 @@ spec:
           - name: data # TPL003
       container:
         image: busybox:latest
+      outputs:
+        parameters:
+          - name: message # TPL004
+            valueFrom:
+              path: /data/message
+          - name: message # TPL004, M004
 """

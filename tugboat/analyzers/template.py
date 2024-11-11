@@ -161,3 +161,58 @@ def check_input_artifacts(template: Template, workflow: Workflow | WorkflowTempl
                     "msg": f"Parameter name '{name}' is duplicated.",
                     "input": name,
                 }
+
+
+@hookimpl(specname="analyze_template")
+def check_output_parameters(template: Template, workflow: Workflow | WorkflowTemplate):
+    if not template.outputs:
+        return
+
+    # check fields for each parameter; also count the number of times each name appears
+    parameters = {}
+    for idx, param in enumerate(template.outputs.parameters or []):
+        loc = ("outputs", "parameters", idx)
+
+        yield from require_all(
+            model=param,
+            loc=loc,
+            fields=["name"],
+        )
+        yield from require_exactly_one(
+            model=param,
+            loc=loc,
+            fields=["value", "valueFrom"],
+        )
+
+        if param.name:
+            parameters.setdefault(param.name, []).append(loc)
+
+        # TODO check expression
+
+        if param.valueFrom:
+            yield from require_exactly_one(
+                model=param.valueFrom,
+                loc=(*loc, "valueFrom"),
+                fields=[
+                    "configMapKeyRef",
+                    "event",
+                    "expression",
+                    "jqFilter",
+                    "jsonPath",
+                    "parameter",
+                    "path",
+                    "supplied",
+                ],
+            )
+
+    # report duplicates
+    for name, locs in parameters.items():
+        if len(locs) > 1:
+            for loc in locs:
+                yield {
+                    "code": "TPL004",
+                    "loc": loc,
+                    "summary": "Duplicated parameter name",
+                    "msg": f"Parameter name '{name}' is duplicated.",
+                    "input": name,
+                }

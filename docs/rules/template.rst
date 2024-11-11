@@ -71,3 +71,45 @@ The template contains multiple input artifacts with the same name.
               - name: data
               - name: data
                 #     ^^^^ This artifact is duplicated
+
+
+``TPL004`` - Duplicated output parameter name
+---------------------------------------------
+
+The template contains multiple output parameters with the same name.
+
+.. code-block:: yaml
+
+   apiVersion: argoproj.io/v1alpha1
+   kind: WorkflowTemplate
+   metadata:
+     name: demo
+   spec:
+     templates:
+        - name: main
+          outputs:
+            parameters:
+              - name: message
+              - name: message
+                #     ^^^^^^^ This parameter is duplicated
+
+
+``TPL005`` - Duplicated output artifact name
+--------------------------------------------
+
+The template contains multiple output artifacts with the same name.
+
+.. code-block:: yaml
+
+   apiVersion: argoproj.io/v1alpha1
+   kind: WorkflowTemplate
+   metadata:
+     name: demo
+   spec:
+     templates:
+        - name: main
+          outputs:
+            artifacts:
+              - name: data
+              - name: data
+                #     ^^^^ This artifact is duplicated
