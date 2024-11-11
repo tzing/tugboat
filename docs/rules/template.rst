@@ -31,8 +31,8 @@ In the following example, the template ``hello`` is duplicated:
            image: alpine:latest
 
 
-``WT002`` - Duplicated input parameter name
--------------------------------------------
+``TPL002`` - Duplicated input parameter name
+--------------------------------------------
 
 The template contains multiple input parameters with the same name.
 
@@ -52,8 +52,8 @@ The template contains multiple input parameters with the same name.
                 #     ^^^^^^^ This parameter is duplicated
 
 
-``WT003`` - Duplicated input artifact name
-------------------------------------------
+``TPL003`` - Duplicated input artifact name
+-------------------------------------------
 
 The template contains multiple input artifacts with the same name.
 

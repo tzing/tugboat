@@ -31,6 +31,68 @@ class TestRules:
             in diagnostics
         )
 
+    def test_check_input_parameters(self):
+        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
+        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        assert (
+            IsPartialDict(
+                {
+                    "code": "TPL002",
+                    "loc": ("spec", "templates", 0, "inputs", "parameters", 0),
+                }
+            )
+            in diagnostics
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "TPL002",
+                    "loc": ("spec", "templates", 0, "inputs", "parameters", 1),
+                }
+            )
+            in diagnostics
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "M005",
+                    "loc": (
+                        "spec",
+                        "templates",
+                        0,
+                        "inputs",
+                        "parameters",
+                        0,
+                        "valueFrom",
+                        "path",
+                    ),
+                }
+            )
+            in diagnostics
+        )
+
+    def test_check_input_artifacts(self):
+        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
+        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        assert (
+            IsPartialDict(
+                {
+                    "code": "TPL003",
+                    "loc": ("spec", "templates", 0, "inputs", "artifacts", 0),
+                }
+            )
+            in diagnostics
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "TPL003",
+                    "loc": ("spec", "templates", 0, "inputs", "artifacts", 1),
+                }
+            )
+            in diagnostics
+        )
+
 
 MANIFEST_AMBIGUOUS_TYPE = """
 apiVersion: argoproj.io/v1alpha1
@@ -46,4 +108,25 @@ spec:
         image: python:alpine3.13
         command: [ python ]
         source: print("hello world!")
+"""
+
+MANIFEST_DUPLICATE_ARGUMENTS = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  templates:
+    - name: main
+      inputs:
+        parameters:
+          - name: message # TPL002
+            valueFrom:
+              path: /malformed # M005
+          - name: message # TPL002
+        artifacts:
+          - name: data # TPL003
+          - name: data # TPL003
+      container:
+        image: busybox:latest
 """
