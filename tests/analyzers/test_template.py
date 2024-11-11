@@ -124,6 +124,45 @@ class TestRules:
             in diagnostics
         )
 
+    def test_check_output_artifacts(self):
+        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
+        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        assert (
+            IsPartialDict(
+                {
+                    "code": "TPL005",
+                    "loc": ("spec", "templates", 0, "outputs", "artifacts", 0),
+                }
+            )
+            in diagnostics
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "TPL005",
+                    "loc": ("spec", "templates", 0, "outputs", "artifacts", 1),
+                }
+            )
+            in diagnostics
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "M004",
+                    "loc": (
+                        "spec",
+                        "templates",
+                        0,
+                        "outputs",
+                        "artifacts",
+                        0,
+                        "archive",
+                    ),
+                }
+            )
+            in diagnostics
+        )
+
 
 MANIFEST_AMBIGUOUS_TYPE = """
 apiVersion: argoproj.io/v1alpha1
@@ -166,4 +205,10 @@ spec:
             valueFrom:
               path: /data/message
           - name: message # TPL004, M004
+        artifacts:
+          - name: data # TPL005
+            path: /data
+            archive: {} # M004
+          - name: data # TPL005
+            path: /data
 """
