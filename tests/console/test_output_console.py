@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from tugboat.console.outputs.console import report
+from tugboat.console.outputs.console import _calc_highlight_range, report
 
 
 class TestReport:
@@ -46,6 +46,7 @@ class TestReport:
             " 1 | apiVersion: argoproj.io/v1alpha1",
             "   | └ T01 at . in hello-world-",
             " 2 | kind: Workflow",
+            " 3 | metadata:",
             "",
             "   Test error message",
             "",
@@ -84,6 +85,7 @@ class TestReport:
             "   |               ^^^^^",
             "   |               └ T02 at .spec.entrypoint in hello-",
             " 7 |   templates:",
+            " 8 |     - name: hello",
             "",
             "   Test failure message",
             "",
@@ -121,6 +123,7 @@ class TestReport:
             " 2 | kind: Workflow",
             "   | └ T03 at .kind in hello-world-",
             " 3 | metadata:",
+            " 4 |   generateName: hello-world-",
             "",
             "   Test skipped message",
             "",
@@ -159,3 +162,21 @@ class TestReport:
             output = stream.getvalue()
 
         assert isinstance(output, str)
+
+
+class TestCalcHighlightRange:
+
+    def test_success(self):
+        start, end = _calc_highlight_range("hello user 1234", 0, 1234)
+        assert start == 11
+        assert end == 15
+
+    def test_not_found(self):
+        assert _calc_highlight_range("hello world", 2, "hello") is None
+        assert _calc_highlight_range("hello world", 0, "not-found") is None
+
+    def test_empty(self):
+        assert _calc_highlight_range("hello world", 0, " ") is None
+
+    def test_none(self):
+        assert _calc_highlight_range("hello world; None", 0, None) is None

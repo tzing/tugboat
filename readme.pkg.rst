@@ -16,6 +16,7 @@ Tugboat is a linter to streamline your `Argo Workflows <https://argoproj.github.
       |               ^^^^^^^
       |               └ WF001 at .spec.entrypoint in test-
     7 |   templates:
+    8 |     - name: whalesay
 
       Entrypoint 'ducksay' is not defined in any template.
       Defined entrypoints: 'whalesay'.
