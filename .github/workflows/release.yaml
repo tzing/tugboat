@@ -11,23 +11,41 @@ jobs:
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
+      contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      # Setup toolchain
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install poetry
-        run: pipx install poetry
+      - name: Get tools
+        run: pipx install poetry bumpver
+      - uses: actions/checkout@v4
+
+      # Check the version in pyproject.toml matches the tag
+      # for ensure version on PyPI and ReadTheDocs are in sync
       - name: Check version
         run: |
           export PACKAGE_VERSION="$(poetry version --short)"
           export TAG_VERSION="${GITHUB_REF_NAME:1}"
-
-          echo "package version: $PACKAGE_VERSION"
-          echo "github ref: $TAG_VERSION"
-
+          echo "Package version: $PACKAGE_VERSION"
+          echo "GitHub ref: $TAG_VERSION"
           [[ "x$PACKAGE_VERSION" == "x$TAG_VERSION" ]]
+
+      # Release to PyPI
       - run: poetry build
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+      # Bump version for next development cycle
+      - name: Bump to next dev version
+        id: bump-version
+        run: |
+          bumpver update --patch --tag dev
+          echo "version=`poetry version --short`" | tee -a "$GITHUB_OUTPUT"
+      - name: Create commit for version ${{ steps.bump-version.outputs.version }}
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          branch: main
+          commit_message: "chore: bump to ${{ steps.bump-version.outputs.version }}"
+          commit_author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
