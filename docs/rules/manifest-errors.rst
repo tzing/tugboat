@@ -140,10 +140,16 @@ For instance, the following manifest contains an invalid value for the ``imagePu
            #                ^^^^^^^^^^^^ invalid value here
 
 
-``M009`` - Manifest name too long
----------------------------------
+``M009`` - Manifest Name Length Error
+-------------------------------------
 
-The name of the manifest is too long.
+The manifest name does not meet the required length criteria; it is either too long or too short.
+
+For generated names, Kubernetes typically trims the user-provided name to fit within the length limit.
+However, tugboat requires that the user-provided name reserves 5 characters for the generated suffix to ensure it is not truncated.
+
+For example, the following manifest name is too long for a WorkflowTemplate, which has a maximum name length of 63 characters.
+This generated name (59 characters) may cause the last character of the generated name to be truncated:
 
 .. code-block:: yaml
 
@@ -160,7 +166,13 @@ The name of the manifest is too long.
 ``M010`` - Invalid manifest name
 --------------------------------
 
-Found invalid characters in the manifest name.
+The manifest name contains invalid characters.
+
+Kubernetes requires most resource names to comply with the `RFC 1123`_ standard for DNS subdomain names [#kube-names]_:
+
+* Only lowercase alphanumeric characters, ``-``, or ``.``
+* Must start with an alphanumeric character
+* Must end with an alphanumeric character
 
 .. code-block:: yaml
 
@@ -171,3 +183,6 @@ Found invalid characters in the manifest name.
      #     ^^^^^^^^^^^^ invalid characters '_' in the name
    spec:
      ...
+
+.. _RFC 1123: https://tools.ietf.org/html/rfc1123
+.. [#kube-names] Read `Object Names and IDs <https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names>`_ for more details.
