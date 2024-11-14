@@ -4,56 +4,94 @@ import re
 import typing
 
 if typing.TYPE_CHECKING:
-    from tugboat.core import Diagnostic
+    from collections.abc import Iterator
+
+    from tugboat.core import Diagnostic as Diagnosis
+
+GENERATED_SUFFIX_LENGTH = 5
 
 
 def check_resource_name(
-    name: str, *, length: int = 253, is_generate_name: bool = False
-) -> Diagnostic | None:
+    name: str,
+    *,
+    min_length: int = 1,
+    max_length: int = 253,
+    is_generate_name: bool = False,
+) -> Iterator[Diagnosis]:
     """
     Check if the name is valid to be used as a Kubernetes resource name.
+
+    Returns
+    -------
+    Iterator[Diagnosis]
+        An iterator of diagnoses if the name is invalid, otherwise an empty iterator.
+        Note that the ``loc`` field is always an empty tuple.
+
+    See also
+    --------
+    Object Names and IDs
+       https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
     """
     if is_generate_name:
         # although kubernetes automatically truncates the name when it exceeds
         # the length, we want to keep the name as close as possible to the
         # original name to help users identify the resource.
-        length -= 5
+        min_length = max(min_length - GENERATED_SUFFIX_LENGTH, 1)
+        max_length -= GENERATED_SUFFIX_LENGTH
 
-    if len(name) > length:
-        return {
+    if not name:
+        yield {
+            "type": "failure",
+            "code": "M009",
+            "loc": (),
+            "summary": "Resource name is too short",
+            "msg": f"Resource name is empty, minimum length is {min_length}.",
+        }
+    elif len(name) < min_length:
+        yield {
+            "type": "failure",
+            "code": "M009",
+            "loc": (),
+            "summary": "Resource name is too short",
+            "msg": f"Resource name '{name}' is too short, minimum length is {min_length}.",
+            "input": name,
+        }
+
+    if len(name) > max_length:
+        yield {
             "type": "failure",
             "code": "M009",
             "loc": (),
             "summary": "Resource name is too long",
-            "msg": f"Resource name '{name}' is too long, maximum length is {length}.",
+            "msg": f"Resource name '{name}' is too long, maximum length is {max_length}.",
             "input": name,
         }
 
     if is_generate_name:
-        internal_name = name.removesuffix("-")
+        normalized_name = name.removesuffix("-")
     else:
-        internal_name = name
+        normalized_name = name
 
     pattern = re.compile(r"[a-z0-9]([a-z0-9.-]*[a-z0-9])?")
-    if pattern.fullmatch(internal_name):
+    if pattern.fullmatch(normalized_name):
         return
 
-    diagnostic: Diagnostic = {
+    diagnostic: Diagnosis = {
         "type": "failure",
         "code": "M010",
         "loc": (),
         "summary": "Invalid resource name",
         "msg": f"""
-            Resource name '{name}' is invalid.
+            Resource name '{name}' contains invalid characters.
             It must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character.
             """,
         "input": name,
     }
 
-    alternative_name = internal_name.replace("_", "-").lower()
+    alternative_name = normalized_name.replace("_", "-").lower()
     if pattern.fullmatch(alternative_name):
         if is_generate_name and name.endswith("-"):
             alternative_name += "-"
         diagnostic["fix"] = alternative_name
 
-    return diagnostic
+    yield diagnostic
