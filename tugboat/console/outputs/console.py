@@ -11,7 +11,7 @@ from tugboat.console.utils import format_loc
 if typing.TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from pathlib import Path
-    from typing import IO
+    from typing import IO, Any
 
     from tugboat.analyze import AugmentedDiagnosis
 
@@ -73,9 +73,8 @@ def report_diagnosis(echo: Callable, file: Path, diagnosis: AugmentedDiagnosis):
             # default to the column number, but if the input is present, use that instead
             indent_before_caret = " " * max(diagnosis["column"] - 1, 0)
 
-            if diagnosis["input"] is not None and str(diagnosis["input"]) in line:
-                col_start = line.index(str(diagnosis["input"]))
-                col_end = col_start + len(str(diagnosis["input"]))
+            if range_ := _calc_highlight_range(line, diagnosis["input"]):
+                col_start, col_end = range_
                 indent_before_caret = " " * col_start
 
                 # print the underline
@@ -124,3 +123,21 @@ def get_content_near(file: Path, target_line: int) -> Iterator[tuple[int, str]]:
 @functools.lru_cache(1)
 def read_file(path: Path) -> str:
     return path.read_text()
+
+
+def _calc_highlight_range(line: str, input_: Any):
+    """
+    Calculate the range to highlight in the line.
+    """
+    if input_ is None:
+        return  # early escape if no value is provided
+
+    value = str(input_)
+    if value not in line:
+        return  # escape if the value is not in the line
+    if not value.strip():
+        return  # prevent highlighting empty strings
+
+    col_start = line.index(value)
+    col_end = col_start + len(value)
+    return col_start, col_end
