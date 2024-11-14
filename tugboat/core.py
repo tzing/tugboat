@@ -13,48 +13,46 @@ if typing.TYPE_CHECKING:
 hookimpl = pluggy.HookimplMarker("tugboat")
 
 
-class Diagnostic(typing.TypedDict):
-    """
-    A diagnostic reported by the checker.
-    """
+class Diagnosis(typing.TypedDict):
+    """A diagnosis reported by the analyzer."""
 
     type: NotRequired[Literal["error", "failure", "skipped"]]
     """
-    The type of diagnostic.
+    The diagnosis type.
     When not provided, it defaults to "failure".
     """
 
     code: str
-    """The code of the diagnostic."""
+    """Diagnosis code."""
 
     loc: Sequence[str | int]
     """
-    The location of the diagnostic in the manifest.
+    The location of the issue in the manifest.
     The first element is the key of the manifest, and the rest are the keys of
     the nested dictionaries.
     """
 
     summary: NotRequired[str]
     """
-    The summary of the diagnostic.
+    The summary.
     When not provided, the first sentence of the message will be used.
     """
 
     msg: str
     """
-    The detailed message of the diagnostic.
+    The detailed message.
     When multiple lines are used in the message, the framework will automatically dedent it.
     This allows the analyzer to use Python multiline strings without concern for indentation.
     """
 
     input: NotRequired[Any]
-    """The input that caused the diagnostic."""
+    """The input that caused the issue."""
 
     fix: NotRequired[str]
-    """The fix to the diagnostic."""
+    """The possible fix for the issue."""
 
     ctx: NotRequired[Any]
-    """The additional context of the diagnostic."""
+    """The additional context."""
 
 
 @functools.lru_cache(1)
