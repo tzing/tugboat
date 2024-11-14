@@ -116,9 +116,9 @@ def report_diagnosis(echo: Callable, file: Path, diagnosis: AugmentedDiagnosis):
 def get_content_near(file: Path, target_line: int) -> Iterator[tuple[int, str]]:
     target_line -= 1  # 1-based to 0-based
     content = read_file(file).splitlines()
-    start = max(0, target_line - LINES_BEHIND)
-    end = min(len(content), target_line + LINES_AHEAD)
-    yield from enumerate(content[start:end], start + 1)
+    start = max(0, target_line - LINES_AHEAD)
+    end = min(len(content), target_line + LINES_BEHIND)
+    yield from enumerate(content[start : end + 1], start + 1)
 
 
 @functools.lru_cache(1)
