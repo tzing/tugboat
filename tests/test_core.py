@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pluggy
 
-from tugboat.core import Diagnostic, get_plugin_manager, hookimpl
+from tugboat.core import Diagnosis, get_plugin_manager, hookimpl
 from tugboat.schemas import Manifest, Workflow
 
 
@@ -26,7 +26,7 @@ class TestHookspecs:
         assert isinstance(manifest, Mock)
 
     @hookimpl(tryfirst=True)
-    def analyze_workflow(self, workflow: Workflow) -> Iterable[Diagnostic]:
+    def analyze_workflow(self, workflow: Workflow) -> Iterable[Diagnosis]:
         assert isinstance(workflow, Workflow)
         yield {
             "code": "T01",
@@ -43,9 +43,9 @@ class TestHookspecs:
         assert isinstance(iterators, list)
         assert all(isinstance(it, Iterable) for it in iterators)
 
-        diagnostics = itertools.chain.from_iterable(iterators)
+        diagnoses = itertools.chain.from_iterable(iterators)
         assert {
             "code": "T01",
             "loc": (),
             "msg": "Mocked",
-        } in diagnostics
+        } in diagnoses

@@ -36,12 +36,12 @@ class TestAnalyzeYaml:
                 {
                     "code": "T01",
                     "loc": ("spec", "foo"),
-                    "msg": "Test diagnostic. This is a long message.",
+                    "msg": "Test diagnosis. This is a long message.",
                 }
             ],
         )
 
-        diagnostics = analyze_yaml(
+        diagnoses = analyze_yaml(
             """
             apiVersion: v1
             kind: Test
@@ -51,7 +51,7 @@ class TestAnalyzeYaml:
               foo: bar
             """
         )
-        assert diagnostics == [
+        assert diagnoses == [
             {
                 "line": 7,
                 "column": 15,
@@ -59,20 +59,20 @@ class TestAnalyzeYaml:
                 "code": "T01",
                 "manifest": "test-",
                 "loc": ("spec", "foo"),
-                "summary": "Test diagnostic",
-                "msg": "Test diagnostic. This is a long message.",
+                "summary": "Test diagnosis",
+                "msg": "Test diagnosis. This is a long message.",
                 "input": None,
                 "fix": None,
             }
         ]
 
     def test_yaml_error(self):
-        diagnostics = analyze_yaml(
+        diagnoses = analyze_yaml(
             """
             test: "foo
             """
         )
-        assert diagnostics == [
+        assert diagnoses == [
             {
                 "line": 3,
                 "column": 13,
@@ -88,13 +88,13 @@ class TestAnalyzeYaml:
         ]
 
     def test_yaml_input_error(self):
-        diagnostics = analyze_yaml(
+        diagnoses = analyze_yaml(
             """
             - foo
             - bar
             """
         )
-        assert diagnostics == [
+        assert diagnoses == [
             {
                 "line": 2,
                 "column": 13,
@@ -181,7 +181,7 @@ class TestAnalyzeRaw:
     def test_standard(self, plugin_manager):
         plugin_manager.register(self)
 
-        diagnostics = analyze_raw(
+        diagnoses = analyze_raw(
             {
                 "apiVersion": "v1",
                 "kind": "Test",
@@ -189,7 +189,7 @@ class TestAnalyzeRaw:
                 "spec": {"foo": "bar"},
             }
         )
-        assert diagnostics == [
+        assert diagnoses == [
             {
                 "code": "T01",
                 "loc": (),
@@ -216,8 +216,8 @@ class TestAnalyzeRaw:
     def test_not_kubernetes_manifest(self, plugin_manager):
         plugin_manager.register(self)
 
-        diagnostics = analyze_raw({"foo": "bar"})
-        assert diagnostics == [
+        diagnoses = analyze_raw({"foo": "bar"})
+        assert diagnoses == [
             {
                 "type": "skipped",
                 "code": "M001",
@@ -230,14 +230,14 @@ class TestAnalyzeRaw:
     def test_parse_manifest_validation_error(self, plugin_manager):
         plugin_manager.register(self)
 
-        diagnostics = analyze_raw(
+        diagnoses = analyze_raw(
             {
                 "apiVersion": "v1",
                 "kind": "Test",
                 "metadata": {"name": "test"},
             }
         )
-        assert diagnostics == [
+        assert diagnoses == [
             {
                 "type": "failure",
                 "code": "M004",
@@ -250,13 +250,13 @@ class TestAnalyzeRaw:
     def test_parse_manifest_exception(self, plugin_manager):
         plugin_manager.register(self)
 
-        diagnostics = analyze_raw(
+        diagnoses = analyze_raw(
             {
                 "apiVersion": "v1",
                 "kind": "ParseError",
             }
         )
-        assert diagnostics == [
+        assert diagnoses == [
             {
                 "type": "error",
                 "code": "F001",
@@ -269,13 +269,13 @@ class TestAnalyzeRaw:
     def test_unrecognized_kind(self, plugin_manager):
         plugin_manager.register(self)
 
-        diagnostics = analyze_raw(
+        diagnoses = analyze_raw(
             {
                 "apiVersion": "v1",
                 "kind": "Unrecognized",
             }
         )
-        assert diagnostics == [
+        assert diagnoses == [
             {
                 "type": "skipped",
                 "code": "M002",
@@ -288,13 +288,13 @@ class TestAnalyzeRaw:
     def test_not_manifest_obj(self, plugin_manager):
         plugin_manager.register(self)
 
-        diagnostics = analyze_raw(
+        diagnoses = analyze_raw(
             {
                 "apiVersion": "v1",
                 "kind": "NotManifest",
             }
         )
-        assert diagnostics == [
+        assert diagnoses == [
             {
                 "type": "error",
                 "code": "F001",
@@ -307,7 +307,7 @@ class TestAnalyzeRaw:
     def test_analyze_error(self, plugin_manager):
         plugin_manager.register(self)
 
-        diagnostics = analyze_raw(
+        diagnoses = analyze_raw(
             {
                 "apiVersion": "v1",
                 "kind": "AnalysisError",
@@ -315,7 +315,7 @@ class TestAnalyzeRaw:
                 "spec": {"foo": "bar"},
             }
         )
-        assert diagnostics == [
+        assert diagnoses == [
             {
                 "type": "error",
                 "code": "F001",
@@ -343,14 +343,14 @@ class TestArgoExamples:
                 continue
 
             # analyze
-            diagnostics = analyze_yaml(file_path.read_text())
+            diagnoses = analyze_yaml(file_path.read_text())
 
             # skip warnings
-            diagnostics = list(filter(lambda d: d["type"] != "skipped", diagnostics))
+            diagnoses = list(filter(lambda d: d["type"] != "skipped", diagnoses))
 
             # fail on errors
-            if any(diagnostics):
-                logger.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+            if any(diagnoses):
+                logger.critical("diagnoses: %s", json.dumps(diagnoses, indent=2))
                 pytest.fail(f"Found issue with {file_path}")
 
 

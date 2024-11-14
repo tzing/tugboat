@@ -1,3 +1,4 @@
+import itertools
 import json
 import logging
 
@@ -95,8 +96,9 @@ class TestAnalyze:
             }
         )
 
-        diagnostics = list(plugin_manager.hook.analyze(manifest=manifest))
-        assert diagnostics == [
+        diagnoses_generators = plugin_manager.hook.analyze(manifest=manifest)
+        diagnoses = list(itertools.chain.from_iterable(diagnoses_generators))
+        assert diagnoses == [
             {
                 "code": "T001",
                 "loc": (),
@@ -152,8 +154,9 @@ class TestAnalyze:
             }
         )
 
-        diagnostics = list(plugin_manager.hook.analyze(manifest=manifest))
-        assert diagnostics == [
+        diagnoses_generators = plugin_manager.hook.analyze(manifest=manifest)
+        diagnoses = list(itertools.chain.from_iterable(diagnoses_generators))
+        assert diagnoses == [
             {
                 "code": "T002",
                 "loc": ("spec", "templates", 0),
@@ -174,69 +177,67 @@ class TestAnalyze:
 
 class TestRules:
     def test_check_metadata_1(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_NAME)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_NAME)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
                 {"code": "M010", "loc": ("metadata", "name"), "fix": "invalid-name"}
             )
-            in diagnostics
+            in diagnoses
         )
 
     def test_check_metadata_2(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_GENERATE_NAME)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_GENERATE_NAME)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict({"code": "M010", "loc": ("metadata", "generateName")})
-            in diagnostics
+            in diagnoses
         )
 
     def test_check_spec_1(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_NAME)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_NAME)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict({"code": "M006", "loc": ("spec", "workflowTemplateRef")})
-            in diagnostics
+            in diagnoses
         )
 
     def test_check_spec_2(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_GENERATE_NAME)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_GENERATE_NAME)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
-            IsPartialDict({"code": "M004", "loc": ("spec", "entrypoint")})
-            in diagnostics
+            IsPartialDict({"code": "M004", "loc": ("spec", "entrypoint")}) in diagnoses
         )
 
     def test_check_entrypoint(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_ENTRYPOINT)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_ENTRYPOINT)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
-            IsPartialDict({"code": "WF001", "loc": ("spec", "entrypoint")})
-            in diagnostics
+            IsPartialDict({"code": "WF001", "loc": ("spec", "entrypoint")}) in diagnoses
         )
         assert (
             IsPartialDict({"code": "TPL001", "loc": ("spec", "templates", 0)})
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict({"code": "TPL001", "loc": ("spec", "templates", 2)})
-            in diagnostics
+            in diagnoses
         )
 
     def test_check_argument_parameters(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_ARGUMENTS)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_ARGUMENTS)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
                 {"code": "WT002", "loc": ("spec", "arguments", "parameters", 0)}
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
                 {"code": "WT002", "loc": ("spec", "arguments", "parameters", 1)}
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
@@ -245,12 +246,12 @@ class TestRules:
                     "loc": ("spec", "arguments", "parameters", 1, "default"),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
 
     def test_check_argument_artifacts(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_ARGUMENTS)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_ARGUMENTS)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
         assert (
             IsPartialDict(
@@ -259,7 +260,7 @@ class TestRules:
                     "loc": ("spec", "arguments", "artifacts", 1, "raw"),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
@@ -268,20 +269,20 @@ class TestRules:
                     "loc": ("spec", "arguments", "artifacts", 1, "s3"),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
 
         assert (
             IsPartialDict(
                 {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 0)}
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
                 {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 1)}
             )
-            in diagnostics
+            in diagnoses
         )
 
 

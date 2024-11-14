@@ -10,54 +10,54 @@ logger = logging.getLogger(__name__)
 
 class TestRules:
     def test_check_metadata_1(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_NAME_TOO_LONG)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
-        assert IsPartialDict({"code": "M009"}) in diagnostics
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_NAME_TOO_LONG)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        assert IsPartialDict({"code": "M009"}) in diagnoses
 
     def test_check_metadata_2(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_USE_GENERATE_NAME)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
-        assert IsPartialDict({"code": "WT004"}) in diagnostics
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_USE_GENERATE_NAME)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        assert IsPartialDict({"code": "WT004"}) in diagnoses
 
     def test_check_spec(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_USE_GENERATE_NAME)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
-        assert IsPartialDict({"code": "M006"}) in diagnostics
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_USE_GENERATE_NAME)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        assert IsPartialDict({"code": "M006"}) in diagnoses
 
     def test_check_entrypoint(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_ENTRYPOINT)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
-        assert IsPartialDict({"code": "WT001"}) in diagnostics
-        assert IsPartialDict({"code": "TPL001"}) in diagnostics
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_ENTRYPOINT)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        assert IsPartialDict({"code": "WT001"}) in diagnoses
+        assert IsPartialDict({"code": "TPL001"}) in diagnoses
 
     def test_check_arguments(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_ARGUMENTS)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_ARGUMENTS)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
         assert (
             IsPartialDict(
                 {"code": "WT002", "loc": ("spec", "arguments", "parameters", 0)}
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
                 {"code": "WT002", "loc": ("spec", "arguments", "parameters", 1)}
             )
-            in diagnostics
+            in diagnoses
         )
 
         assert (
             IsPartialDict(
                 {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 0)}
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
                 {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 1)}
             )
-            in diagnostics
+            in diagnoses
         )
 
         assert (
@@ -67,7 +67,7 @@ class TestRules:
                     "loc": ("spec", "arguments", "artifacts", 0, "raw"),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
@@ -76,7 +76,7 @@ class TestRules:
                     "loc": ("spec", "arguments", "artifacts", 0, "s3"),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
 
 

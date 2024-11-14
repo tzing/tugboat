@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 class TestRules:
     def test_analyze_template(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_AMBIGUOUS_TYPE)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_AMBIGUOUS_TYPE)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
                 {
@@ -19,7 +19,7 @@ class TestRules:
                     "loc": ("spec", "templates", 0, "container"),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
@@ -28,12 +28,12 @@ class TestRules:
                     "loc": ("spec", "templates", 0, "script"),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
 
     def test_check_input_parameters(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
                 {
@@ -41,7 +41,7 @@ class TestRules:
                     "loc": ("spec", "templates", 0, "inputs", "parameters", 0),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
@@ -50,7 +50,7 @@ class TestRules:
                     "loc": ("spec", "templates", 0, "inputs", "parameters", 1),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
@@ -68,12 +68,12 @@ class TestRules:
                     ),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
 
     def test_check_input_artifacts(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
                 {
@@ -81,7 +81,7 @@ class TestRules:
                     "loc": ("spec", "templates", 0, "inputs", "artifacts", 0),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
@@ -90,12 +90,12 @@ class TestRules:
                     "loc": ("spec", "templates", 0, "inputs", "artifacts", 1),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
 
     def test_check_output_parameters(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
                 {
@@ -103,7 +103,7 @@ class TestRules:
                     "loc": ("spec", "templates", 0, "outputs", "parameters", 0),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
@@ -112,7 +112,7 @@ class TestRules:
                     "loc": ("spec", "templates", 0, "outputs", "parameters", 1),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
@@ -121,12 +121,12 @@ class TestRules:
                     "loc": ("spec", "templates", 0, "outputs", "parameters", 1),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
 
     def test_check_output_artifacts(self):
-        diagnostics = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
-        logging.critical("Diagnostics: %s", json.dumps(diagnostics, indent=2))
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
                 {
@@ -134,7 +134,7 @@ class TestRules:
                     "loc": ("spec", "templates", 0, "outputs", "artifacts", 0),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
@@ -143,7 +143,7 @@ class TestRules:
                     "loc": ("spec", "templates", 0, "outputs", "artifacts", 1),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
         assert (
             IsPartialDict(
@@ -160,7 +160,7 @@ class TestRules:
                     ),
                 }
             )
-            in diagnostics
+            in diagnoses
         )
 
 

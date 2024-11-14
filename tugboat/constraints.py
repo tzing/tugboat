@@ -12,12 +12,12 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from typing import Any
 
-    from tugboat.core import Diagnostic
+    from tugboat.core import Diagnosis
 
 
 def accept_none(
     *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
-) -> Iterator[Diagnostic]:
+) -> Iterator[Diagnosis]:
     """
     This constraint checks if all the specified fields are set to None. For each
     field that is not None, error M005 is yielded.
@@ -36,7 +36,7 @@ def accept_none(
 
 def mutually_exclusive(
     *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
-) -> Iterator[Diagnostic]:
+) -> Iterator[Diagnosis]:
     """
     Requires that at most one of the specified fields in the model is set. But
     does not forace that any of them are set. If the constraint is not met,
@@ -63,7 +63,7 @@ def mutually_exclusive(
 
 def require_all(
     *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
-) -> Iterator[Diagnostic]:
+) -> Iterator[Diagnosis]:
     """
     This constraint requires that all of the specified fields in the model are set.
     If any of the fields are missing, error M004 is yielded.
@@ -90,7 +90,7 @@ def require_all(
 
 def require_exactly_one(
     *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
-) -> Iterator[Diagnostic]:
+) -> Iterator[Diagnosis]:
     """
     This constraint requires that exactly one of the specified fields in the
     model is set. If the constraint is not met, following errors are yielded:

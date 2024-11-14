@@ -7,12 +7,12 @@ from tugboat.hookspecs.core import hookspec
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from tugboat.core import Diagnostic
+    from tugboat.core import Diagnosis
     from tugboat.schemas import Step, Template, Workflow, WorkflowTemplate
 
 
 @hookspec
-def analyze_workflow(workflow: Workflow) -> Iterable[Diagnostic]:  # type: ignore[reportReturnType]
+def analyze_workflow(workflow: Workflow) -> Iterable[Diagnosis]:  # type: ignore[reportReturnType]
     """
     Analyze a workflow.
 
@@ -24,7 +24,7 @@ def analyze_workflow(workflow: Workflow) -> Iterable[Diagnostic]:  # type: ignor
 
 
 @hookspec
-def analyze_workflow_template(workflow_template: WorkflowTemplate) -> Iterable[Diagnostic]:  # type: ignore[reportReturnType]
+def analyze_workflow_template(workflow_template: WorkflowTemplate) -> Iterable[Diagnosis]:  # type: ignore[reportReturnType]
     """
     Analyze a workflow template.
 
@@ -36,7 +36,7 @@ def analyze_workflow_template(workflow_template: WorkflowTemplate) -> Iterable[D
 
 
 @hookspec
-def analyze_template(template: Template, workflow: Workflow | WorkflowTemplate) -> Iterable[Diagnostic]:  # type: ignore[reportReturnType]
+def analyze_template(template: Template, workflow: Workflow | WorkflowTemplate) -> Iterable[Diagnosis]:  # type: ignore[reportReturnType]
     """
     Analyze a template.
 
@@ -54,7 +54,7 @@ def analyze_template(template: Template, workflow: Workflow | WorkflowTemplate) 
 @hookspec
 def analyze_step(
     step: Step, template: Template, workflow: Workflow | WorkflowTemplate
-) -> Iterable[Diagnostic]:  # type: ignore[reportReturnType]
+) -> Iterable[Diagnosis]:  # type: ignore[reportReturnType]
     """
     Analyze a workflow step.
 

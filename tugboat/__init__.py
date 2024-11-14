@@ -1,4 +1,8 @@
-__all__ = ["hookimpl", "__version__"]
+__all__ = [
+    "__version__",
+    "Diagnosis",
+    "hookimpl",
+]
 
-from tugboat.core import hookimpl
+from tugboat.core import Diagnosis, hookimpl
 from tugboat.version import __version__
