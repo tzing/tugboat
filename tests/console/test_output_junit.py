@@ -8,7 +8,7 @@ from tugboat.console.outputs.junit import report
 class TestReport:
 
     def test_1(self):
-        diagnostics = {
+        diagnoses = {
             Path("sample-workflow.yaml"): [
                 {
                     "type": "error",
@@ -38,7 +38,7 @@ class TestReport:
         }
 
         with io.StringIO() as stream:
-            report(diagnostics, stream)
+            report(diagnoses, stream)
             xml = stream.getvalue()
 
         for line in (
@@ -51,7 +51,7 @@ class TestReport:
             assert line in xml
 
     def test_2(self):
-        diagnostics = {
+        diagnoses = {
             Path("sample-workflow.yaml"): [
                 {
                     "type": "failure",
@@ -88,7 +88,7 @@ class TestReport:
         }
 
         with io.StringIO() as stream:
-            report(diagnostics, stream)
+            report(diagnoses, stream)
             xml = stream.getvalue()
 
         for line in (

@@ -10,14 +10,14 @@ from tugboat.core import hookimpl
 from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterator
 
-    from tugboat.core import Diagnostic
+    from tugboat.core import Diagnosis
     from tugboat.schemas import WorkflowTemplate
 
 
 @hookimpl(specname="analyze_workflow_template")
-def check_metadata(workflow_template: WorkflowTemplate) -> Iterable[Diagnostic]:
+def check_metadata(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
     yield from require_exactly_one(
         model=workflow_template.metadata,
         loc=("metadata",),
@@ -25,10 +25,9 @@ def check_metadata(workflow_template: WorkflowTemplate) -> Iterable[Diagnostic]:
     )
 
     if workflow_template.metadata.name:
-        yield from prepend_loc(
-            ["metadata", "name"],
-            check_resource_name(workflow_template.metadata.name, max_length=63),
-        )
+        if diagnosis := check_resource_name(workflow_template.metadata.name, length=63):
+            diagnosis["loc"] = ("metadata", "name")
+            yield diagnosis
 
     if workflow_template.metadata.generateName:
         yield {
@@ -42,7 +41,7 @@ def check_metadata(workflow_template: WorkflowTemplate) -> Iterable[Diagnostic]:
 
 
 @hookimpl(specname="analyze_workflow_template")
-def check_spec(workflow_template: WorkflowTemplate) -> Iterable[Diagnostic]:
+def check_spec(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
     yield from require_exactly_one(
         model=workflow_template.spec,
         loc=("spec",),
@@ -51,25 +50,23 @@ def check_spec(workflow_template: WorkflowTemplate) -> Iterable[Diagnostic]:
 
 
 @hookimpl(specname="analyze_workflow_template")
-def check_entrypoint(workflow_template: WorkflowTemplate) -> Iterable[Diagnostic]:
-    for diagnostic in tugboat.analyzers.workflow.check_entrypoint(workflow_template):
-        match diagnostic["code"]:
+def check_entrypoint(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
+    for diagnosis in tugboat.analyzers.workflow.check_entrypoint(workflow_template):
+        match diagnosis["code"]:
             case "WF001":
-                diagnostic["code"] = "WT001"
-        yield diagnostic
+                diagnosis["code"] = "WT001"
+        yield diagnosis
 
 
 @hookimpl(specname="analyze_workflow_template")
-def check_arguments(
-    workflow_template: WorkflowTemplate,
-) -> Iterable[Diagnostic]:
-    for diagnostic in itertools.chain(
+def check_arguments(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
+    for diagnosis in itertools.chain(
         tugboat.analyzers.workflow.check_argument_parameters(workflow_template),
         tugboat.analyzers.workflow.check_argument_artifacts(workflow_template),
     ):
-        match diagnostic["code"]:
+        match diagnosis["code"]:
             case "WT002":
-                diagnostic["code"] = "WT002"
+                diagnosis["code"] = "WT002"
             case "WT003":
-                diagnostic["code"] = "WT003"
-        yield diagnostic
+                diagnosis["code"] = "WT003"
+        yield diagnosis

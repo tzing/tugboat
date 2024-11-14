@@ -27,7 +27,9 @@ class Diagnosis(typing.TypedDict):
 
     loc: Sequence[str | int]
     """
-    The location of the issue in the manifest.
+    The location of the issue occurrence within the manifest, specified in a
+    path-like format.
+
     The first element is the key of the manifest, and the rest are the keys of
     the nested dictionaries.
     """
@@ -41,8 +43,10 @@ class Diagnosis(typing.TypedDict):
     msg: str
     """
     The detailed message.
-    When multiple lines are used in the message, the framework will automatically dedent it.
-    This allows the analyzer to use Python multiline strings without concern for indentation.
+
+    When multiple lines are used in the message, the framework will automatically
+    dedent it. This allows the analyzer to use Python multiline strings without
+    concern for indentation.
     """
 
     input: NotRequired[Any]

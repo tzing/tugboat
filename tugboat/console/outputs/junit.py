@@ -13,29 +13,29 @@ if typing.TYPE_CHECKING:
     from pathlib import Path
     from typing import IO
 
-    from tugboat.analyze import ExtendedDiagnostic
+    from tugboat.analyze import AugmentedDiagnosis
 
 logger = logging.getLogger(__name__)
 
 
 def report(
-    diagnostics: dict[Path, list[ExtendedDiagnostic]],
+    aggregated_diagnoses: dict[Path, list[AugmentedDiagnosis]],
     stream: IO[str],
 ) -> None:
     now = datetime.datetime.now().astimezone()
     root = Element("testsuites", timestamp=now.isoformat(), name="tugboat")
 
     total_counts = {"errors": 0, "failures": 0, "skipped": 0}
-    for path, file_diagnostics in diagnostics.items():
-        for manifest, manigest_diagnostics in group_by_manifest(file_diagnostics):
+    for path, file_diagnoses in aggregated_diagnoses.items():
+        for manifest, manifest_diagnoses in group_by_manifest(file_diagnoses):
             # create a suite for each manifest
             testsuite = SubElement(root, "testsuite", file=str(path))
             if manifest:
                 testsuite.attrib["name"] = manifest
 
-            # create a test case for each diagnostic
+            # create a test case for each diagnosis
             counts = {"errors": 0, "failures": 0, "skipped": 0}
-            for diag in manigest_diagnostics:
+            for diag in manifest_diagnoses:
                 testcase = SubElement(
                     testsuite,
                     "testcase",
@@ -85,26 +85,24 @@ def report(
     )
 
 
-def group_by_manifest(
-    diagnostics: Iterable[ExtendedDiagnostic],
-) -> Iterator[
+def group_by_manifest(diagnoses: Iterable[AugmentedDiagnosis]) -> Iterator[
     tuple[
         str | None,
-        list[ExtendedDiagnostic],
+        list[AugmentedDiagnosis],
     ]
 ]:
     """
-    Assume that the diagnostics are sorted by manifest. Returns groups of the
-    diagnostics by manifest.
+    Assume that the diagnoses are sorted by manifest. Returns groups of the
+    diagnoses by manifest.
     """
     manifest = None
     group = []
-    for diag in diagnostics:
-        if diag["manifest"] != manifest:
+    for diagnosis in diagnoses:
+        if diagnosis["manifest"] != manifest:
             if group:
                 yield manifest, group
-            manifest = diag["manifest"]
+            manifest = diagnosis["manifest"]
             group = []
-        group.append(diag)
+        group.append(diagnosis)
     if group:
         yield manifest, group

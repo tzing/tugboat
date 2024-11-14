@@ -13,12 +13,12 @@ from tugboat.core import hookimpl
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from tugboat.core import Diagnostic
+    from tugboat.core import Diagnosis
     from tugboat.schemas import Template, Workflow, WorkflowTemplate
 
 
 @hookimpl
-def analyze_template(template: Template) -> Iterable[Diagnostic]:
+def analyze_template(template: Template) -> Iterable[Diagnosis]:
     yield from require_all(
         model=template,
         loc=(),
@@ -44,7 +44,7 @@ def analyze_template(template: Template) -> Iterable[Diagnostic]:
 @hookimpl(specname="analyze_template")
 def check_input_parameters(
     template: Template, workflow: Workflow | WorkflowTemplate
-) -> Iterable[Diagnostic]:
+) -> Iterable[Diagnosis]:
     if not template.inputs:
         return
 
@@ -107,7 +107,7 @@ def check_input_parameters(
 @hookimpl(specname="analyze_template")
 def check_input_artifacts(
     template: Template, workflow: Workflow | WorkflowTemplate
-) -> Iterable[Diagnostic]:
+) -> Iterable[Diagnosis]:
     if not template.inputs:
         return
 
@@ -170,7 +170,7 @@ def check_input_artifacts(
 @hookimpl(specname="analyze_template")
 def check_output_parameters(
     template: Template, workflow: Workflow | WorkflowTemplate
-) -> Iterable[Diagnostic]:
+) -> Iterable[Diagnosis]:
     if not template.outputs:
         return
 
@@ -227,7 +227,7 @@ def check_output_parameters(
 @hookimpl(specname="analyze_template")
 def check_output_artifacts(
     template: Template, workflow: Workflow | WorkflowTemplate
-) -> Iterable[Diagnostic]:
+) -> Iterable[Diagnosis]:
     if not template.outputs:
         return
 

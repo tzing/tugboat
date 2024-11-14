@@ -15,7 +15,7 @@ from tugboat.version import __version__
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
-    from tugboat.analyze import ExtendedDiagnostic
+    from tugboat.analyze import AugmentedDiagnosis
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ def main(
         raise click.Abort
 
     # analyze files
-    diagnostics: dict[Path, list[ExtendedDiagnostic]] = {}
+    diagnoses: dict[Path, list[AugmentedDiagnosis]] = {}
     for i, file_path in enumerate(target_files, 1):
         logger.info("[%d/%d] Analyzing file %s", i, len(target_files), file_path)
         try:
@@ -105,18 +105,18 @@ def main(
             logger.debug("Error details:", exc_info=True)
             raise click.Abort from None
 
-        diagnostics[file_path] = analyze_yaml(manifest)
+        diagnoses[file_path] = analyze_yaml(manifest)
 
     logger.debug(
-        "Analysis completed. Found %d diagnostics.",
-        sum(map(len, diagnostics.values())),
+        "Analysis completed. Found %d diagnoses.",
+        sum(map(len, diagnoses.values())),
     )
 
     # generate report
-    generate_report(diagnostics, output_format, output_file, color)
+    generate_report(diagnoses, output_format, output_file, color)
 
     # finalize
-    summary, is_failed = summarize(diagnostics)
+    summary, is_failed = summarize(diagnoses)
 
     print(summary, file=sys.stderr)
 
@@ -164,7 +164,7 @@ def setup_logging(verbose_level: int):
 
 
 def generate_report(
-    diagnostics: dict[Path, list[ExtendedDiagnostic]],
+    diagnoses: dict[Path, list[AugmentedDiagnosis]],
     output_format: str,
     output_file: Path | None,
     color: bool | None,
@@ -181,22 +181,24 @@ def generate_report(
     if output_format == "console":
         from tugboat.console.outputs.console import report
 
-        report(diagnostics, output_stream, color)
+        report(diagnoses, output_stream, color)
 
     elif output_format == "junit":
         from tugboat.console.outputs.junit import report
 
-        report(diagnostics, output_stream)
+        report(diagnoses, output_stream)
 
     # close the output stream
     if output_file:
         output_stream.close()
 
 
-def summarize(diagnostics: dict[Path, list[ExtendedDiagnostic]]) -> tuple[str, bool]:
+def summarize(
+    aggregated_diagnoses: dict[Path, list[AugmentedDiagnosis]]
+) -> tuple[str, bool]:
     """
-    Summarize the diagnostics. Return a tuple of the summary message and a
-    boolean indicating whether the diagnostics contain any error or failure.
+    Summarize the diagnoses. Return a tuple of the summary message and a
+    boolean indicating whether the diagnoses contain any error or failure.
     """
     counts = {
         "error": 0,
@@ -204,9 +206,9 @@ def summarize(diagnostics: dict[Path, list[ExtendedDiagnostic]]) -> tuple[str, b
         "skipped": 0,
     }
 
-    for diags in diagnostics.values():
-        for diag in diags:
-            counts[diag["type"]] = counts.get(diag["type"], 0) + 1
+    for diagnoses in aggregated_diagnoses.values():
+        for diagnosis in diagnoses:
+            counts[diagnosis["type"]] = counts.get(diagnosis["type"], 0) + 1
 
     summary_parts = []
     if count := counts["error"]:

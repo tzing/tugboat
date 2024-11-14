@@ -15,15 +15,15 @@ class TestAcceptNone:
 
     def test_pass(self):
         model = Mock(BaseModel, foo=None, bar="bar")
-        diagnostics = list(accept_none(model=model, loc=["spec"], fields=["foo"]))
-        assert diagnostics == []
+        diagnoses = list(accept_none(model=model, loc=["spec"], fields=["foo"]))
+        assert diagnoses == []
 
     def test_picked_1(self):
         model = Mock(BaseModel, foo=None, bar="bar")
-        diagnostics = list(
+        diagnoses = list(
             accept_none(model=model, loc=["spec", 0, 1, "baz"], fields=["foo", "bar"])
         )
-        assert diagnostics == [
+        assert diagnoses == [
             {
                 "type": "failure",
                 "code": "M005",
@@ -36,10 +36,10 @@ class TestAcceptNone:
 
     def test_picked_2(self):
         model = Mock(BaseModel, foo=None, bar="bar")
-        diagnostics = list(
+        diagnoses = list(
             accept_none(model=model, loc=["spec", 0, 1], fields=["foo", "bar"])
         )
-        assert diagnostics == [
+        assert diagnoses == [
             {
                 "type": "failure",
                 "code": "M005",
@@ -55,24 +55,24 @@ class TestMutuallyExclusive:
 
     def test_pass(self):
         model = Mock(BaseModel, foo=None, bar="bar")
-        diagnostics = list(
+        diagnoses = list(
             mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
         )
-        assert diagnostics == []
+        assert diagnoses == []
 
     def test_none(self):
         model = Mock(BaseModel, foo=None, bar=None)
-        diagnostics = list(
+        diagnoses = list(
             mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
         )
-        assert diagnostics == []
+        assert diagnoses == []
 
     def test_too_many(self):
         model = Mock(BaseModel, foo="foo", bar="bar")
-        diagnostics = list(
+        diagnoses = list(
             mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
         )
-        assert diagnostics == [
+        assert diagnoses == [
             {
                 "type": "failure",
                 "code": "M006",
@@ -96,17 +96,13 @@ class TestRequireAll:
 
     def test_pass(self):
         model = Mock(BaseModel, foo="foo", bar="bar")
-        diagnostics = list(
-            require_all(model=model, loc=["spec"], fields=["foo", "bar"])
-        )
-        assert diagnostics == []
+        diagnoses = list(require_all(model=model, loc=["spec"], fields=["foo", "bar"]))
+        assert diagnoses == []
 
     def test_missing(self):
         model = Mock(BaseModel, foo=None, bar="")
-        diagnostics = list(
-            require_all(model=model, loc=["spec"], fields=["foo", "bar"])
-        )
-        assert diagnostics == [
+        diagnoses = list(require_all(model=model, loc=["spec"], fields=["foo", "bar"]))
+        assert diagnoses == [
             {
                 "type": "failure",
                 "code": "M004",
@@ -128,17 +124,17 @@ class TestRequireExactlyOne:
 
     def test_pass(self):
         model = Mock(BaseModel, foo=None, bar="bar")
-        diagnostics = list(
+        diagnoses = list(
             require_exactly_one(model=model, loc=["spec"], fields=["foo", "bar"])
         )
-        assert diagnostics == []
+        assert diagnoses == []
 
     def test_missing(self):
         model = Mock(BaseModel, foo=None, bar=None)
-        diagnostics = list(
+        diagnoses = list(
             require_exactly_one(model=model, loc=["spec"], fields=["foo", "bar"])
         )
-        assert diagnostics == [
+        assert diagnoses == [
             {
                 "type": "failure",
                 "code": "M004",
@@ -153,10 +149,10 @@ class TestRequireExactlyOne:
 
     def test_too_many(self):
         model = Mock(BaseModel, foo="foo", bar="bar")
-        diagnostics = list(
+        diagnoses = list(
             require_exactly_one(model=model, loc=["spec"], fields=["foo", "bar"])
         )
-        assert diagnostics == [
+        assert diagnoses == [
             {
                 "type": "failure",
                 "code": "M006",

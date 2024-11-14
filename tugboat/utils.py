@@ -8,21 +8,19 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
     from typing import Any
 
-    from tugboat.core import Diagnostic
+    from tugboat.core import Diagnosis
 
 
 def prepend_loc(
-    prefix: Sequence[str | int], iterable: Iterable[Diagnostic]
-) -> Iterable[Diagnostic]:
-    """Decorator to prepend the location prefix to the issue."""
-    _prepend = functools.partial(_prepend_loc, prefix=prefix)
+    prefix: Sequence[str | int], iterable: Iterable[Diagnosis]
+) -> Iterable[Diagnosis]:
+    """Prepend the path to the location of each diagnosis in the iterable."""
+
+    def _prepend(diagnoses: Diagnosis) -> Diagnosis:
+        diagnoses["loc"] = (*prefix, *diagnoses.get("loc", []))
+        return diagnoses
+
     return map(_prepend, iterable)
-
-
-def _prepend_loc(diagnostic: Diagnostic, prefix: Sequence[str | int]) -> Diagnostic:
-    """The helper function to prepend the location prefix to the diagnostic."""
-    diagnostic["loc"] = (*prefix, *diagnostic.get("loc", []))
-    return diagnostic
 
 
 def join_items(

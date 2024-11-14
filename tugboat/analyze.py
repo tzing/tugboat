@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import logging
 import textwrap
 import typing
@@ -23,60 +24,63 @@ if typing.TYPE_CHECKING:
     from pydantic_core import ErrorDetails
     from ruamel.yaml.comments import CommentedBase
 
-    from tugboat.core import Diagnostic
+    from tugboat.core import Diagnosis
 
 logger = logging.getLogger(__name__)
 
 _yaml_parser = None
 
 
-class ExtendedDiagnostic(TypedDict):
+class AugmentedDiagnosis(TypedDict):
     """
-    A diagnostic reported by the checker.
+    The augmented diagnosis reported by the analyzer.
 
-    This extends the :py:class:`Diagnostic` type by adding extra fields, with
-    all members normalized.
+    This type extends the :py:class:`Diagnosis` and adds additional fields
+    to provide more context about the diagnosis.
     """
 
     line: int
     """
-    Line number of the diagnostic in the source file.
+    Line number of the issue occurrence in the source file.
     Note that the line number is cumulative across all documents in the YAML file.
     """
 
     column: int
     """
-    Column number of the diagnostic in the source file.
+    Column number of the issue occurrence in the source file.
     """
 
     type: Literal["error", "failure", "skipped"]
-    """The type of diagnostic."""
+    """The type that describes the severity."""
 
     code: str
-    """The code of the diagnostic."""
+    """Diagnosis code."""
 
     manifest: str | None
-    """The manifest name that caused the diagnostic."""
+    """The manifest name where the issue occurred."""
 
     loc: tuple[str | int, ...]
-    """The location of the diagnostic in the manifest."""
+    """
+    The location of the issue occurrence within the manifest, specified in a
+    path-like format.
+    """
 
     summary: str
-    """The summary of the diagnostic."""
+    """The summary."""
 
     msg: str
-    """The detailed message of the diagnostic."""
+    """The detailed message."""
 
     input: Any | None
-    """The input that caused the diagnostic."""
+    """The input that caused the issue."""
 
     fix: str | None
-    """The fix to the diagnostic."""
+    """The possible fix for the issue."""
 
 
-def analyze_yaml(manifest: str) -> list[ExtendedDiagnostic]:
+def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
     """
-    Analyze a YAML manifest and report diagnostics.
+    Analyze a YAML manifest and report diagnoses.
 
     This function internally uses :py:func:`analyze_raw` to analyze the manifest.
     The manifest is first parsed into a Python dictionary before being analyzed.
@@ -88,8 +92,8 @@ def analyze_yaml(manifest: str) -> list[ExtendedDiagnostic]:
 
     Returns
     -------
-    list[Diagnostic]
-        The diagnostics reported by the analyzers.
+    list[Diagnosis]
+        The diagnoses reported by the analyzers.
     """
     global _yaml_parser
 
@@ -119,7 +123,7 @@ def analyze_yaml(manifest: str) -> list[ExtendedDiagnostic]:
             }
         ]
 
-    diagnostics = []
+    diagnoses = []
     for document in documents:
         if document is None:
             continue
@@ -142,7 +146,7 @@ def analyze_yaml(manifest: str) -> list[ExtendedDiagnostic]:
 
         for diag in analyze_raw(document):
             line, column = _get_line_column(document, diag.get("loc", ()))
-            diagnostics.append(
+            diagnoses.append(
                 {
                     "line": line + 1,
                     "column": column + 1,
@@ -157,7 +161,7 @@ def analyze_yaml(manifest: str) -> list[ExtendedDiagnostic]:
                 }
             )
 
-    return diagnostics
+    return diagnoses
 
 
 def _get_line_column(node: CommentedBase, loc: Sequence[int | str]) -> tuple[int, int]:
@@ -186,13 +190,13 @@ def _get_summary(msg: str) -> str:
     return msg.strip().splitlines()[0].split(". ")[0]
 
 
-def analyze_raw(manifest: dict) -> list[Diagnostic]:
+def analyze_raw(manifest: dict) -> list[Diagnosis]:
     """
-    Analyze a raw manifest and report diagnostics.
+    Analyze a raw manifest and report diagnoses.
 
     This function underlyingly uses the plugin manager to run the analyzers
-    registered with the system. The diagnostics are collected and returned
-    as a list of Diagnostic objects.
+    registered with the system. The diagnoses are collected and returned
+    as a list of Diagnosis objects.
 
     Parameters
     ----------
@@ -201,8 +205,8 @@ def analyze_raw(manifest: dict) -> list[Diagnostic]:
 
     Returns
     -------
-    list[Diagnostic]
-        The diagnostics reported by the analyzers.
+    list[Diagnosis]
+        The diagnoses reported by the analyzers.
     """
     pm = get_plugin_manager()
 
@@ -266,8 +270,9 @@ def analyze_raw(manifest: dict) -> list[Diagnostic]:
 
     # examine the manifest
     try:
-        diagnostics: Iterable[Diagnostic] = pm.hook.analyze(manifest=manifest_obj)
-        diagnostics = list(diagnostics)  # force evaluation
+        analyzers_diagnoses: Iterable[Iterator[Diagnosis]]
+        analyzers_diagnoses = pm.hook.analyze(manifest=manifest_obj)
+        diagnoses = list(itertools.chain.from_iterable(analyzers_diagnoses))
     except Exception as e:
         logger.exception("Error during execution of analyze hook")
         return [
@@ -280,25 +285,25 @@ def analyze_raw(manifest: dict) -> list[Diagnostic]:
             }
         ]
 
-    logger.debug("Got %d diagnostics for manifest '%s'", len(diagnostics), name)
+    logger.debug("Got %d diagnoses for manifest '%s'", len(diagnoses), name)
 
-    # normalize the diagnostics
-    for diagnostic in diagnostics:
-        diagnostic.setdefault("code", "UNKNOWN")
-        diagnostic["msg"] = textwrap.dedent(diagnostic["msg"]).strip()
+    # normalize the diagnoses
+    for diagnosis in diagnoses:
+        diagnosis.setdefault("code", "UNKNOWN")
+        diagnosis["msg"] = textwrap.dedent(diagnosis["msg"]).strip()
 
-    # sort the diagnostics
-    def _sort_key(diagnostic: Diagnostic) -> tuple:
+    # sort the diagnoses
+    def _sort_key(diagnosis: Diagnosis) -> tuple:
         return (
             # 1. position of the occurrence
-            tuple(diagnostic.get("loc", [])),
-            # 2. diagnostic code
-            diagnostic.get("code") or "",
+            tuple(diagnosis.get("loc", [])),
+            # 2. diagnosis code
+            diagnosis.get("code") or "",
         )
 
-    diagnostics = sorted(diagnostics, key=_sort_key)
+    diagnoses = sorted(diagnoses, key=_sort_key)
 
-    return diagnostics
+    return diagnoses
 
 
 def _get_manifest_name(manifest: dict) -> str | None:
@@ -314,8 +319,8 @@ def is_kubernetes_manifest(d: dict) -> bool:
     return "apiVersion" in d and "kind" in d
 
 
-def translate_pydantic_error(error: ErrorDetails) -> Diagnostic:
-    """Translate a Pydantic error to a diagnostic."""
+def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
+    """Translate a Pydantic error to a diagnosis object."""
     field = error["loc"][-1]
 
     match error["type"]:

@@ -76,7 +76,7 @@ def check_resource_name(
     if pattern.fullmatch(normalized_name):
         return
 
-    diagnostic: Diagnosis = {
+    diagnosis: Diagnosis = {
         "type": "failure",
         "code": "M010",
         "loc": (),
@@ -92,6 +92,6 @@ def check_resource_name(
     if pattern.fullmatch(alternative_name):
         if is_generate_name and name.endswith("-"):
             alternative_name += "-"
-        diagnostic["fix"] = alternative_name
+        diagnosis["fix"] = alternative_name
 
-    yield diagnostic
+    yield diagnosis

@@ -13,29 +13,29 @@ if typing.TYPE_CHECKING:
     from pathlib import Path
     from typing import IO
 
-    from tugboat.analyze import ExtendedDiagnostic
+    from tugboat.analyze import AugmentedDiagnosis
 
 LINES_AHEAD = 2
 LINES_BEHIND = 2
 
 
 def report(
-    diagnostics: dict[Path, list[ExtendedDiagnostic]],
+    aggregated_diagnoses: dict[Path, list[AugmentedDiagnosis]],
     stream: IO[str],
     color: bool | None,
 ) -> None:
     def _echo(*args, nl: bool = True):
         click.echo("".join(args), file=stream, color=color, nl=nl)
 
-    for path, diags in diagnostics.items():
+    for path, diags in aggregated_diagnoses.items():
         for diag in diags:
-            report_diagnostic(echo=_echo, file=path, diagnostic=diag)
+            report_diagnosis(echo=_echo, file=path, diagnosis=diag)
 
 
-def report_diagnostic(echo: Callable, file: Path, diagnostic: ExtendedDiagnostic):
-    if diagnostic["type"] in ("error", "failure"):
+def report_diagnosis(echo: Callable, file: Path, diagnosis: AugmentedDiagnosis):
+    if diagnosis["type"] in ("error", "failure"):
         error_style = {"fg": "red", "bold": True}
-    elif diagnostic["type"] == "skipped":
+    elif diagnosis["type"] == "skipped":
         error_style = {"fg": "yellow", "bold": True}
     else:
         error_style = {"fg": "magenta", "bold": True}
@@ -44,38 +44,38 @@ def report_diagnostic(echo: Callable, file: Path, diagnostic: ExtendedDiagnostic
     echo(
         click.style(file, bold=True),
         click.style(":", fg="cyan"),
-        click.style(diagnostic["line"]),
+        click.style(diagnosis["line"]),
         click.style(":", fg="cyan"),
-        click.style(diagnostic["column"]),
+        click.style(diagnosis["column"]),
         click.style(":", fg="cyan"),
         " ",
-        click.style(diagnostic["code"], **error_style),
+        click.style(diagnosis["code"], **error_style),
         " ",
-        diagnostic["summary"],
+        diagnosis["summary"],
     )
 
     echo()
 
     # print the code snippet
-    line_number_width = len(str(diagnostic["line"] + LINES_BEHIND - 1)) + 1
+    line_number_width = len(str(diagnosis["line"] + LINES_BEHIND - 1)) + 1
     line_number_delimiter = click.style(" | ", dim=True)
-    for ln, line in get_content_near(file, diagnostic["line"]):
+    for ln, line in get_content_near(file, diagnosis["line"]):
         echo(
             click.style(f"{ln:{line_number_width}}", dim=True),
             line_number_delimiter,
             line,
         )
 
-        if ln == diagnostic["line"]:
+        if ln == diagnosis["line"]:
             line_prefix = " " * line_number_width + line_number_delimiter
 
             # calculate the indent before the caret
             # default to the column number, but if the input is present, use that instead
-            indent_before_caret = " " * max(diagnostic["column"] - 1, 0)
+            indent_before_caret = " " * max(diagnosis["column"] - 1, 0)
 
-            if diagnostic["input"] is not None and str(diagnostic["input"]) in line:
-                col_start = line.index(str(diagnostic["input"]))
-                col_end = col_start + len(str(diagnostic["input"]))
+            if diagnosis["input"] is not None and str(diagnosis["input"]) in line:
+                col_start = line.index(str(diagnosis["input"]))
+                col_end = col_start + len(str(diagnosis["input"]))
                 indent_before_caret = " " * col_start
 
                 # print the underline
@@ -89,21 +89,21 @@ def report_diagnostic(echo: Callable, file: Path, diagnostic: ExtendedDiagnostic
             echo(
                 line_prefix,
                 indent_before_caret,
-                click.style(f"└ {diagnostic["code"]}", **error_style),
+                click.style(f"└ {diagnosis["code"]}", **error_style),
                 click.style(" at ", dim=True),
-                click.style(format_loc(diagnostic["loc"]), fg="cyan"),
+                click.style(format_loc(diagnosis["loc"]), fg="cyan"),
                 click.style(" in ", dim=True),
-                click.style(diagnostic["manifest"] or "<unknown>", fg="blue"),
+                click.style(diagnosis["manifest"] or "<unknown>", fg="blue"),
             )
 
     echo()
 
     # print the details
-    echo(textwrap.indent(diagnostic["msg"], " " * (line_number_width + 1)))
+    echo(textwrap.indent(diagnosis["msg"], " " * (line_number_width + 1)))
     echo()
 
     # print the suggestion
-    if fix := diagnostic["fix"]:
+    if fix := diagnosis["fix"]:
         echo(
             " " * (line_number_width + 1),
             click.style("Do you mean:", fg="cyan", bold=True),

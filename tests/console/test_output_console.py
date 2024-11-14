@@ -19,7 +19,7 @@ class TestReport:
 
     def test_error(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
         monkeypatch.chdir(fixture_dir)
-        diagnostics = {
+        diagnoses = {
             Path("sample-workflow.yaml"): [
                 {
                     "type": "error",
@@ -37,7 +37,7 @@ class TestReport:
         }
 
         with io.StringIO() as stream:
-            report(diagnostics, stream, False)
+            report(diagnoses, stream, False)
             output = stream.getvalue()
 
         assert output.splitlines() == [
@@ -54,7 +54,7 @@ class TestReport:
     def test_failure(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
         monkeypatch.chdir(fixture_dir)
 
-        diagnostics = {
+        diagnoses = {
             Path("missing-script-source.yaml"): [
                 {
                     "type": "failure",
@@ -72,7 +72,7 @@ class TestReport:
         }
 
         with io.StringIO() as stream:
-            report(diagnostics, stream, False)
+            report(diagnoses, stream, False)
             output = stream.getvalue()
 
         assert output.splitlines() == [
@@ -93,7 +93,7 @@ class TestReport:
 
     def test_skipped(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
         monkeypatch.chdir(fixture_dir)
-        diagnostics = {
+        diagnoses = {
             Path("sample-workflow.yaml"): [
                 {
                     "type": "skipped",
@@ -111,7 +111,7 @@ class TestReport:
         }
 
         with io.StringIO() as stream:
-            report(diagnostics, stream, False)
+            report(diagnoses, stream, False)
             output = stream.getvalue()
 
         assert output.splitlines() == [
@@ -137,7 +137,7 @@ class TestReport:
         The actual color or the output is not tested.
         """
         monkeypatch.chdir(fixture_dir)
-        diagnostics = {
+        diagnoses = {
             Path("sample-workflow.yaml"): [
                 {
                     "type": diagnostic_type,
@@ -155,7 +155,7 @@ class TestReport:
         }
 
         with io.StringIO() as stream:
-            report(diagnostics, stream, False)
+            report(diagnoses, stream, False)
             output = stream.getvalue()
 
         assert isinstance(output, str)

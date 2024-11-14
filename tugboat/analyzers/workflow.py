@@ -12,9 +12,11 @@ from tugboat.schemas import Workflow, WorkflowTemplate
 from tugboat.utils import join_with_and, prepend_loc
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterator
 
-    from tugboat.core import Diagnostic
+    from tugboat.core import Diagnosis
+
+    type WorkflowCompatible = Workflow | WorkflowTemplate
 
 
 @hookimpl
@@ -27,39 +29,39 @@ def parse_manifest(manifest: dict) -> Workflow | WorkflowTemplate | None:
 
 
 @hookimpl
-def analyze(manifest: Workflow | WorkflowTemplate) -> Iterable[Diagnostic] | None:
+def analyze(manifest: WorkflowCompatible) -> Iterator[Diagnosis]:
     # early escape if the manifest is not recognized
     if manifest.kind not in ("Workflow", "WorkflowTemplate"):
-        return None  # pragma: no cover
+        return
 
     # invoke checks
     pm = get_plugin_manager()
 
     if manifest.kind == "Workflow":
-        manifest_diagnostic_iterators = pm.hook.analyze_workflow(workflow=manifest)
+        manifest_diagnoses_generators = pm.hook.analyze_workflow(workflow=manifest)
     else:
-        manifest_diagnostic_iterators = pm.hook.analyze_workflow_template(
+        manifest_diagnoses_generators = pm.hook.analyze_workflow_template(
             workflow_template=manifest
         )
-    yield from itertools.chain.from_iterable(manifest_diagnostic_iterators)
+    yield from itertools.chain.from_iterable(manifest_diagnoses_generators)
 
     for idx_tmpl, template in enumerate(manifest.spec.templates or []):
-        template_diagnostic_iterators = pm.hook.analyze_template(
+        template_diagnoses_generators = pm.hook.analyze_template(
             template=template, workflow=manifest
         )
         yield from prepend_loc(
             ["spec", "templates", idx_tmpl],
-            itertools.chain.from_iterable(template_diagnostic_iterators),
+            itertools.chain.from_iterable(template_diagnoses_generators),
         )
 
         for idx_stage, stage in enumerate(template.steps or []):
             for idx_step, step in enumerate(stage):
-                step_diagnostic_iterators = pm.hook.analyze_step(
+                step_diagnoses_generators = pm.hook.analyze_step(
                     step=step, template=template, workflow=manifest
                 )
                 yield from prepend_loc(
                     ["spec", "templates", idx_tmpl, "steps", idx_stage, idx_step],
-                    itertools.chain.from_iterable(step_diagnostic_iterators),
+                    itertools.chain.from_iterable(step_diagnoses_generators),
                 )
 
 
@@ -69,7 +71,7 @@ def analyze(manifest: Workflow | WorkflowTemplate) -> Iterable[Diagnostic] | Non
 
 
 @hookimpl(specname="analyze_workflow")
-def check_metadata(workflow: Workflow) -> Iterable[Diagnostic]:
+def check_metadata(workflow: Workflow) -> Iterator[Diagnosis]:
     yield from require_exactly_one(
         model=workflow.metadata,
         loc=("metadata",),
@@ -77,19 +79,20 @@ def check_metadata(workflow: Workflow) -> Iterable[Diagnostic]:
     )
 
     if workflow.metadata.name:
-        yield from prepend_loc(
-            ["metadata", "name"], check_resource_name(workflow.metadata.name)
-        )
+        if diagnosis := check_resource_name(workflow.metadata.name):
+            diagnosis["loc"] = ("metadata", "name")
+            yield diagnosis
 
     if workflow.metadata.generateName:
-        yield from prepend_loc(
-            ["metadata", "generateName"],
-            check_resource_name(workflow.metadata.generateName, is_generate_name=True),
-        )
+        if diagnosis := check_resource_name(
+            workflow.metadata.generateName, is_generate_name=True
+        ):
+            diagnosis["loc"] = ("metadata", "generateName")
+            yield diagnosis
 
 
 @hookimpl(specname="analyze_workflow")
-def check_spec(workflow: Workflow) -> Iterable[Diagnostic]:
+def check_spec(workflow: Workflow) -> Iterator[Diagnosis]:
     yield from require_exactly_one(
         model=workflow.spec,
         loc=("spec",),
@@ -105,7 +108,7 @@ def check_spec(workflow: Workflow) -> Iterable[Diagnostic]:
 
 
 @hookimpl(specname="analyze_workflow")
-def check_entrypoint(workflow: Workflow | WorkflowTemplate) -> Iterable[Diagnostic]:
+def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
     if not workflow.spec.templates:
         return
 
@@ -145,9 +148,7 @@ def check_entrypoint(workflow: Workflow | WorkflowTemplate) -> Iterable[Diagnost
 
 
 @hookimpl(specname="analyze_workflow")
-def check_argument_parameters(
-    workflow: Workflow | WorkflowTemplate,
-) -> Iterable[Diagnostic]:
+def check_argument_parameters(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
     if not workflow.spec.arguments:
         return
 
@@ -212,9 +213,7 @@ def check_argument_parameters(
 
 
 @hookimpl(specname="analyze_workflow")
-def check_argument_artifacts(
-    workflow: Workflow | WorkflowTemplate,
-) -> Iterable[Diagnostic]:
+def check_argument_artifacts(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
     if not workflow.spec.arguments:
         return
 
