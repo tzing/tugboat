@@ -25,9 +25,10 @@ def check_metadata(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
     )
 
     if workflow_template.metadata.name:
-        if diagnosis := check_resource_name(workflow_template.metadata.name, length=63):
-            diagnosis["loc"] = ("metadata", "name")
-            yield diagnosis
+        yield from prepend_loc(
+            ["metadata", "name"],
+            check_resource_name(workflow_template.metadata.name, max_length=63),
+        )
 
     if workflow_template.metadata.generateName:
         yield {

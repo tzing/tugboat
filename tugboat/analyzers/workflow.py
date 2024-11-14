@@ -79,16 +79,15 @@ def check_metadata(workflow: Workflow) -> Iterator[Diagnosis]:
     )
 
     if workflow.metadata.name:
-        if diagnosis := check_resource_name(workflow.metadata.name):
-            diagnosis["loc"] = ("metadata", "name")
-            yield diagnosis
+        yield from prepend_loc(
+            ["metadata", "name"], check_resource_name(workflow.metadata.name)
+        )
 
     if workflow.metadata.generateName:
-        if diagnosis := check_resource_name(
-            workflow.metadata.generateName, is_generate_name=True
-        ):
-            diagnosis["loc"] = ("metadata", "generateName")
-            yield diagnosis
+        yield from prepend_loc(
+            ["metadata", "generateName"],
+            check_resource_name(workflow.metadata.generateName, is_generate_name=True),
+        )
 
 
 @hookimpl(specname="analyze_workflow")
