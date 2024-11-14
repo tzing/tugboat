@@ -73,7 +73,11 @@ def report_diagnosis(echo: Callable, file: Path, diagnosis: AugmentedDiagnosis):
             # default to the column number, but if the input is present, use that instead
             indent_before_caret = " " * max(diagnosis["column"] - 1, 0)
 
-            if range_ := _calc_highlight_range(line, diagnosis["input"]):
+            if range_ := _calc_highlight_range(
+                line=line,
+                offset=diagnosis["column"] - 1,
+                input_=diagnosis["input"],
+            ):
                 col_start, col_end = range_
                 indent_before_caret = " " * col_start
 
@@ -125,7 +129,7 @@ def read_file(path: Path) -> str:
     return path.read_text()
 
 
-def _calc_highlight_range(line: str, input_: Any):
+def _calc_highlight_range(line: str, offset: int, input_: Any):
     """
     Calculate the range to highlight in the line.
     """
@@ -133,11 +137,13 @@ def _calc_highlight_range(line: str, input_: Any):
         return  # early escape if no value is provided
 
     value = str(input_)
-    if value not in line:
-        return  # escape if the value is not in the line
     if not value.strip():
         return  # prevent highlighting empty strings
 
-    col_start = line.index(value)
+    try:
+        col_start = line.index(value, offset)
+    except ValueError:
+        return
+
     col_end = col_start + len(value)
     return col_start, col_end
