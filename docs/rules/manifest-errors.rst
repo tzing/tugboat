@@ -140,7 +140,7 @@ For instance, the following manifest contains an invalid value for the ``imagePu
            #                ^^^^^^^^^^^^ invalid value here
 
 
-``M009`` - Manifest Name Length Error
+``M009`` - Manifest name length error
 -------------------------------------
 
 The manifest name does not meet the required length criteria; it is either too long or too short.
