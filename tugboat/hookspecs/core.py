@@ -7,7 +7,7 @@ import pluggy
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from tugboat.core import Diagnostic
+    from tugboat.core import Diagnosis
     from tugboat.schemas import Manifest
 
 hookspec = pluggy.HookspecMarker("tugboat")
@@ -31,11 +31,10 @@ def parse_manifest(manifest: dict) -> Manifest | None:  # type: ignore[reportRet
     """
 
 
-@hookspec(firstresult=True)
-def analyze(manifest: Manifest) -> Iterable[Diagnostic] | None:  # type: ignore[reportReturnType]
+@hookspec()
+def analyze(manifest: Manifest) -> Iterable[Diagnosis]:  # type: ignore[reportReturnType]
     """
-    Analyze the manifest and provide diagnostics if the handler recognizes the kind.
-    Return :py:obj:`None` if the kind is not recognized.
+    Analyze the manifest and provide diagnoses.
 
     Parameters
     ----------
@@ -44,6 +43,6 @@ def analyze(manifest: Manifest) -> Iterable[Diagnostic] | None:  # type: ignore[
 
     Returns
     -------
-    Iterable[Diagnostic]
-        The diagnostics reported by the handler.
+    Iterable[Diagnosis]
+        The diagnoses reported by the handler.
     """
