@@ -7,6 +7,7 @@ import tugboat.analyzers.workflow
 from tugboat.analyzers.kubernetes import check_resource_name
 from tugboat.constraints import require_exactly_one
 from tugboat.core import hookimpl
+from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
@@ -24,11 +25,10 @@ def check_metadata(workflow_template: WorkflowTemplate) -> Iterable[Diagnostic]:
     )
 
     if workflow_template.metadata.name:
-        if diagnostic := check_resource_name(
-            workflow_template.metadata.name, length=63
-        ):
-            diagnostic["loc"] = ("metadata", "name")
-            yield diagnostic
+        yield from prepend_loc(
+            ["metadata", "name"],
+            check_resource_name(workflow_template.metadata.name, max_length=63),
+        )
 
     if workflow_template.metadata.generateName:
         yield {
