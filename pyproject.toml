@@ -59,6 +59,7 @@ addopts = "--cov=tugboat --cov-report xml --cov-report term-missing"
 
 [tool.ruff]
 target-version = "py312"
+exclude = ["tugboat/_vendor"]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tugboat/schemas/**" = ["TCH001"]
@@ -84,3 +85,4 @@ max-complexity = 12
 
 [tool.pyright]
 include = ["tugboat"]
+exclude = ["tugboat/_vendor"]
