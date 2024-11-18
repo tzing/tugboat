@@ -6,8 +6,8 @@ The prefix ``CW`` is used to identify potential issues with `cron workflows`_.
 .. _cron workflows: https://argo-workflows.readthedocs.io/en/latest/cron-workflows/
 
 
-``CW001`` - Resource name length error
--------------------------------------
+:bdg:`CW001` Resource name length error
+---------------------------------------
 
 The resource name does not meet the required length criteria; it is either too long or too short.
 

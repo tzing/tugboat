@@ -7,8 +7,8 @@ These errors are likely to cause runtime issues when the workflow template is us
 .. _Workflow Template: https://argo-workflows.readthedocs.io/en/latest/workflow-templates/
 
 
-``WT001`` - Invalid entrypoint
-------------------------------
+:bdg:`WT001` Invalid entrypoint
+-------------------------------
 
 The specified entrypoint does not exist in the workflow template.
 
@@ -29,8 +29,8 @@ For instance, the following workflow specifies an entrypoint that does not exist
            image: alpine:latest
 
 
-``WT002`` - Duplicated parameter name
--------------------------------------
+:bdg:`WT002` Duplicated parameter name
+--------------------------------------
 
 The workflow template contains multiple argument parameters with the same name.
 
@@ -53,8 +53,8 @@ In the following example, the template ``message`` is duplicated:
            value: "Hello, Tugboat!"
 
 
-``WT003`` - Duplicated artifact name
-------------------------------------
+:bdg:`WT003` Duplicated artifact name
+-------------------------------------
 
 The workflow template contains multiple argument artifacts with the same name.
 
@@ -80,8 +80,8 @@ In the following example, the artifact ``message`` is duplicated:
                 Hello, Tugboat!
 
 
-``WT004`` - Use strict name
----------------------------
+:bdg:`WT004` Use strict name
+----------------------------
 
 This error occurs when a workflow template uses the ``metadata.generateName`` field instead of the ``metadata.name`` field.
 
