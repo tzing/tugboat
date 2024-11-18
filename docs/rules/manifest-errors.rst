@@ -1,7 +1,7 @@
 M - Manifest Errors
 ===================
 
-Code ``M`` is used for errors reported by the manifest parser.
+Code ``M`` is primarily used for errors reported by the manifest parser.
 These errors are typically caused by incorrect syntax or missing required information in the manifest file.
 
 
@@ -34,7 +34,7 @@ If the parser identifies a more specific issue, a more precise error code, such 
 ``M004`` - Missing required field
 ---------------------------------
 
-A mandatory field is missing from the manifest.
+A mandatory field is missing from the resource.
 
 For instance, the following manifest lacks the required ``source`` field within the ``script`` section:
 
@@ -140,16 +140,18 @@ For instance, the following manifest contains an invalid value for the ``imagePu
            #                ^^^^^^^^^^^^ invalid value here
 
 
-``M009`` - Manifest name length error
+.. _code.m009:
+
+``M009`` - Resource name length error
 -------------------------------------
 
-The manifest name does not meet the required length criteria; it is either too long or too short.
+The resource name does not meet the required length criteria; it is either too long or too short.
 
 For generated names, Kubernetes typically trims the user-provided name to fit within the length limit.
 However, tugboat requires that the user-provided name reserves 5 characters for the generated suffix to ensure it is not truncated.
 
-For example, the following manifest name is too long for a WorkflowTemplate, which has a maximum name length of 63 characters.
-This generated name (59 characters) may cause the last character of the generated name to be truncated:
+For example, the following resource name is too long for a WorkflowTemplate, which has a maximum name length of 63 characters.
+This given name (59 characters) may cause the last character of the given name to be truncated:
 
 .. code-block:: yaml
 
@@ -163,10 +165,10 @@ This generated name (59 characters) may cause the last character of the generate
      ...
 
 
-``M010`` - Invalid manifest name
+``M010`` - Invalid resource name
 --------------------------------
 
-The manifest name contains invalid characters.
+The resource name contains invalid characters.
 
 Kubernetes requires most resource names to comply with the `RFC 1123`_ standard for DNS subdomain names [#kube-names]_:
 
