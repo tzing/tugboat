@@ -6,7 +6,7 @@ import pytest
 import ruamel.yaml
 from pydantic import ValidationError
 
-from tugboat.schemas import Workflow, WorkflowTemplate
+from tugboat.schemas import CronWorkflow, Workflow, WorkflowTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,19 @@ class TestArgoExamples:
         for file, resource in manifests:
             try:
                 WorkflowTemplate.model_validate(resource)
+            except ValidationError:
+                logger.exception("Failed to validate %s", file)
+                pytest.fail(f"Failed to validate {file}")
+
+    def test_cronworkflow(self, argo_example_dir: Path):
+        manifests = load_manifests(
+            dir_path=argo_example_dir,
+            expected_kinds=["CronWorkflow"],
+        )
+
+        for file, resource in manifests:
+            try:
+                CronWorkflow.model_validate(resource)
             except ValidationError:
                 logger.exception("Failed to validate %s", file)
                 pytest.fail(f"Failed to validate {file}")

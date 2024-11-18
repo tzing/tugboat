@@ -72,10 +72,12 @@ def get_plugin_manager() -> pluggy.PluginManager:
     pm.add_hookspecs(tugboat.hookspecs.workflow)
 
     # hook implementations
+    import tugboat.analyzers.cron_workflow
     import tugboat.analyzers.template
     import tugboat.analyzers.workflow
     import tugboat.analyzers.workflow_template
 
+    pm.register(tugboat.analyzers.cron_workflow)
     pm.register(tugboat.analyzers.template)
     pm.register(tugboat.analyzers.workflow)
     pm.register(tugboat.analyzers.workflow_template)

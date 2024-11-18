@@ -19,13 +19,13 @@ def check_resource_name(
     is_generate_name: bool = False,
 ) -> Iterator[Diagnosis]:
     """
-    Check if the name is valid to be used as a Kubernetes resource name.
+    Check if the name is valid to be used as a Kubernetes resource name. This
+    function reports the following issues:
 
-    Returns
-    -------
-    Iterator[Diagnosis]
-        An iterator of diagnoses if the name is invalid, otherwise an empty iterator.
-        Note that the ``loc`` field is always an empty tuple.
+    M009
+       Resource name length error
+    M010
+       Invalid resource name
 
     See also
     --------

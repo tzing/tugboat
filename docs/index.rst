@@ -98,6 +98,7 @@ The command will output the following:
    :maxdepth: 1
    :caption: Rules
 
+   rules/cron-workflow
    rules/fatal-errors
    rules/manifest-errors
    rules/template
