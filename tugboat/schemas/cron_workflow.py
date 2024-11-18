@@ -4,9 +4,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from tugboat.schemas.arguments import Arguments
-from tugboat.schemas.manifest import Manifest, Metadata
-from tugboat.schemas.template import Template
+from tugboat.schemas.manifest import Manifest
 from tugboat.schemas.workflow import WorkflowSpec
 
 

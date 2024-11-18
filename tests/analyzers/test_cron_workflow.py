@@ -1,4 +1,3 @@
-import itertools
 import json
 import logging
 
@@ -6,7 +5,6 @@ from dirty_equals import IsPartialDict
 
 import tugboat.analyze
 from tests.utils import ContainsSubStrings
-from tugboat.core import hookimpl
 from tugboat.schemas import CronWorkflow
 
 logger = logging.getLogger(__name__)
