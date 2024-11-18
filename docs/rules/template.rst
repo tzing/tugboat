@@ -1,5 +1,5 @@
-TPL - Template Rules
-====================
+Template Rules (``TPL``)
+========================
 
 Code ``TPL`` is used for errors specifically related to the `template`_, the reusable and composable unit of execution in a workflow or workflow template.
 

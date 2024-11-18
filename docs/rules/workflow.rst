@@ -1,5 +1,5 @@
-WF - Workflow Rules
-===================
+Workflow Rules (``WF``)
+=======================
 
 Code ``WF`` is used for issues closely related to the `Workflow`_.
 These issues are likely to cause runtime errors when the workflow is executed.

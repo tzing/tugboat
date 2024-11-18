@@ -1,5 +1,5 @@
-F - Fatal Errors
-================
+Fatal Errors (``F``)
+====================
 
 Code ``F`` are the most severe errors that stops the analysis.
 They are usually related to the manifest file parsing errors, or the manifest is not valid.

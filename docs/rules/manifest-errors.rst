@@ -1,5 +1,5 @@
-M - Manifest Errors
-===================
+Manifest Errors (``M``)
+=======================
 
 Code ``M`` is primarily used for errors reported by the manifest parser.
 These errors are typically caused by incorrect syntax or missing required information in the manifest file.

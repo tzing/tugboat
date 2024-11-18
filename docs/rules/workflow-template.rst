@@ -1,5 +1,5 @@
-WT - Workflow Template Rules
-============================
+Workflow Template Rules (``WT``)
+================================
 
 Code ``WT`` is used for errors specifically related to the `Workflow Template`_.
 These errors are likely to cause runtime issues when the workflow template is used in a workflow.

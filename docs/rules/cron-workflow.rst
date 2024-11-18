@@ -1,5 +1,5 @@
-CW - Cron Workflow Rules
-========================
+Cron Workflow Rules (``CW``)
+============================
 
 The prefix ``CW`` is used to identify potential issues with `cron workflows`_.
 
