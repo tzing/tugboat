@@ -10,6 +10,6 @@
 
 A linter to streamline your [Argo Workflows] with precision and confidence.
 
-![screenshot](./docs/images/screenshot.png)
+![screenshot](./docs/_static/images/screenshot.png)
 
 [Argo Workflows]: https://argoproj.github.io/workflows/
