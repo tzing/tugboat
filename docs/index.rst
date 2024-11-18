@@ -5,7 +5,7 @@ A linter to streamline your `Argo Workflows`_ with precision and confidence.
 
 .. _Argo Workflows: https://argoproj.github.io/workflows/
 
-.. figure:: images/screenshot.png
+.. figure:: /_static/images/screenshot.png
    :alt: Screenshot of tugboat command
    :align: center
 

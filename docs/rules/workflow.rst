@@ -1,5 +1,5 @@
-WF - Workflow Rules
-===================
+Workflow Rules (``WF``)
+=======================
 
 Code ``WF`` is used for issues closely related to the `Workflow`_.
 These issues are likely to cause runtime errors when the workflow is executed.
@@ -9,8 +9,8 @@ These issues are likely to cause runtime errors when the workflow is executed.
 
 .. _code.wf001:
 
-``WF001`` - Invalid entrypoint
-------------------------------
+:bdg:`WF001` Invalid entrypoint
+-------------------------------
 
 The specified entrypoint does not exist in the workflow.
 
@@ -31,8 +31,8 @@ For instance, the following workflow specifies an entrypoint that does not exist
            image: alpine:latest
 
 
-``WT002`` - Duplicated parameter name
--------------------------------------
+:bdg:`WT002` Duplicated parameter name
+--------------------------------------
 
 The workflow contains multiple argument parameters with the same name.
 
@@ -55,8 +55,8 @@ In the following example, the template ``message`` is duplicated:
            value: "Hello, Tugboat!"
 
 
-``WT003`` - Duplicated artifact name
-------------------------------------
+:bdg:`WT003` Duplicated artifact name
+-------------------------------------
 
 The workflow contains multiple argument artifacts with the same name.
 

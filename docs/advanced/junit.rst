@@ -57,12 +57,12 @@ Here is an example workflow that lints the manifests and reports the results as 
 
 It could produce a check like this:
 
-.. figure:: ../images/gha-pr-check.png
+.. figure:: /_static/images/gha-pr-check.png
    :figclass: light-only
    :alt: JUnit Report Action example
    :align: center
 
-.. figure:: ../images/gha-pr-check-dark.png
+.. figure:: /_static/images/gha-pr-check-dark.png
    :figclass: dark-only
    :alt: JUnit Report Action example
    :align: center

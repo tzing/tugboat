@@ -1,18 +1,18 @@
-M - Manifest Errors
-===================
+Manifest Errors (``M``)
+=======================
 
 Code ``M`` is primarily used for errors reported by the manifest parser.
 These errors are typically caused by incorrect syntax or missing required information in the manifest file.
 
 
-``M001`` - Not a Kubernetes manifest
-------------------------------------
+:bdg:`M001` Not a Kubernetes manifest
+-------------------------------------
 
 This error code is triggered when the input file does not look like a Kubernetes manifest.
 
 
-``M002`` - Unsupported manifest kind
-------------------------------------
+:bdg:`M002` Unsupported manifest kind
+-------------------------------------
 
 The input manifest kind is not supported by the parser.
 
@@ -20,19 +20,19 @@ Tugboat is not designed to parse every possible Kubernetes resource.
 This error code is triggered when the parser encounters a manifest kind that is not supported by Tugboat.
 
 
-``M003`` - Malformed manifest
------------------------------
+:bdg:`M003` Malformed manifest
+------------------------------
 
 The input manifest does not conform to the expected format.
 
 This error code is triggered when the parser encounters a general error in the manifest file.
-If the parser identifies a more specific issue, a more precise error code, such as :ref:`M004 <code.m004>`, will be used instead.
+If the parser identifies a more specific issue, a more precise error code, such as :ref:`code.m004`, will be used instead.
 
 
 .. _code.m004:
 
-``M004`` - Missing required field
----------------------------------
+:bdg:`M004` Missing required field
+----------------------------------
 
 A mandatory field is missing from the resource.
 
@@ -52,8 +52,8 @@ For instance, the following manifest lacks the required ``source`` field within 
            # <-- expected 'source' field here but missing
 
 
-``M005`` - Found redundant field
---------------------------------
+:bdg:`M005` Found redundant field
+---------------------------------
 
 The manifest contains an unexpected field.
 
@@ -74,8 +74,8 @@ For instance, the following manifest contains an extra field, ``extraField``, wi
    #^^^^^^^^^^^^^^^^ unexpected field here
 
 
-``M006`` - Mutually exclusive fields
-------------------------------------
+:bdg:`M006` Mutually exclusive fields
+-------------------------------------
 
 The manifest contains fields that are mutually exclusive.
 
@@ -100,8 +100,8 @@ For instance, the following manifest contains both ``script`` and ``container`` 
            image: alpine:latest
 
 
-``M007`` - Type mismatch
-------------------------
+:bdg:`M007` Type mismatch
+-------------------------
 
 The value of a field does not match the expected type.
 
@@ -118,8 +118,8 @@ The following manifest contains a number in ``entrypoint`` field, which is expec
      #           ^^^^ expected a string here
 
 
-``M008`` - Invalid field value
-------------------------------
+:bdg:`M008` Invalid field value
+-------------------------------
 
 The value of a field is not valid.
 
@@ -142,8 +142,8 @@ For instance, the following manifest contains an invalid value for the ``imagePu
 
 .. _code.m009:
 
-``M009`` - Resource name length error
--------------------------------------
+:bdg:`M009` Resource name length error
+--------------------------------------
 
 The resource name does not meet the required length criteria; it is either too long or too short.
 
@@ -165,8 +165,8 @@ This given name (59 characters) may cause the last character of the given name t
      ...
 
 
-``M010`` - Invalid resource name
---------------------------------
+:bdg:`M010` Invalid resource name
+---------------------------------
 
 The resource name contains invalid characters.
 
