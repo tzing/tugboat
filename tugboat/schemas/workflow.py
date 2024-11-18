@@ -5,22 +5,11 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict
 
 from tugboat.schemas.arguments import Arguments
-from tugboat.schemas.manifest import Manifest, Metadata
+from tugboat.schemas.manifest import Manifest
 from tugboat.schemas.template import Template
 
 
-class Workflow(Manifest):
-    apiVersion: Literal["argoproj.io/v1alpha1"]  # type: ignore[reportIncompatibleVariableOverride]
-    kind: Literal["Workflow"]  # type: ignore[reportIncompatibleVariableOverride]
-    metadata: Metadata
-    spec: Spec
-
-
-class WorkflowTemplate(Workflow):
-    kind: Literal["WorkflowTemplate"]  # type: ignore[reportIncompatibleVariableOverride]
-
-
-class Spec(BaseModel):
+class WorkflowSpec(BaseModel):
     """
     `WorkflowSpec`_ is the specification of a Workflow.
 
@@ -80,3 +69,25 @@ class WorkflowTemplateRef(BaseModel):
 
     name: str
     clusterScope: bool | None = None
+
+
+class Workflow(Manifest[WorkflowSpec]):
+    """
+    `Workflows` are the top-level resource in Argo Workflows that define a single
+    unit of work.
+
+    .. _Workflows: https://argo-workflows.readthedocs.io/en/latest/workflow-concepts/
+    """
+
+    apiVersion: Literal["argoproj.io/v1alpha1"]  # type: ignore[reportIncompatibleVariableOverride]
+    kind: Literal["Workflow"]  # type: ignore[reportIncompatibleVariableOverride]
+
+
+class WorkflowTemplate(Workflow):
+    """
+    `WorkflowTemplates`_ are reusable Workflow definitions stored in the cluster.
+
+    .. _WorkflowTemplates: https://argo-workflows.readthedocs.io/en/latest/workflow-templates/
+    """
+
+    kind: Literal["WorkflowTemplate"]  # type: ignore[reportIncompatibleVariableOverride]
