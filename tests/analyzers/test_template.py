@@ -31,7 +31,7 @@ class TestRules:
             in diagnoses
         )
 
-    def test_check_input_parameters(self):
+    def test_check_input_parameters_1(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
@@ -69,6 +69,24 @@ class TestRules:
                 }
             )
             in diagnoses
+        )
+
+    def test_check_input_parameters_2(self):
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_REFERENCES)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        assert IsPartialDict(
+            {
+                "code": "VAR001",
+                "loc": ("spec", "templates", 0, "inputs", "parameters", 0, "value"),
+            }
+        )
+        assert IsPartialDict(
+            {
+                "code": "VAR002",
+                "loc": ("spec", "templates", 0, "inputs", "parameters", 2, "value"),
+                "msg": "Reference 'workflow.invalid' is not a valid parameter for the workflow 'test-'.",
+                "input": "{{ workflow.invalid }}",
+            }
         )
 
     def test_check_input_artifacts(self):
@@ -118,7 +136,15 @@ class TestRules:
             IsPartialDict(
                 {
                     "code": "M004",
-                    "loc": ("spec", "templates", 0, "outputs", "parameters", 1),
+                    "loc": (
+                        "spec",
+                        "templates",
+                        0,
+                        "outputs",
+                        "parameters",
+                        1,
+                        "valueFrom",
+                    ),
                 }
             )
             in diagnoses
@@ -211,4 +237,24 @@ spec:
             archive: {} # M004
           - name: data # TPL005
             path: /data
+"""
+
+MANIFEST_INVALID_REFERENCES = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  templates:
+    - name: main
+      inputs:
+        parameters:
+          - name: message-1
+            value: "{{ workflow.name " # VAR001
+          - name: message-2
+            value: "{{ workflow.name }}"
+          - name: message-3
+            value: "{{ workflow.invalid }}" # VAR002
+        artifacts:
+          - name: data
 """

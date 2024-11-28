@@ -9,6 +9,9 @@ from tugboat.constraints import (
     require_exactly_one,
 )
 from tugboat.core import hookimpl
+from tugboat.parsers import parse_template, report_syntax_errors
+from tugboat.reference import get_workflow_context_c
+from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
@@ -48,6 +51,8 @@ def check_input_parameters(
     if not template.inputs:
         return
 
+    workflow_context = get_workflow_context_c(workflow)
+
     # check fields for each parameter; also count the number of times each name appears
     parameters = {}
     for idx, param in enumerate(template.inputs.parameters or []):
@@ -67,7 +72,21 @@ def check_input_parameters(
         if param.name:
             parameters.setdefault(param.name, []).append(loc)
 
-        # TODO check expression
+        if param.value:
+            doc = parse_template(param.value)
+            yield from prepend_loc((*loc, "value"), report_syntax_errors(doc))
+
+            for node, ref in doc.iter_references():
+                if ref not in workflow_context.parameters:
+                    ref_repr = ".".join(ref)
+                    wf_name = workflow.metadata.name or workflow.metadata.generateName
+                    yield {
+                        "code": "VAR002",
+                        "loc": (*loc, "value"),
+                        "summary": "Misused reference",
+                        "msg": f"Reference '{ref_repr}' is not a valid parameter for the workflow '{wf_name}'.",
+                        "input": str(node),
+                    }
 
         if param.valueFrom:
             yield from require_exactly_one(
@@ -84,12 +103,15 @@ def check_input_parameters(
                 loc=(*loc, "valueFrom"),
                 fields=[
                     "event",
+                    "globalName",
                     "jqFilter",
                     "jsonPath",
                     "path",
                     "supplied",
                 ],
             )
+
+            # TODO check expression
 
     # report duplicates
     for name, locs in parameters.items():
@@ -146,6 +168,7 @@ def check_input_artifacts(
                 "archiveLogs",
                 "artifactGC",
                 "deleted",
+                "globalName",
             ],
         )
 
@@ -182,18 +205,16 @@ def check_output_parameters(
         yield from require_all(
             model=param,
             loc=loc,
-            fields=["name"],
+            fields=["name", "valueFrom"],
         )
-        yield from require_exactly_one(
+        yield from accept_none(
             model=param,
             loc=loc,
-            fields=["value", "valueFrom"],
+            fields=["value"],
         )
 
         if param.name:
             parameters.setdefault(param.name, []).append(loc)
-
-        # TODO check expression
 
         if param.valueFrom:
             yield from require_exactly_one(
@@ -210,6 +231,8 @@ def check_output_parameters(
                     "supplied",
                 ],
             )
+
+            # TODO check expression
 
     # report duplicates
     for name, locs in parameters.items():
