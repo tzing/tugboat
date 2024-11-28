@@ -1,3 +1,12 @@
+"""
+Utilities for building available references within the given scope.
+
+See Also
+--------
+Reference
+   https://argo-workflows.readthedocs.io/en/latest/variables/#reference
+"""
+
 from __future__ import annotations
 
 import copy
@@ -53,11 +62,6 @@ def cache(max_size: int):
 def get_global_context() -> Context:
     """
     Returns a context with the available global references.
-
-    See Also
-    --------
-    Global Reference
-       https://argo-workflows.readthedocs.io/en/latest/variables/#global
     """
     return Context(
         parameters={
@@ -93,11 +97,6 @@ def get_workflow_context(
 ) -> Context:
     """
     Returns a context with the available references for the given workflow.
-
-    See Also
-    --------
-    Global Reference
-       https://argo-workflows.readthedocs.io/en/latest/variables/#global
     """
     ctx = get_global_context()
 
