@@ -1,3 +1,10 @@
+"""
+This module provides the parser for Argo template syntax.
+
+It parses the input text into an abstract syntax tree (AST) that can be used to
+analyze the template and generate a report.
+"""
+
 from __future__ import annotations
 
 __all__ = [
