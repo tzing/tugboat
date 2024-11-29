@@ -26,7 +26,7 @@ from tugboat.utils import LruDict
 if typing.TYPE_CHECKING:
     from collections.abc import Callable, Collection
 
-    from tugboat.schemas import Template, Workflow, WorkflowTemplate
+    from tugboat.schemas import Workflow, WorkflowTemplate
 
 type ReferenceTuple = tuple[str, ...]
 
@@ -58,7 +58,7 @@ def find_closest_match(
         # calculate the normalized distance for each element
         base_distance = (
             dameau_levenshtein_normalized_distance(a, b)
-            for a, b in zip(target_reference, candidate)
+            for a, b in zip(target_reference, candidate, strict=False)
         )
 
         if len(target_reference) != len(candidate):
