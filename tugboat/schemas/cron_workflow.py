@@ -17,19 +17,18 @@ class CronWorkflowSpec(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    schedule: str | None = None
-    schedules: list[str] | None = None
-    workflowSpec: WorkflowSpec
-
-    # acknowledged fields
     concurrencyPolicy: str | None = None
     failedJobsHistoryLimit: int | None = None
+    schedule: str | None = None
+    schedules: list[str] | None = None
     startingDeadlineSeconds: int | None = None
-    stopStrategy: Any | None = None
     successfulJobsHistoryLimit: int | None = None
     suspend: bool | None = None
     timezone: str | None = None
     when: str | None = None
+    workflowSpec: WorkflowSpec
+
+    stopStrategy: Any | None = None
     workflowMetadata: Any | None = None
 
 
