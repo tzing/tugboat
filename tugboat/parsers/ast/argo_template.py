@@ -54,12 +54,6 @@ class PlainText(Node):
 
 class SimpleReferenceTag(Node):
 
-    raw_tag: str
-    """The original text of this tag."""
-
-    raw_reference: str
-    """The original text of the reference."""
-
     reference: ReferenceTuple
     """Reference to a variable."""
 
@@ -93,11 +87,10 @@ class SimpleReferenceTag(Node):
 
         # consume the reference
         reference = []
-        reference_components = []
 
         if next_lexeme_is(lexemes, Name.Variable):
             _, _, text = lexeme = lexemes.pop(0)
-            reference_components.append(lexeme)
+            components.append(lexeme)
             reference.append(text)
 
             while (
@@ -107,14 +100,12 @@ class SimpleReferenceTag(Node):
             ):
                 # the dot
                 lexeme = lexemes.pop(0)
-                reference_components.append(lexeme)
+                components.append(lexeme)
 
                 # the name
                 _, _, text = lexeme = lexemes.pop(0)
-                reference_components.append(lexeme)
+                components.append(lexeme)
                 reference.append(text)
-
-        components += reference_components
 
         # consume trailing whitespaces
         components += consume_whitespaces(lexemes)
@@ -126,16 +117,10 @@ class SimpleReferenceTag(Node):
             return Unexpected.create(components)
 
         components.append(lexemes.pop(0))  # consume the closing tag
-        return cls.model_validate(
-            {
-                "raw_tag": "".join(text for _, _, text in components),
-                "raw_reference": "".join(text for _, _, text in reference_components),
-                "reference": reference,
-            }
-        )
+        return cls(reference=tuple(reference))
 
     def __str__(self) -> str:
-        return self.raw_tag
+        return ".".join(self.reference)
 
 
 class ExpressionTag(Node):
