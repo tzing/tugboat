@@ -85,7 +85,8 @@ class TestRules:
                 "code": "VAR002",
                 "loc": ("spec", "templates", 0, "inputs", "parameters", 2, "value"),
                 "msg": "Reference 'workflow.invalid' is not a valid parameter for the workflow 'test-'.",
-                "input": "{{ workflow.invalid }}",
+                "input": "workflow.invalid",
+                "fix": "workflow.name",
             }
         )
 
