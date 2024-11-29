@@ -14,15 +14,60 @@ import functools
 import typing
 
 from pydantic import BaseModel, Field
+from rapidfuzz.distance.DamerauLevenshtein import (
+    distance as dameau_levenshtein_distance,
+)
+from rapidfuzz.distance.DamerauLevenshtein import (
+    normalized_distance as dameau_levenshtein_normalized_distance,
+)
 
 from tugboat.utils import LruDict
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Collection
 
-    from tugboat.schemas import Workflow, WorkflowTemplate
+    from tugboat.schemas import Template, Workflow, WorkflowTemplate
 
 type ReferenceTuple = tuple[str, ...]
+
+
+def find_closest_match(
+    target_reference: ReferenceTuple, candidate_references: Collection[ReferenceTuple]
+) -> ReferenceTuple:
+    """
+    Find the closest match for a given reference in a list of reference.
+    """
+    # NOTE this algorithm is heuristic
+
+    # group the candidates by their distance to the target reference
+    distance_grouped_candidates: dict[int, list[ReferenceTuple]] = {}
+    for candidate in candidate_references:
+        dist = dameau_levenshtein_distance(target_reference, candidate)
+        distance_grouped_candidates.setdefault(dist, []).append(candidate)
+
+    # find the closest group
+    closest_distance = min(distance_grouped_candidates.keys())
+    closest_candidates = distance_grouped_candidates[closest_distance]
+
+    if len(closest_candidates) == 1:
+        return closest_candidates[0]
+
+    # there are multiple candidates with the same distance, compare the elements
+    # of the target reference with the candidates
+    def _calculate_distance(candidate: ReferenceTuple) -> tuple[float, ...]:
+        # calculate the normalized distance for each element
+        base_distance = (
+            dameau_levenshtein_normalized_distance(a, b)
+            for a, b in zip(target_reference, candidate)
+        )
+
+        if len(target_reference) != len(candidate):
+            # if the lengths are different, add a penalty to the distance
+            return (*base_distance, 2.0)
+        else:
+            return tuple(base_distance)
+
+    return min(closest_candidates, key=_calculate_distance)
 
 
 class Context(BaseModel):

@@ -1,5 +1,41 @@
-from tugboat.reference import Context, get_global_context, get_workflow_context_c
+import pytest
+
+from tugboat.reference import (
+    Context,
+    find_closest_match,
+    get_global_context,
+    get_workflow_context_c,
+)
 from tugboat.schemas import Workflow
+
+
+class TestFindClosestMatch:
+
+    @pytest.mark.parametrize(
+        ("target", "expected"),
+        [
+            # exact match
+            (("red", "pink"), ("red", "pink")),
+            (("red", "teal", "pink"), ("red", "teal", "pink")),
+            # length mismatch
+            (("red", "pink", "EXTRA"), ("red", "pink")),
+            (("red",), ("red", "blue")),
+            # character mismatch
+            (("red", "pinkk"), ("red", "pink")),
+            (("red", "teel", "pink"), ("red", "teal", "pink")),
+        ],
+    )
+    def test(self, target, expected):
+        candidates = [
+            ("red", "blue"),
+            ("red", "pink"),
+            ("red", "teal"),
+            ("red", "blue", "pink"),
+            ("red", "teal", "pink"),
+            ("red", "blue", "pink", "gray"),
+            ("red", "blue", "teal", "gray"),
+        ]
+        assert find_closest_match(target, candidates) == expected
 
 
 class TestGetGlobalContext:
