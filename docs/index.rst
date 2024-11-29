@@ -104,3 +104,4 @@ The command will output the following:
    rules/template
    rules/workflow
    rules/workflow-template
+   rules/workflow-variable
