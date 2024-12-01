@@ -15,9 +15,7 @@ from tugboat.references.cache import cache
 from tugboat.references.context import Context
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from tugboat.schemas import Template, Workflow, WorkflowTemplate
+    from tugboat.schemas import Workflow, WorkflowTemplate
 
 
 @cache(1)
