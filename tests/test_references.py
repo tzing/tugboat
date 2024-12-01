@@ -1,8 +1,6 @@
-import copy
-
 import pytest
 
-from tugboat.references.cache import LruDict
+from tugboat.references.cache import LruDict, cache
 from tugboat.references.context import AnyStr, Context, ReferenceCollection
 
 
@@ -68,22 +66,6 @@ class TestReferenceCollection:
         assert collection.find_closest(()) == ()
 
 
-class TestContext:
-
-    def test_copy(self):
-        ctx_1 = Context()
-        ctx_2 = copy.deepcopy(ctx_1)
-
-        ctx_1.parameters.add(("a", "b"))
-        ctx_2.parameters.add(("foo", "bar"))
-
-        assert ("a", "b") in ctx_1.parameters
-        assert ("a", "b") not in ctx_2.parameters
-
-        assert ("foo", "bar") in ctx_2.parameters
-        assert ("foo", "bar") not in ctx_1.parameters
-
-
 class TestLruDict:
     def test_basic(self):
         d = LruDict(max_size=3)
@@ -132,3 +114,20 @@ class TestLruDict:
         d["c"] = 3
         del d["b"]
         assert d == {"a": 1, "c": 3}
+
+
+class TestCache:
+
+    def test(self):
+        @cache(4)
+        def func(obj):
+            ctx = Context()
+            ctx.parameters |= {("foo", "bar")}
+            return ctx
+
+        ctx_1 = func(object())
+        ctx_1.parameters |= {("baz", "qux")}
+        assert len(ctx_1.parameters) == 2
+
+        ctx_2 = func(object())
+        assert len(ctx_2.parameters) == 1
