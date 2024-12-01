@@ -10,7 +10,7 @@ from tugboat.constraints import (
 )
 from tugboat.core import hookimpl
 from tugboat.parsers import parse_template, report_syntax_errors
-from tugboat.reference import find_closest_match, get_workflow_context_c
+from tugboat.references import get_workflow_context_c
 from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:
@@ -79,7 +79,7 @@ def check_input_parameters(
             for node, ref in doc.iter_references():
                 if ref not in workflow_context.parameters:
                     wf_name = workflow.metadata.name or workflow.metadata.generateName
-                    closest = find_closest_match(ref, workflow_context.parameters)
+                    closest = workflow_context.parameters.find_closest(ref)
                     fix = node.model_validate({"reference": closest})
                     yield {
                         "code": "VAR002",

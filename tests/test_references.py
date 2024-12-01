@@ -1,15 +1,34 @@
 import pytest
 
-from tugboat.reference import (
-    Context,
-    find_closest_match,
-    get_global_context,
-    get_workflow_context_c,
-)
+from tugboat.references import get_global_context, get_workflow_context_c
+from tugboat.references.cache import LruDict, cache
+from tugboat.references.context import AnyStr, Context, ReferenceCollection
 from tugboat.schemas import Workflow
 
 
-class TestFindClosestMatch:
+class TestReferenceCollection:
+
+    def test(self):
+        collection = ReferenceCollection()
+        assert len(collection) == 0
+
+        collection |= {
+            ("a", "b"),
+            ("c", AnyStr),
+        }
+        assert len(collection) == 2
+
+        assert ("a", "b") in collection
+        assert ("c", "SOMETHING-ELSE") in collection
+
+        assert repr(collection) == "{('a', 'b'), ('c', ANY)}"
+
+    def test_errors(self):
+        collection = ReferenceCollection()
+        with pytest.raises(TypeError):
+            collection.add("not-a-tuple")
+        with pytest.raises(NotImplementedError):
+            collection.discard(("a", "b"))
 
     @pytest.mark.parametrize(
         ("target", "expected"),
@@ -19,23 +38,101 @@ class TestFindClosestMatch:
             (("red", "teal", "pink"), ("red", "teal", "pink")),
             # length mismatch
             (("red", "pink", "EXTRA"), ("red", "pink")),
-            (("red",), ("red", "blue")),
+            (("green",), ("green", "yellow")),
             # character mismatch
             (("red", "pinkk"), ("red", "pink")),
             (("red", "teel", "pink"), ("red", "teal", "pink")),
+            # match `AnyStr`
+            (("green", "grey", "WHATEVER"), ("green", "grey", "WHATEVER")),
+            (("green", "grey", "WHATEVER", "SUB"), ("green", "grey", "WHATEVER")),
+            (("green", "grey"), ("green", "yellow")),
         ],
     )
-    def test(self, target, expected):
-        candidates = [
+    def test_find_closest(self, target, expected):
+        collection = ReferenceCollection()
+        collection |= {
             ("red", "blue"),
             ("red", "pink"),
-            ("red", "teal"),
             ("red", "blue", "pink"),
             ("red", "teal", "pink"),
             ("red", "blue", "pink", "gray"),
             ("red", "blue", "teal", "gray"),
+            ("green", "yellow"),
+            ("green", "grey", AnyStr),
+        }
+        assert collection.find_closest(target) == expected
+
+    def test_empty(self):
+        collection = ReferenceCollection()
+        assert collection.find_closest(("foo", "bar")) == ()
+        assert collection.find_closest(()) == ()
+
+
+class TestLruDict:
+    def test_basic(self):
+        d = LruDict(max_size=3)
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        assert d == {"a": 1, "b": 2, "c": 3}
+
+    def test_exceed_max_size(self):
+        d = LruDict(max_size=3)
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        d["d"] = 4
+        assert d == {"b": 2, "c": 3, "d": 4}
+
+    def test_update(self):
+        d = LruDict(max_size=3)
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        d["b"] = 4
+        assert list(d.items()) == [
+            ("a", 1),
+            ("c", 3),
+            ("b", 4),
         ]
-        assert find_closest_match(target, candidates) == expected
+
+    def test_get(self):
+        d = LruDict(max_size=3)
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        assert d.get("a") == 1
+        assert d.get("not-exists") is None
+        assert list(d.items()) == [
+            ("b", 2),
+            ("c", 3),
+            ("a", 1),
+        ]
+
+    def test_del(self):
+        d = LruDict(max_size=3)
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        del d["b"]
+        assert d == {"a": 1, "c": 3}
+
+
+class TestCache:
+
+    def test(self):
+        @cache(4)
+        def func(obj):
+            ctx = Context()
+            ctx.parameters |= {("foo", "bar")}
+            return ctx
+
+        ctx_1 = func(object())
+        ctx_1.parameters |= {("baz", "qux")}
+        assert len(ctx_1.parameters) == 2
+
+        ctx_2 = func(object())
+        assert len(ctx_2.parameters) == 1
 
 
 class TestGetGlobalContext:
@@ -43,9 +140,7 @@ class TestGetGlobalContext:
     def test(self):
         ctx = get_global_context()
         assert isinstance(ctx, Context)
-        assert isinstance(ctx.parameters, set)
         assert all(isinstance(p, tuple) for p in ctx.parameters)
-        assert isinstance(ctx.artifacts, set)
         assert all(isinstance(a, tuple) for a in ctx.artifacts)
 
     def test_cache(self):
@@ -78,14 +173,6 @@ class TestGetWorkflowContext:
                         ],
                     },
                     "templates": [
-                        {
-                            "name": "hello-world",
-                            "container": {
-                                "image": "busybox",
-                                "command": ["echo"],
-                                "args": ["hello world"],
-                            },
-                        },
                         {
                             "name": "global-output",
                             "container": {
