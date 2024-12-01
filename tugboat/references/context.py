@@ -62,7 +62,7 @@ class ReferenceCollection(MutableSet[ReferenceTuple]):
         return new
 
     def add(self, value):
-        if not isinstance(value, (tuple, list)):
+        if not isinstance(value, tuple | list):
             raise TypeError("value must be a tuple or a list")
         if any(isinstance(item, _AnyStr) for item in value):
             self._dynamic.append(value)
@@ -114,7 +114,7 @@ class ReferenceCollection(MutableSet[ReferenceTuple]):
                     continue
                 return tuple(
                     a if isinstance(b, _AnyStr) else b
-                    for a, b in zip(target, candidate)
+                    for a, b in zip(target, candidate, strict=False)
                 )
             return candidate
 

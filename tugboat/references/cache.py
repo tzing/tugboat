@@ -8,7 +8,7 @@ import typing
 from typing import overload
 
 if typing.TYPE_CHECKING:
-    from typing import Callable
+    from collections.abc import Callable
 
     from tugboat.references.context import Context
 
