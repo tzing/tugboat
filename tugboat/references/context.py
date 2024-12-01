@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing
 from collections.abc import MutableSet
 
 from pydantic import BaseModel, Field, InstanceOf
@@ -10,7 +11,11 @@ from rapidfuzz.distance.DamerauLevenshtein import (
     normalized_distance as dameau_levenshtein_normalized_distance,
 )
 
-type ReferenceTuple = tuple[str, ...]
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
+
+type _TR = tuple[str, ...]
+"""Type alias for reference, which is a tuple of strings."""
 
 
 class _AnyStr(str):
@@ -32,7 +37,7 @@ A special object that matches any string.
 """
 
 
-class ReferenceCollection(MutableSet[ReferenceTuple]):
+class ReferenceCollection(MutableSet[_TR]):
     """
     A :py:class:`set`-like collection of references, handling the special logic
     of :py:data:`AnyStr`.
@@ -72,14 +77,35 @@ class ReferenceCollection(MutableSet[ReferenceTuple]):
     def discard(self, value):
         raise NotImplementedError
 
-    def find_closest(self, target: ReferenceTuple) -> ReferenceTuple:
+    def filter_unknown[
+        _TN
+    ](self, references: Iterable[tuple[_TN, _TR]]) -> Iterator[tuple[_TN, _TR, _TR]]:
+        """
+        Filter out unknown references from the given references.
+
+        Parameters
+        ----------
+        references : Iterable[tuple[_TN, _TR]]
+            An iterable of tuples of nodes and references
+
+        Yields
+        ------
+        tuple[_TN, _TR, _TR]
+            A tuple of the node, the reference, and the closest valid reference.
+        """
+        for node, reference in references:
+            if reference not in self:
+                closest = self.find_closest(reference)
+                yield node, reference, closest
+
+    def find_closest(self, target: _TR) -> _TR:
         """
         Find the closest match for a given reference in a list of reference.
         """
         # NOTE this algorithm is heuristic
 
         # group the candidates by their distance to the target reference
-        distance_grouped_candidates: dict[int, list[ReferenceTuple]] = {}
+        distance_grouped_candidates: dict[int, list[_TR]] = {}
         for candidate in self:
             dist = dameau_levenshtein_distance(target, candidate)
             distance_grouped_candidates.setdefault(dist, []).append(candidate)
@@ -91,7 +117,7 @@ class ReferenceCollection(MutableSet[ReferenceTuple]):
             closest_candidates = distance_grouped_candidates[closest_distance]
 
         # sort by the distance of each element
-        def _calculate_distance(candidate: ReferenceTuple) -> tuple[float, ...]:
+        def _calculate_distance(candidate: _TR) -> tuple[float, ...]:
             # calculate the normalized distance for each element
             base_distance = (
                 dameau_levenshtein_normalized_distance(a, b)
