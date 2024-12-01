@@ -2,6 +2,7 @@ import copy
 
 import pytest
 
+from tugboat.references.cache import LruDict
 from tugboat.references.context import AnyStr, Context, ReferenceCollection
 
 
@@ -81,3 +82,53 @@ class TestContext:
 
         assert ("foo", "bar") in ctx_2.parameters
         assert ("foo", "bar") not in ctx_1.parameters
+
+
+class TestLruDict:
+    def test_basic(self):
+        d = LruDict(max_size=3)
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        assert d == {"a": 1, "b": 2, "c": 3}
+
+    def test_exceed_max_size(self):
+        d = LruDict(max_size=3)
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        d["d"] = 4
+        assert d == {"b": 2, "c": 3, "d": 4}
+
+    def test_update(self):
+        d = LruDict(max_size=3)
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        d["b"] = 4
+        assert list(d.items()) == [
+            ("a", 1),
+            ("c", 3),
+            ("b", 4),
+        ]
+
+    def test_get(self):
+        d = LruDict(max_size=3)
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        assert d.get("a") == 1
+        assert d.get("not-exists") is None
+        assert list(d.items()) == [
+            ("b", 2),
+            ("c", 3),
+            ("a", 1),
+        ]
+
+    def test_del(self):
+        d = LruDict(max_size=3)
+        d["a"] = 1
+        d["b"] = 2
+        d["c"] = 3
+        del d["b"]
+        assert d == {"a": 1, "c": 3}
