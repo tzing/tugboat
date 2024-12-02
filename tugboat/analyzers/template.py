@@ -11,7 +11,7 @@ from tugboat.constraints import (
 )
 from tugboat.core import hookimpl
 from tugboat.parsers import parse_template, report_syntax_errors
-from tugboat.references import get_template_context_c, get_workflow_context_c
+from tugboat.references import get_workflow_context_c
 from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:

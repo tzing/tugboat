@@ -127,6 +127,10 @@ class SimpleReferenceTag(Node):
     def __str__(self) -> str:
         return self.raw
 
+    @classmethod
+    def format(cls, reference: ReferenceTuple) -> str:
+        return "{{ " + ".".join(reference) + " }}"
+
 
 class ExpressionTag(Node):
     """

@@ -170,3 +170,7 @@ class TestSimpleReferenceTag:
         assert isinstance(node, Unexpected)
         assert node.text == "{{foo.bar"
         assert node.msg == "expect closing tag '}}'"
+
+    def test_format(self):
+        assert SimpleReferenceTag.format(("foo", "bar")) == "{{ foo.bar }}"
+        assert SimpleReferenceTag.format(("foo",)) == "{{ foo }}"
