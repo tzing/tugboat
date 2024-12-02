@@ -54,6 +54,8 @@ class PlainText(Node):
 
 class SimpleReferenceTag(Node):
 
+    raw: str
+    """The raw text of the reference tag."""
     reference: ReferenceTuple
     """Reference to a variable."""
 
@@ -117,10 +119,17 @@ class SimpleReferenceTag(Node):
             return Unexpected.create(components)
 
         components.append(lexemes.pop(0))  # consume the closing tag
-        return cls(reference=tuple(reference))
+        return cls(
+            raw="".join(text for _, _, text in components),
+            reference=tuple(reference),
+        )
 
     def __str__(self) -> str:
-        return ".".join(self.reference)
+        return self.raw
+
+    @classmethod
+    def format(cls, reference: ReferenceTuple) -> str:
+        return "{{ " + ".".join(reference) + " }}"
 
 
 class ExpressionTag(Node):

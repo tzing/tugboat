@@ -52,7 +52,7 @@ class Diagnosis(typing.TypedDict):
     input: NotRequired[Any]
     """The input that caused the issue."""
 
-    fix: NotRequired[str]
+    fix: NotRequired[str | None]
     """The possible fix for the issue."""
 
     ctx: NotRequired[Any]

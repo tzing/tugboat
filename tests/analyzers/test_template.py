@@ -4,11 +4,13 @@ import logging
 from dirty_equals import IsPartialDict
 
 import tugboat.analyze
+from tests.utils import ContainsSubStrings
 
 logger = logging.getLogger(__name__)
 
 
 class TestRules:
+
     def test_analyze_template(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_AMBIGUOUS_TYPE)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
@@ -31,8 +33,8 @@ class TestRules:
             in diagnoses
         )
 
-    def test_check_input_parameters_1(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
+    def test_check_input_parameters(self):
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_PARAMETERS)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
@@ -70,28 +72,29 @@ class TestRules:
             )
             in diagnoses
         )
-
-    def test_check_input_parameters_2(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_REFERENCES)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-        assert IsPartialDict(
-            {
-                "code": "VAR001",
-                "loc": ("spec", "templates", 0, "inputs", "parameters", 0, "value"),
-            }
+        assert (
+            IsPartialDict(
+                {
+                    "code": "VAR001",
+                    "loc": ("spec", "templates", 0, "inputs", "parameters", 1, "value"),
+                }
+            )
+            in diagnoses
         )
-        assert IsPartialDict(
-            {
-                "code": "VAR002",
-                "loc": ("spec", "templates", 0, "inputs", "parameters", 2, "value"),
-                "msg": "Reference 'workflow.invalid' is not a valid parameter for the workflow 'test-'.",
-                "input": "workflow.invalid",
-                "fix": "workflow.name",
-            }
+        assert (
+            IsPartialDict(
+                {
+                    "code": "VAR002",
+                    "loc": ("spec", "templates", 0, "inputs", "parameters", 2, "value"),
+                    "msg": "Invalid parameter reference 'workflow.invalid' in parameter 'message-3'.",
+                    "input": "{{ workflow.invalid}}",
+                }
+            )
+            in diagnoses
         )
 
     def test_check_input_artifacts(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_ARTIFACTS)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
@@ -107,6 +110,46 @@ class TestRules:
                 {
                     "code": "TPL003",
                     "loc": ("spec", "templates", 0, "inputs", "artifacts", 1),
+                }
+            )
+            in diagnoses
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "VAR002",
+                    "loc": (
+                        "spec",
+                        "templates",
+                        0,
+                        "inputs",
+                        "artifacts",
+                        0,
+                        "raw",
+                        "data",
+                    ),
+                    "msg": ContainsSubStrings(
+                        "Invalid parameter reference 'workflow.namee' in artifact 'data'."
+                    ),
+                    "fix": "{{ workflow.name }}",
+                }
+            )
+            in diagnoses
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "VAR002",
+                    "loc": (
+                        "spec",
+                        "templates",
+                        0,
+                        "inputs",
+                        "artifacts",
+                        1,
+                        "from",
+                    ),
+                    "msg": "Invalid artifact reference 'invalid' in artifact 'data'.",
                 }
             )
             in diagnoses
@@ -240,22 +283,42 @@ spec:
             path: /data
 """
 
-MANIFEST_INVALID_REFERENCES = """
+
+MANIFEST_INVALID_INPUT_PARAMETERS = """
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
   generateName: test-
 spec:
+  entrypoint: test
   templates:
     - name: main
       inputs:
         parameters:
-          - name: message-1
+          - name: message # TPL002
+            valueFrom:
+              path: /malformed # M005
+          - name: message # TPL002
             value: "{{ workflow.name " # VAR001
-          - name: message-2
-            value: "{{ workflow.name }}"
           - name: message-3
-            value: "{{ workflow.invalid }}" # VAR002
+            value: "{{ workflow.invalid}}" # VAR002
+"""
+
+MANIFEST_INVALID_INPUT_ARTIFACTS = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  entrypoint: test
+  templates:
+    - name: test
+      inputs:
         artifacts:
-          - name: data
+          - name: data # TPL003
+            raw:
+              data:
+                This is a message from {{ workflow.namee }}. # VAR002
+          - name: data # TPL003
+            from: "{{ invalid }}"
 """

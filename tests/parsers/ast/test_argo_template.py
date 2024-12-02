@@ -34,7 +34,7 @@ class TestDocument:
 
     def test_reference_tag(self):
         doc = self.parse("{{ foo }}")
-        assert doc.children == [SimpleReferenceTag(reference=("foo",))]
+        assert doc.children == [SimpleReferenceTag(raw="{{ foo }}", reference=("foo",))]
         assert list(doc.iter_references()) == [
             (IsInstance(SimpleReferenceTag), ("foo",))
         ]
@@ -47,7 +47,7 @@ class TestDocument:
         doc = self.parse("Hello, {{ foo }}! I'm {{= bar }}.")
         assert doc.children == [
             PlainText(text="Hello, "),
-            SimpleReferenceTag(reference=("foo",)),
+            SimpleReferenceTag(raw="{{ foo }}", reference=("foo",)),
             PlainText(text="! I'm "),
             ExpressionTag(literal="{{= bar }}"),
             PlainText(text="."),
@@ -117,7 +117,7 @@ class TestSimpleReferenceTag:
         assert lexemes == []
 
         assert isinstance(node, SimpleReferenceTag)
-        assert str(node) == "foo"
+        assert str(node) == "{{  foo}}"
         assert node.reference == ("foo",)
 
     def test_matched_2(self):
@@ -134,7 +134,7 @@ class TestSimpleReferenceTag:
         assert lexemes == []
 
         assert isinstance(node, SimpleReferenceTag)
-        assert str(node) == "foo.bar"
+        assert str(node) == "{{foo.bar  }}"
         assert node.reference == ("foo", "bar")
 
     def test_skipped(self):
@@ -170,3 +170,7 @@ class TestSimpleReferenceTag:
         assert isinstance(node, Unexpected)
         assert node.text == "{{foo.bar"
         assert node.msg == "expect closing tag '}}'"
+
+    def test_format(self):
+        assert SimpleReferenceTag.format(("foo", "bar")) == "{{ foo.bar }}"
+        assert SimpleReferenceTag.format(("foo",)) == "{{ foo }}"
