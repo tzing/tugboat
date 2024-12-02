@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import typing
 
 from tugboat.constraints import (
@@ -51,69 +52,17 @@ def check_input_parameters(
     if not template.inputs:
         return
 
-    workflow_context = get_workflow_context_c(workflow)
+    ctx = get_workflow_context_c(workflow)
 
     # check fields for each parameter; also count the number of times each name appears
-    parameters = {}
+    parameters = collections.defaultdict(list)
     for idx, param in enumerate(template.inputs.parameters or []):
         loc = ("inputs", "parameters", idx)
 
-        yield from require_all(
-            model=param,
-            loc=loc,
-            fields=["name"],
-        )
-        yield from mutually_exclusive(
-            model=param,
-            loc=loc,
-            fields=["value", "valueFrom"],
-        )
-
         if param.name:
-            parameters.setdefault(param.name, []).append(loc)
+            parameters[param.name].append(loc)
 
-        if param.value:
-            doc = parse_template(param.value)
-            yield from prepend_loc((*loc, "value"), report_syntax_errors(doc))
-
-            for node, ref in doc.iter_references():
-                if ref not in workflow_context.parameters:
-                    wf_name = workflow.metadata.name or workflow.metadata.generateName
-                    closest = workflow_context.parameters.find_closest(ref)
-                    fix = node.model_validate({"reference": closest})
-                    yield {
-                        "code": "VAR002",
-                        "loc": (*loc, "value"),
-                        "summary": "Misused reference",
-                        "msg": f"Reference '{node}' is not a valid parameter for the workflow '{wf_name}'.",
-                        "input": str(node),
-                        "fix": str(fix),
-                    }
-
-        if param.valueFrom:
-            yield from require_exactly_one(
-                model=param.valueFrom,
-                loc=(*loc, "valueFrom"),
-                fields=[
-                    "configMapKeyRef",
-                    "expression",
-                    "parameter",
-                ],
-            )
-            yield from accept_none(
-                model=param.valueFrom,
-                loc=(*loc, "valueFrom"),
-                fields=[
-                    "event",
-                    "globalName",
-                    "jqFilter",
-                    "jsonPath",
-                    "path",
-                    "supplied",
-                ],
-            )
-
-            # TODO check expression
+        yield from prepend_loc(loc, _check_input_parameter(param, ctx))
 
     # report duplicates
     for name, locs in parameters.items():
@@ -126,6 +75,72 @@ def check_input_parameters(
                     "msg": f"Parameter name '{name}' is duplicated.",
                     "input": name,
                 }
+
+
+def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
+    sources = {}
+
+    # check fields
+    yield from require_all(
+        model=param,
+        loc=(),
+        fields=["name"],
+    )
+    yield from mutually_exclusive(
+        model=param,
+        loc=(),
+        fields=["value", "valueFrom"],
+    )
+
+    if param.value:
+        sources["value"] = param.value
+
+    if param.valueFrom:
+        yield from require_exactly_one(
+            model=param.valueFrom,
+            loc=("valueFrom",),
+            fields=[
+                "configMapKeyRef",
+                "expression",
+                "parameter",
+            ],
+        )
+        yield from accept_none(
+            model=param.valueFrom,
+            loc=("valueFrom",),
+            fields=[
+                "event",
+                "globalName",
+                "jqFilter",
+                "jsonPath",
+                "path",
+                "supplied",
+            ],
+        )
+
+        if param.valueFrom.parameter:
+            sources["valueFrom", "parameter"] = param.valueFrom.parameter
+
+        # TODO check expression
+
+    # check references
+    for loc, text in sources.items():
+        doc = parse_template(text)
+        yield from prepend_loc(loc, report_syntax_errors(doc))
+
+        for node, ref, closest in context.parameters.filter_unknown(
+            doc.iter_references()
+        ):
+            ref = ".".join(ref)
+            fix = node.format(closest)
+            yield {
+                "code": "VAR002",
+                "loc": (*loc, "raw", "data"),
+                "summary": "Misused reference",
+                "msg": f"Reference '{ref}' in parameter '{param.name}' is invalid.",
+                "input": str(node),
+                "fix": str(fix),
+            }
 
 
 @hookimpl(specname="analyze_template")
