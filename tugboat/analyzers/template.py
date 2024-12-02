@@ -100,7 +100,7 @@ def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagn
     )
 
     if param.value:
-        sources["value"] = param.value
+        sources["value",] = param.value
 
     if param.valueFrom:
         yield from require_exactly_one(
@@ -138,15 +138,15 @@ def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagn
         for node, ref, closest in context.parameters.filter_unknown(
             doc.iter_references()
         ):
-            ref = ".".join(ref)
-            fix = node.format(closest)
             yield {
                 "code": "VAR002",
                 "loc": loc,
                 "summary": "Misused reference",
-                "msg": f"Reference '{ref}' in parameter '{param.name}' is invalid.",
+                "msg": (
+                    f"Invalid parameter reference '{".".join(ref)}' in parameter '{param.name}'."
+                ),
                 "input": str(node),
-                "fix": str(fix),
+                "fix": node.format(closest),
             }
 
 
@@ -222,7 +222,7 @@ def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diag
     )
 
     if artifact.from_:
-        artifact_sources["from"] = artifact.from_
+        artifact_sources["from",] = artifact.from_
 
     # TODO fromExpression
 
@@ -237,15 +237,15 @@ def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diag
         for node, ref, closest in context.artifacts.filter_unknown(
             doc.iter_references()
         ):
-            ref = ".".join(ref)
-            fix = node.format(closest)
             yield {
                 "code": "VAR002",
                 "loc": loc,
-                "summary": "Misused reference",
-                "msg": f"Reference '{ref}' in artifact '{artifact.name}' is invalid.",
+                "summary": "Invalid reference",
+                "msg": (
+                    f"Invalid artifact reference '{".".join(ref)}' in artifact '{artifact.name}'."
+                ),
                 "input": str(node),
-                "fix": str(fix),
+                "fix": node.format(closest) if closest else None,
             }
 
     for loc, text in param_sources.items():
@@ -255,20 +255,18 @@ def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diag
         for node, ref, closest in context.parameters.filter_unknown(
             doc.iter_references()
         ):
-            ref_str = ".".join(ref)
-            fix = node.format(closest)
-
-            msg = f"Reference '{ref_str}' in artifact '{artifact.name}' is invalid."
-            if "artifacts" in ref:
-                msg += "\nNote that 'artifacts' are not available in this context."
-
             yield {
                 "code": "VAR002",
                 "loc": loc,
-                "summary": "Misused reference",
-                "msg": f"Reference '{ref}' in artifact '{artifact.name}' is invalid.",
+                "summary": "Invalid reference",
+                "msg": (
+                    f"""
+                    Invalid parameter reference '{".".join(ref)}' in artifact '{artifact.name}'.
+                    Note: Only parameter references are allowed here, even though this is an artifact object.
+                    """
+                ),
                 "input": str(node),
-                "fix": str(fix),
+                "fix": node.format(closest) if closest else None,
             }
 
 
