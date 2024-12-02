@@ -11,14 +11,21 @@ from tugboat.constraints import (
 )
 from tugboat.core import hookimpl
 from tugboat.parsers import parse_template, report_syntax_errors
-from tugboat.references import get_workflow_context_c
+from tugboat.references import get_template_context_c, get_workflow_context_c
 from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
     from tugboat.core import Diagnosis
-    from tugboat.schemas import Template, Workflow, WorkflowTemplate
+    from tugboat.references import Context
+    from tugboat.schemas import (
+        Artifact,
+        Parameter,
+        Template,
+        Workflow,
+        WorkflowTemplate,
+    )
 
 
 @hookimpl
@@ -135,7 +142,7 @@ def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagn
             fix = node.format(closest)
             yield {
                 "code": "VAR002",
-                "loc": (*loc, "raw", "data"),
+                "loc": loc,
                 "summary": "Misused reference",
                 "msg": f"Reference '{ref}' in parameter '{param.name}' is invalid.",
                 "input": str(node),
@@ -150,49 +157,17 @@ def check_input_artifacts(
     if not template.inputs:
         return
 
+    ctx = get_workflow_context_c(workflow)
+
     # check fields for each artifact; also count the number of times each name appears
-    artifacts = {}
+    artifacts = collections.defaultdict(list)
     for idx, artifact in enumerate(template.inputs.artifacts or []):
         loc = ("inputs", "artifacts", idx)
 
-        yield from require_all(
-            model=artifact,
-            loc=loc,
-            fields=["name"],
-        )
-        yield from mutually_exclusive(
-            model=artifact,
-            loc=loc,
-            fields=[
-                "artifactory",
-                "azure",
-                "from_",
-                "fromExpression",
-                "gcs",
-                "git",
-                "hdfs",
-                "http",
-                "oss",
-                "raw",
-                "s3",
-            ],
-        )
-        yield from accept_none(
-            model=artifact,
-            loc=loc,
-            fields=[
-                "archive",
-                "archiveLogs",
-                "artifactGC",
-                "deleted",
-                "globalName",
-            ],
-        )
-
         if artifact.name:
-            artifacts.setdefault(artifact.name, []).append(loc)
+            artifacts[artifact.name].append(loc)
 
-        # TODO check expression
+        yield from prepend_loc(loc, _check_input_artifact(artifact, ctx))
 
     # report duplicates
     for name, locs in artifacts.items():
@@ -205,6 +180,96 @@ def check_input_artifacts(
                     "msg": f"Parameter name '{name}' is duplicated.",
                     "input": name,
                 }
+
+
+def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
+    param_sources = {}
+    artifact_sources = {}
+
+    # check fields
+    yield from require_all(
+        model=artifact,
+        loc=(),
+        fields=["name"],
+    )
+    yield from mutually_exclusive(
+        model=artifact,
+        loc=(),
+        fields=[
+            "artifactory",
+            "azure",
+            "from_",
+            "fromExpression",
+            "gcs",
+            "git",
+            "hdfs",
+            "http",
+            "oss",
+            "raw",
+            "s3",
+        ],
+    )
+    yield from accept_none(
+        model=artifact,
+        loc=(),
+        fields=[
+            "archive",
+            "archiveLogs",
+            "artifactGC",
+            "deleted",
+            "globalName",
+        ],
+    )
+
+    if artifact.from_:
+        artifact_sources["from"] = artifact.from_
+
+    # TODO fromExpression
+
+    if artifact.raw:
+        param_sources["raw", "data"] = artifact.raw.data
+
+    # check references
+    for loc, text in artifact_sources.items():
+        doc = parse_template(text)
+        yield from prepend_loc(loc, report_syntax_errors(doc))
+
+        for node, ref, closest in context.artifacts.filter_unknown(
+            doc.iter_references()
+        ):
+            ref = ".".join(ref)
+            fix = node.format(closest)
+            yield {
+                "code": "VAR002",
+                "loc": loc,
+                "summary": "Misused reference",
+                "msg": f"Reference '{ref}' in artifact '{artifact.name}' is invalid.",
+                "input": str(node),
+                "fix": str(fix),
+            }
+
+    for loc, text in param_sources.items():
+        doc = parse_template(text)
+        yield from prepend_loc(loc, report_syntax_errors(doc))
+
+        for node, ref, closest in context.parameters.filter_unknown(
+            doc.iter_references()
+        ):
+            ref_str = ".".join(ref)
+            fix = node.format(closest)
+
+            msg = f"Reference '{ref_str}' in artifact '{artifact.name}' is invalid."
+            if "artifacts" in ref:
+                msg += "\nNote that 'artifacts' are not available in this context."
+
+            yield {
+                "code": "VAR002",
+                "loc": loc,
+                "summary": "Misused reference",
+                "msg": f"Reference '{ref}' in artifact '{artifact.name}' is invalid.",
+                "input": str(node),
+                "fix": str(fix),
+            }
 
 
 @hookimpl(specname="analyze_template")
