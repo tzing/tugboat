@@ -78,12 +78,17 @@ class TestArgoExamples:
             expected_kinds=["CronWorkflow"],
         )
 
-        for file, resource in manifests:
+        for file, data in manifests:
             try:
-                CronWorkflow.model_validate(resource)
+                manifest = CronWorkflow.model_validate(data)
             except ValidationError:
                 logger.exception("Failed to validate %s", file)
                 pytest.fail(f"Failed to validate {file}")
+
+            try:
+                hash(manifest)
+            except TypeError:
+                pytest.fail(f"Failed to hash {file}")
 
 
 def load_manifests(
