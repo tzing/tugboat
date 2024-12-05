@@ -195,7 +195,7 @@ class TestRules:
         )
 
     def test_check_output_artifacts(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_OUTPUT_ARTIFACTS)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
@@ -340,4 +340,21 @@ spec:
           - name: message # TPL004
             valueFrom:
               parameter: "{{ workflow.invalid}}" # VAR002
+"""
+
+MANIFEST_INVALID_OUTPUT_ARTIFACTS = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  templates:
+    - name: main
+      outputs:
+        artifacts:
+          - name: data # TPL005
+            path: /data
+            archive: {} # M004
+          - name: data # TPL005
+            from: '{{ invalid }}'
 """

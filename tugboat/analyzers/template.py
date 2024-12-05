@@ -346,61 +346,14 @@ def check_output_artifacts(
         return
 
     # check fields for each artifact; also count the number of times each name appears
-    artifacts = {}
+    artifacts = collections.defaultdict(list)
     for idx, artifact in enumerate(template.outputs.artifacts or []):
         loc = ("outputs", "artifacts", idx)
 
-        yield from require_all(
-            model=artifact,
-            loc=loc,
-            fields=["name"],
-        )
-        yield from require_exactly_one(
-            model=artifact,
-            loc=loc,
-            fields=[
-                "from_",
-                "fromExpression",
-                "path",
-            ],
-        )
-        yield from mutually_exclusive(
-            model=artifact,
-            loc=loc,
-            fields=[
-                "artifactory",
-                "azure",
-                "gcs",
-                "hdfs",
-                "http",
-                "oss",
-                "s3",
-            ],
-        )
-        yield from accept_none(
-            model=artifact,
-            loc=loc,
-            fields=[
-                "git",
-                "raw",
-            ],
-        )
-
         if artifact.name:
-            artifacts.setdefault(artifact.name, []).append(loc)
+            artifacts[artifact.name].append(loc)
 
-        # TODO check expression
-
-        if artifact.archive:
-            yield from require_exactly_one(
-                model=artifact.archive,
-                loc=(*loc, "archive"),
-                fields=[
-                    "none",
-                    "tar",
-                    "zip",
-                ],
-            )
+        yield from prepend_loc(loc, _check_output_artifact(artifact))
 
     # report duplicates
     for name, locs in artifacts.items():
@@ -413,3 +366,60 @@ def check_output_artifacts(
                     "msg": f"Parameter name '{name}' is duplicated.",
                     "input": name,
                 }
+
+
+def _check_output_artifact(artifact: Artifact) -> Iterable[Diagnosis]:
+    artifact_sources = {}
+
+    # check fields
+    yield from require_all(
+        model=artifact,
+        loc=(),
+        fields=["name"],
+    )
+    yield from require_exactly_one(
+        model=artifact,
+        loc=(),
+        fields=[
+            "from_",
+            "fromExpression",
+            "path",
+        ],
+    )
+    yield from mutually_exclusive(
+        model=artifact,
+        loc=(),
+        fields=[
+            "artifactory",
+            "azure",
+            "gcs",
+            "hdfs",
+            "http",
+            "oss",
+            "s3",
+        ],
+    )
+    yield from accept_none(
+        model=artifact,
+        loc=(),
+        fields=[
+            "git",
+            "raw",
+        ],
+    )
+
+    if artifact.archive:
+        yield from require_exactly_one(
+            model=artifact.archive,
+            loc=("archive",),
+            fields=[
+                "none",
+                "tar",
+                "zip",
+            ],
+        )
+
+    if artifact.from_:
+        artifact_sources["from",] = artifact.from_
+
+    # TODO artifact.fromExpression
