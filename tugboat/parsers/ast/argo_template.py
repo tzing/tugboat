@@ -128,8 +128,12 @@ class SimpleReferenceTag(Node):
         return self.raw
 
     @classmethod
-    def format(cls, reference: ReferenceTuple) -> str:
-        return "{{ " + ".".join(reference) + " }}"
+    def format(cls, reference: ReferenceTuple) -> str | None:
+        """
+        Create a string representation of the reference in the same format as
+        this reference tag type.
+        """
+        return "{{ " + ".".join(reference) + " }}" if reference else None
 
 
 class ExpressionTag(Node):
