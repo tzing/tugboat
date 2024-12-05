@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict
 
-from tugboat.schemas.basic import ConfigMapKeySelector, Empty
+from tugboat.schemas.basic import Array, ConfigMapKeySelector, Empty
 
 
 class _BaseModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
 
 class Parameter(_BaseModel):
@@ -17,9 +15,9 @@ class Parameter(_BaseModel):
 
     default: str | None = None
     description: str | None = None
-    enum: list[str] | None = None
+    enum: Array[str] | None = None
     globalName: str | None = None
-    value: Any | None = None
+    value: bool | int | str | None = None
     valueFrom: ValueFrom | None = None
 
 
