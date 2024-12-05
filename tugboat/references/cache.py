@@ -13,32 +13,27 @@ if typing.TYPE_CHECKING:
     from tugboat.references.context import Context
 
 
-def cache(max_size: int):
+class cache:
     """
     Decorator to cache the results of a function.
 
-    This is a specialized version of :py:func:`functools.lru_cache` that uses the
-    input object IDs as keys and returns a copy of the cached value.
-
-    It uses input object IDs as keys because the input objects are Pydantic
-    models, which are mutable. Due to this, the cache key is based on the object
-    IDs, but developers should be aware that this can lead to unexpected behavior
-    if the same object is passed multiple times.
+    This decorator is like :py:func:`functools.lru_cache`, but it returns a copy
+    of the cached value instead of the original value.
     """
 
-    def _decorator[**P](func: Callable[P, Context]) -> Callable[P, Context]:
-        store = LruDict(max_size=max_size)
+    def __init__(self, max_size: int):
+        self.max_size = max_size
+        self.store = LruDict(max_size=max_size)
 
+    def __call__(self, func: Callable[..., Context]) -> Callable[..., Context]:
         @functools.wraps(func)
         def _wrapper(*args, **kwargs):
-            key = tuple(id(arg) for arg in args)
-            if (value := store.get(key)) is None:
-                store[key] = value = func(*args, **kwargs)
+            assert not kwargs
+            if (value := self.store.get(args)) is None:
+                self.store[args] = value = func(*args, **kwargs)
             return copy.deepcopy(value)
 
         return _wrapper
-
-    return _decorator
 
 
 class LruDict[TK, TV](collections.OrderedDict[TK, TV]):
