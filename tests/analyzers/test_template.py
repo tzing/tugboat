@@ -156,7 +156,7 @@ class TestRules:
         )
 
     def test_check_output_parameters(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_OUTPUT_PARAMETERS)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
@@ -186,7 +186,7 @@ class TestRules:
                         0,
                         "outputs",
                         "parameters",
-                        1,
+                        0,
                         "valueFrom",
                     ),
                 }
@@ -321,4 +321,23 @@ spec:
                 This is a message from {{ workflow.namee }}. # VAR002
           - name: data # TPL003
             from: "{{ invalid }}" # VAR002
+"""
+
+MANIFEST_INVALID_OUTPUT_PARAMETERS = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  entrypoint: main
+  templates:
+    - name: main
+      container:
+        image: busybox:latest
+      outputs:
+        parameters:
+          - name: message # TPL004
+          - name: message # TPL004
+            valueFrom:
+              parameter: "{{ workflow.invalid}}" # VAR002
 """

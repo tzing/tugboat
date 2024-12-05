@@ -279,41 +279,14 @@ def check_output_parameters(
         return
 
     # check fields for each parameter; also count the number of times each name appears
-    parameters = {}
+    parameters = collections.defaultdict(list)
     for idx, param in enumerate(template.outputs.parameters or []):
         loc = ("outputs", "parameters", idx)
 
-        yield from require_all(
-            model=param,
-            loc=loc,
-            fields=["name", "valueFrom"],
-        )
-        yield from accept_none(
-            model=param,
-            loc=loc,
-            fields=["value"],
-        )
-
         if param.name:
-            parameters.setdefault(param.name, []).append(loc)
+            parameters[param.name].append(loc)
 
-        if param.valueFrom:
-            yield from require_exactly_one(
-                model=param.valueFrom,
-                loc=(*loc, "valueFrom"),
-                fields=[
-                    "configMapKeyRef",
-                    "event",
-                    "expression",
-                    "jqFilter",
-                    "jsonPath",
-                    "parameter",
-                    "path",
-                    "supplied",
-                ],
-            )
-
-            # TODO check expression
+        yield from prepend_loc(loc, _check_output_parameter(param))
 
     # report duplicates
     for name, locs in parameters.items():
@@ -326,6 +299,43 @@ def check_output_parameters(
                     "msg": f"Parameter name '{name}' is duplicated.",
                     "input": name,
                 }
+
+
+def _check_output_parameter(param: Parameter) -> Iterable[Diagnosis]:
+    sources = {}
+
+    # check fields
+    yield from require_all(
+        model=param,
+        loc=(),
+        fields=["name", "valueFrom"],
+    )
+    yield from accept_none(
+        model=param,
+        loc=(),
+        fields=["value"],
+    )
+
+    if param.valueFrom:
+        yield from require_exactly_one(
+            model=param.valueFrom,
+            loc=("valueFrom",),
+            fields=[
+                "configMapKeyRef",
+                "event",
+                "expression",
+                "jqFilter",
+                "jsonPath",
+                "parameter",
+                "path",
+                "supplied",
+            ],
+        )
+
+        # TODO check expression
+
+        if param.valueFrom.parameter:
+            sources["valueFrom", "parameter"] = param.valueFrom.parameter
 
 
 @hookimpl(specname="analyze_template")
