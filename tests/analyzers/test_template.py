@@ -86,7 +86,7 @@ class TestRules:
                 {
                     "code": "VAR002",
                     "loc": ("spec", "templates", 0, "inputs", "parameters", 2, "value"),
-                    "msg": "Invalid parameter reference 'workflow.invalid' in parameter 'message-3'.",
+                    "msg": "The parameter reference 'workflow.invalid' used in parameter 'message-3' is invalid.",
                     "input": "{{ workflow.invalid}}",
                 }
             )
@@ -129,7 +129,7 @@ class TestRules:
                         "data",
                     ),
                     "msg": ContainsSubStrings(
-                        "Invalid parameter reference 'workflow.namee' in artifact 'data'."
+                        "The parameter reference 'workflow.namee' used in artifact 'data' is invalid.",
                     ),
                     "fix": "{{ workflow.name }}",
                 }
@@ -149,7 +149,7 @@ class TestRules:
                         1,
                         "from",
                     ),
-                    "msg": "Invalid artifact reference 'invalid' in artifact 'data'.",
+                    "msg": "The artifact reference 'invalid' used in artifact 'data' is invalid.",
                 }
             )
             in diagnoses
@@ -320,5 +320,5 @@ spec:
               data:
                 This is a message from {{ workflow.namee }}. # VAR002
           - name: data # TPL003
-            from: "{{ invalid }}"
+            from: "{{ invalid }}" # VAR002
 """

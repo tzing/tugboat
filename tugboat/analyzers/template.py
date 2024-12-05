@@ -143,7 +143,8 @@ def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagn
                 "loc": loc,
                 "summary": "Invalid reference",
                 "msg": (
-                    f"Invalid parameter reference '{".".join(ref)}' in parameter '{param.name}'."
+                    f"The parameter reference '{".".join(ref)}' used in parameter "
+                    f"'{param.name}' is invalid."
                 ),
                 "input": str(node),
                 "fix": node.format(closest),
@@ -242,7 +243,7 @@ def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diag
                 "loc": loc,
                 "summary": "Invalid reference",
                 "msg": (
-                    f"Invalid artifact reference '{".".join(ref)}' in artifact '{artifact.name}'."
+                    f"The artifact reference '{".".join(ref)}' used in artifact '{artifact.name}' is invalid."
                 ),
                 "input": str(node),
                 "fix": node.format(closest),
@@ -261,7 +262,7 @@ def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diag
                 "summary": "Invalid reference",
                 "msg": (
                     f"""
-                    Invalid parameter reference '{".".join(ref)}' in artifact '{artifact.name}'.
+                    The parameter reference '{".".join(ref)}' used in artifact '{artifact.name}' is invalid.
                     Note: Only parameter references are allowed here, even though this is an artifact object.
                     """
                 ),
