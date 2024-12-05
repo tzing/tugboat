@@ -2,13 +2,36 @@ import logging
 from collections.abc import Sequence
 from pathlib import Path
 
+import frozendict
 import pytest
 import ruamel.yaml
-from pydantic import ValidationError
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from tugboat.schemas import CronWorkflow, Workflow, WorkflowTemplate
+from tugboat.schemas.basic import Dict
 
 logger = logging.getLogger(__name__)
+
+
+class TestDict:
+
+    def test_typed(self):
+        class Model(BaseModel):
+            data: Dict[str, int]
+
+        m = Model.model_validate({"data": {"a": 1}})
+        assert isinstance(m.data, frozendict.frozendict)
+        assert m.model_dump() == {"data": {"a": 1}}
+
+    def test_untyped(self):
+        ta = TypeAdapter(Dict)
+        assert ta.validate_python({"a": 1}) == {"a": 1}
+        assert ta.validate_python({"foo": "bar"}) == {"foo": "bar"}
+
+    def test_validation_error(self):
+        ta = TypeAdapter(Dict[str, str])
+        with pytest.raises(ValidationError):
+            ta.validate_python({"a": 1})
 
 
 class TestArgoExamples:
