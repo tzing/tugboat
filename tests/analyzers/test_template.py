@@ -250,40 +250,6 @@ spec:
         source: print("hello world!")
 """
 
-MANIFEST_DUPLICATE_ARGUMENTS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  templates:
-    - name: main
-      inputs:
-        parameters:
-          - name: message # TPL002
-            valueFrom:
-              path: /malformed # M005
-          - name: message # TPL002
-        artifacts:
-          - name: data # TPL003
-          - name: data # TPL003
-      container:
-        image: busybox:latest
-      outputs:
-        parameters:
-          - name: message # TPL004
-            valueFrom:
-              path: /data/message
-          - name: message # TPL004, M004
-        artifacts:
-          - name: data # TPL005
-            path: /data
-            archive: {} # M004
-          - name: data # TPL005
-            path: /data
-"""
-
-
 MANIFEST_INVALID_INPUT_PARAMETERS = """
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
