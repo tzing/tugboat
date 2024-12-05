@@ -86,7 +86,7 @@ class TestRules:
                 {
                     "code": "VAR002",
                     "loc": ("spec", "templates", 0, "inputs", "parameters", 2, "value"),
-                    "msg": "Invalid parameter reference 'workflow.invalid' in parameter 'message-3'.",
+                    "msg": "The parameter reference 'workflow.invalid' used in parameter 'message-3' is invalid.",
                     "input": "{{ workflow.invalid}}",
                 }
             )
@@ -129,7 +129,7 @@ class TestRules:
                         "data",
                     ),
                     "msg": ContainsSubStrings(
-                        "Invalid parameter reference 'workflow.namee' in artifact 'data'."
+                        "The parameter reference 'workflow.namee' used in artifact 'data' is invalid.",
                     ),
                     "fix": "{{ workflow.name }}",
                 }
@@ -149,14 +149,14 @@ class TestRules:
                         1,
                         "from",
                     ),
-                    "msg": "Invalid artifact reference 'invalid' in artifact 'data'.",
+                    "msg": "The artifact reference 'invalid' used in artifact 'data' is invalid.",
                 }
             )
             in diagnoses
         )
 
     def test_check_output_parameters(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_OUTPUT_PARAMETERS)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
@@ -186,7 +186,7 @@ class TestRules:
                         0,
                         "outputs",
                         "parameters",
-                        1,
+                        0,
                         "valueFrom",
                     ),
                 }
@@ -195,7 +195,7 @@ class TestRules:
         )
 
     def test_check_output_artifacts(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_ARGUMENTS)
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_OUTPUT_ARTIFACTS)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
@@ -250,40 +250,6 @@ spec:
         source: print("hello world!")
 """
 
-MANIFEST_DUPLICATE_ARGUMENTS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  templates:
-    - name: main
-      inputs:
-        parameters:
-          - name: message # TPL002
-            valueFrom:
-              path: /malformed # M005
-          - name: message # TPL002
-        artifacts:
-          - name: data # TPL003
-          - name: data # TPL003
-      container:
-        image: busybox:latest
-      outputs:
-        parameters:
-          - name: message # TPL004
-            valueFrom:
-              path: /data/message
-          - name: message # TPL004, M004
-        artifacts:
-          - name: data # TPL005
-            path: /data
-            archive: {} # M004
-          - name: data # TPL005
-            path: /data
-"""
-
-
 MANIFEST_INVALID_INPUT_PARAMETERS = """
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
@@ -320,5 +286,41 @@ spec:
               data:
                 This is a message from {{ workflow.namee }}. # VAR002
           - name: data # TPL003
-            from: "{{ invalid }}"
+            from: "{{ invalid }}" # VAR002
+"""
+
+MANIFEST_INVALID_OUTPUT_PARAMETERS = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  entrypoint: main
+  templates:
+    - name: main
+      container:
+        image: busybox:latest
+      outputs:
+        parameters:
+          - name: message # TPL004
+          - name: message # TPL004
+            valueFrom:
+              parameter: "{{ workflow.invalid}}" # VAR002
+"""
+
+MANIFEST_INVALID_OUTPUT_ARTIFACTS = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  templates:
+    - name: main
+      outputs:
+        artifacts:
+          - name: data # TPL005
+            path: /data
+            archive: {} # M004
+          - name: data # TPL005
+            from: '{{ invalid }}'
 """

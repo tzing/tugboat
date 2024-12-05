@@ -143,7 +143,8 @@ def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagn
                 "loc": loc,
                 "summary": "Invalid reference",
                 "msg": (
-                    f"Invalid parameter reference '{".".join(ref)}' in parameter '{param.name}'."
+                    f"The parameter reference '{".".join(ref)}' used in parameter "
+                    f"'{param.name}' is invalid."
                 ),
                 "input": str(node),
                 "fix": node.format(closest),
@@ -242,7 +243,7 @@ def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diag
                 "loc": loc,
                 "summary": "Invalid reference",
                 "msg": (
-                    f"Invalid artifact reference '{".".join(ref)}' in artifact '{artifact.name}'."
+                    f"The artifact reference '{".".join(ref)}' used in artifact '{artifact.name}' is invalid."
                 ),
                 "input": str(node),
                 "fix": node.format(closest),
@@ -261,7 +262,7 @@ def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diag
                 "summary": "Invalid reference",
                 "msg": (
                     f"""
-                    Invalid parameter reference '{".".join(ref)}' in artifact '{artifact.name}'.
+                    The parameter reference '{".".join(ref)}' used in artifact '{artifact.name}' is invalid.
                     Note: Only parameter references are allowed here, even though this is an artifact object.
                     """
                 ),
@@ -278,41 +279,14 @@ def check_output_parameters(
         return
 
     # check fields for each parameter; also count the number of times each name appears
-    parameters = {}
+    parameters = collections.defaultdict(list)
     for idx, param in enumerate(template.outputs.parameters or []):
         loc = ("outputs", "parameters", idx)
 
-        yield from require_all(
-            model=param,
-            loc=loc,
-            fields=["name", "valueFrom"],
-        )
-        yield from accept_none(
-            model=param,
-            loc=loc,
-            fields=["value"],
-        )
-
         if param.name:
-            parameters.setdefault(param.name, []).append(loc)
+            parameters[param.name].append(loc)
 
-        if param.valueFrom:
-            yield from require_exactly_one(
-                model=param.valueFrom,
-                loc=(*loc, "valueFrom"),
-                fields=[
-                    "configMapKeyRef",
-                    "event",
-                    "expression",
-                    "jqFilter",
-                    "jsonPath",
-                    "parameter",
-                    "path",
-                    "supplied",
-                ],
-            )
-
-            # TODO check expression
+        yield from prepend_loc(loc, _check_output_parameter(param))
 
     # report duplicates
     for name, locs in parameters.items():
@@ -327,6 +301,43 @@ def check_output_parameters(
                 }
 
 
+def _check_output_parameter(param: Parameter) -> Iterable[Diagnosis]:
+    sources = {}
+
+    # check fields
+    yield from require_all(
+        model=param,
+        loc=(),
+        fields=["name", "valueFrom"],
+    )
+    yield from accept_none(
+        model=param,
+        loc=(),
+        fields=["value"],
+    )
+
+    if param.valueFrom:
+        yield from require_exactly_one(
+            model=param.valueFrom,
+            loc=("valueFrom",),
+            fields=[
+                "configMapKeyRef",
+                "event",
+                "expression",
+                "jqFilter",
+                "jsonPath",
+                "parameter",
+                "path",
+                "supplied",
+            ],
+        )
+
+        # TODO check expression
+
+        if param.valueFrom.parameter:
+            sources["valueFrom", "parameter"] = param.valueFrom.parameter
+
+
 @hookimpl(specname="analyze_template")
 def check_output_artifacts(
     template: Template, workflow: Workflow | WorkflowTemplate
@@ -335,61 +346,14 @@ def check_output_artifacts(
         return
 
     # check fields for each artifact; also count the number of times each name appears
-    artifacts = {}
+    artifacts = collections.defaultdict(list)
     for idx, artifact in enumerate(template.outputs.artifacts or []):
         loc = ("outputs", "artifacts", idx)
 
-        yield from require_all(
-            model=artifact,
-            loc=loc,
-            fields=["name"],
-        )
-        yield from require_exactly_one(
-            model=artifact,
-            loc=loc,
-            fields=[
-                "from_",
-                "fromExpression",
-                "path",
-            ],
-        )
-        yield from mutually_exclusive(
-            model=artifact,
-            loc=loc,
-            fields=[
-                "artifactory",
-                "azure",
-                "gcs",
-                "hdfs",
-                "http",
-                "oss",
-                "s3",
-            ],
-        )
-        yield from accept_none(
-            model=artifact,
-            loc=loc,
-            fields=[
-                "git",
-                "raw",
-            ],
-        )
-
         if artifact.name:
-            artifacts.setdefault(artifact.name, []).append(loc)
+            artifacts[artifact.name].append(loc)
 
-        # TODO check expression
-
-        if artifact.archive:
-            yield from require_exactly_one(
-                model=artifact.archive,
-                loc=(*loc, "archive"),
-                fields=[
-                    "none",
-                    "tar",
-                    "zip",
-                ],
-            )
+        yield from prepend_loc(loc, _check_output_artifact(artifact))
 
     # report duplicates
     for name, locs in artifacts.items():
@@ -402,3 +366,60 @@ def check_output_artifacts(
                     "msg": f"Parameter name '{name}' is duplicated.",
                     "input": name,
                 }
+
+
+def _check_output_artifact(artifact: Artifact) -> Iterable[Diagnosis]:
+    artifact_sources = {}
+
+    # check fields
+    yield from require_all(
+        model=artifact,
+        loc=(),
+        fields=["name"],
+    )
+    yield from require_exactly_one(
+        model=artifact,
+        loc=(),
+        fields=[
+            "from_",
+            "fromExpression",
+            "path",
+        ],
+    )
+    yield from mutually_exclusive(
+        model=artifact,
+        loc=(),
+        fields=[
+            "artifactory",
+            "azure",
+            "gcs",
+            "hdfs",
+            "http",
+            "oss",
+            "s3",
+        ],
+    )
+    yield from accept_none(
+        model=artifact,
+        loc=(),
+        fields=[
+            "git",
+            "raw",
+        ],
+    )
+
+    if artifact.archive:
+        yield from require_exactly_one(
+            model=artifact.archive,
+            loc=("archive",),
+            fields=[
+                "none",
+                "tar",
+                "zip",
+            ],
+        )
+
+    if artifact.from_:
+        artifact_sources["from",] = artifact.from_
+
+    # TODO artifact.fromExpression
