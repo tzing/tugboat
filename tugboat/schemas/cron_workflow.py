@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
+from tugboat.schemas.basic import Array
 from tugboat.schemas.manifest import Manifest
 from tugboat.schemas.workflow import WorkflowSpec
 
@@ -20,7 +21,7 @@ class CronWorkflowSpec(BaseModel):
     concurrencyPolicy: str | None = None
     failedJobsHistoryLimit: int | None = None
     schedule: str | None = None
-    schedules: list[str] | None = None
+    schedules: Array[str] | None = None
     startingDeadlineSeconds: int | None = None
     successfulJobsHistoryLimit: int | None = None
     suspend: bool | None = None
@@ -30,6 +31,10 @@ class CronWorkflowSpec(BaseModel):
 
     stopStrategy: Any | None = None
     workflowMetadata: Any | None = None
+
+    def __hash__(self):
+        # Override the default __hash__ method to skip unhashable fields.
+        return hash((self.schedule, self.schedules, self.workflowSpec))
 
 
 class CronWorkflow(Manifest[CronWorkflowSpec]):

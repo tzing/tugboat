@@ -3,6 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 from tugboat.schemas.basic import (
+    Array,
     ConfigMapKeySelector,
     Empty,
     KeyValuePair,
@@ -13,7 +14,7 @@ from tugboat.schemas.basic import (
 
 
 class _BaseModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
 
 class Artifact(_BaseModel):
@@ -101,7 +102,7 @@ class GitArtifact(_BaseModel):
     branch: str | None = None
     depth: int | None = None
     disableSubmodules: bool | None = None
-    fetch: list[str] | None = None
+    fetch: Array[str] | None = None
     insecureIgnoreHostKey: bool | None = None
     insecureSkipTLS: bool | None = None
     passwordSecret: SecretKeySelector | None = None
@@ -116,7 +117,7 @@ class GitArtifact(_BaseModel):
 # hdfs
 # ----------------------------------------------------------------------------
 class HdfsArtifact(_BaseModel):
-    addresses: list[str]
+    addresses: Array[str]
     dataTransferProtection: str | None = None
     force: bool | None = None
     hdfsUser: str
@@ -134,7 +135,7 @@ class HdfsArtifact(_BaseModel):
 # ----------------------------------------------------------------------------
 class HttpArtifact(_BaseModel):
     auth: HttpAuth | None = None
-    headers: list[NameValuePair] | None = None
+    headers: Array[NameValuePair] | None = None
     url: str
 
 
@@ -157,8 +158,8 @@ class HttpAuth(_BaseModel):
 class OAuth2Auth(_BaseModel):
     clientIDSecret: SecretKeySelector
     clientSecretSecret: SecretKeySelector
-    endpointParams: list[KeyValuePair] | None = None
-    scopes: list[str] | None = None
+    endpointParams: Array[KeyValuePair] | None = None
+    scopes: Array[str] | None = None
     tokenURLSecret: SecretKeySelector | None = None
 
 

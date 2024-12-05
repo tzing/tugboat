@@ -4,11 +4,12 @@ from pydantic import BaseModel, ConfigDict
 
 from tugboat.schemas.arguments.artifact import Artifact
 from tugboat.schemas.arguments.parameter import Parameter
+from tugboat.schemas.basic import Array
 
 
 class Arguments(BaseModel):
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
-    parameters: list[Parameter] | None = None
-    artifacts: list[Artifact] | None = None
+    parameters: Array[Parameter] | None = None
+    artifacts: Array[Artifact] | None = None

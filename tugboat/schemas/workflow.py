@@ -5,6 +5,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict
 
 from tugboat.schemas.arguments import Arguments
+from tugboat.schemas.basic import Array, Dict
 from tugboat.schemas.manifest import Manifest
 from tugboat.schemas.template import Template
 
@@ -16,7 +17,7 @@ class WorkflowSpec(BaseModel):
     .. _WorkflowSpec: https://argo-workflows.readthedocs.io/en/latest/fields/#workflowspec
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     activeDeadlineSeconds: int | None = None
     archiveLogs: bool | None = None
@@ -25,7 +26,7 @@ class WorkflowSpec(BaseModel):
     dnsPolicy: str | None = None
     entrypoint: str | None = None
     hostNetwork: bool | None = None
-    nodeSelector: dict[str, str] | None = None
+    nodeSelector: Dict[str, str] | None = None
     onExit: str | None = None
     parallelism: int | None = None
     podPriorityClassName: str | None = None
@@ -36,7 +37,7 @@ class WorkflowSpec(BaseModel):
     shutdown: str | None = None
     suspend: bool | None = None
     templateDefaults: Template | None = None
-    templates: list[Template] | None = None
+    templates: Array[Template] | None = None
     workflowTemplateRef: WorkflowTemplateRef | None = None
 
     affinity: Any | None = None
@@ -45,8 +46,8 @@ class WorkflowSpec(BaseModel):
     dnsConfig: Any | None = None
     executor: Any | None = None
     hooks: Any | None = None
-    hostAliases: list[Any] | None = None
-    imagePullSecrets: list[Any] | None = None
+    hostAliases: Array[Any] | None = None
+    imagePullSecrets: Array[Any] | None = None
     metrics: Any | None = None
     podDisruptionBudget: Any | None = None
     podGC: Any | None = None
@@ -54,17 +55,21 @@ class WorkflowSpec(BaseModel):
     retryStrategy: Any | None = None
     securityContext: Any | None = None
     synchronization: Any | None = None
-    tolerations: list[Any] | None = None
+    tolerations: Array[Any] | None = None
     ttlStrategy: Any | None = None
     volumeClaimGC: Any | None = None
-    volumeClaimTemplates: list[Any] | None = None
-    volumes: list[Any] | None = None
+    volumeClaimTemplates: Array[Any] | None = None
+    volumes: Array[Any] | None = None
     workflowMetadata: Any | None = None
+
+    def __hash__(self):
+        # Override the default __hash__ method to skip unhashable fields.
+        return hash((self.arguments, self.templates))
 
 
 class WorkflowTemplateRef(BaseModel):
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     name: str
     clusterScope: bool | None = None
