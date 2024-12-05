@@ -45,7 +45,7 @@ class Dict[TK, TV](frozendict.frozendict[TK, TV]):
 
 
 class _BaseModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
 
 class ConfigMapKeySelector(_BaseModel):
@@ -68,8 +68,8 @@ class NameValuePair(_BaseModel):
 
 
 class PodMetadata(_BaseModel):
-    annotations: dict[str, str] | None = None
-    labels: dict[str, str] | None = None
+    annotations: Dict[str, str] | None = None
+    labels: Dict[str, str] | None = None
 
 
 class SecretKeySelector(_BaseModel):
