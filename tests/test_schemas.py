@@ -52,12 +52,17 @@ class TestArgoExamples:
             ],
         )
 
-        for file, resource in manifests:
+        for file, data in manifests:
             try:
-                Workflow.model_validate(resource)
+                manifest = Workflow.model_validate(data)
             except ValidationError:
                 logger.exception("Failed to validate %s", file)
                 pytest.fail(f"Failed to validate {file}")
+
+            try:
+                hash(manifest)
+            except TypeError:
+                pytest.fail(f"Failed to hash {file}")
 
     def test_workflowtemplate(self, argo_example_dir: Path):
         manifests = load_manifests(
@@ -65,12 +70,17 @@ class TestArgoExamples:
             expected_kinds=["WorkflowTemplate"],
         )
 
-        for file, resource in manifests:
+        for file, data in manifests:
             try:
-                WorkflowTemplate.model_validate(resource)
+                manifest = WorkflowTemplate.model_validate(data)
             except ValidationError:
                 logger.exception("Failed to validate %s", file)
                 pytest.fail(f"Failed to validate {file}")
+
+            try:
+                hash(manifest)
+            except TypeError:
+                pytest.fail(f"Failed to hash {file}")
 
     def test_cronworkflow(self, argo_example_dir: Path):
         manifests = load_manifests(

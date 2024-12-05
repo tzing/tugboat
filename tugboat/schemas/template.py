@@ -5,6 +5,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict
 
 from tugboat.schemas.arguments import Arguments
+from tugboat.schemas.basic import Array, Dict
 
 
 class Template(BaseModel):
@@ -14,7 +15,7 @@ class Template(BaseModel):
     .. _Template: https://argo-workflows.readthedocs.io/en/latest/fields/#template
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     activeDeadlineSeconds: int | str | None = None
     automountServiceAccountToken: bool | None = None
@@ -23,7 +24,7 @@ class Template(BaseModel):
     failFast: bool | None = None
     inputs: Arguments | None = None
     name: str | None = None
-    nodeSelector: dict[str, str] | None = None
+    nodeSelector: Dict[str, str] | None = None
     outputs: Arguments | None = None
     parallelism: int | None = None
     podSpecPatch: str | None = None
@@ -32,7 +33,7 @@ class Template(BaseModel):
     schedulerName: str | None = None
     script: ScriptTemplate | None = None
     serviceAccountName: str | None = None
-    steps: list[list[Step]] | None = None
+    steps: Array[Array[Step]] | None = None
     timeout: str | None = None
 
     affinity: Any | None = None
@@ -41,9 +42,9 @@ class Template(BaseModel):
     dag: Any | None = None
     data: Any | None = None
     executor: Any | None = None
-    hostAliases: list[Any] | None = None
+    hostAliases: Array[Any] | None = None
     http: Any | None = None
-    initContainers: list[Any] | None = None
+    initContainers: Array[Any] | None = None
     memoize: Any | None = None
     metadata: Any | None = None
     metrics: Any | None = None
@@ -51,11 +52,15 @@ class Template(BaseModel):
     resource: Any | None = None
     retryStrategy: Any | None = None
     securityContext: Any | None = None
-    sidecars: list[Any] | None = None
+    sidecars: Array[Any] | None = None
     suspend: Any | None = None
     synchronization: Any | None = None
-    tolerations: list[Any] | None = None
-    volumes: list[Any] | None = None
+    tolerations: Array[Any] | None = None
+    volumes: Array[Any] | None = None
+
+    def __hash__(self):
+        # Override the default __hash__ method to skip unhashable fields.
+        return hash((self.name, self.container, self.script, self.steps))
 
 
 # ----------------------------------------------------------------------------
@@ -63,11 +68,11 @@ class Template(BaseModel):
 # ----------------------------------------------------------------------------
 class _ContainerEntry(BaseModel):
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     image: str
 
-    command: list[str] | None = None
+    command: Array[str] | None = None
     imagePullPolicy: Literal["Always", "Never", "IfNotPresent"] | None = None
     name: str | None = None
     restartPolicy: Literal["Always"] | None = None
@@ -78,18 +83,18 @@ class _ContainerEntry(BaseModel):
     tty: bool | None = None
     workingDir: str | None = None
 
-    env: list[Any] | None = None
-    envFrom: list[Any] | None = None
+    env: Array[Any] | None = None
+    envFrom: Array[Any] | None = None
     lifecycle: Any | None = None
     livenessProbe: Any | None = None
-    ports: list[Any] | None = None
+    ports: Array[Any] | None = None
     readinessProbe: Any | None = None
-    resizePolicy: list[Any] | None = None
+    resizePolicy: Array[Any] | None = None
     resources: Any | None = None
     securityContext: Any | None = None
     startupProbe: Any | None = None
-    volumeDevices: list[Any] | None = None
-    volumeMounts: list[Any] | None = None
+    volumeDevices: Array[Any] | None = None
+    volumeMounts: Array[Any] | None = None
 
 
 class ContainerTemplate(_ContainerEntry):
@@ -99,7 +104,10 @@ class ContainerTemplate(_ContainerEntry):
     .. _container: https://argo-workflows.readthedocs.io/en/latest/fields/#container
     """
 
-    args: list[str] | None = None
+    args: Array[str] | None = None
+
+    def __hash__(self):
+        return hash((self.image, self.command, self.args))
 
 
 class ScriptTemplate(_ContainerEntry):
@@ -110,6 +118,9 @@ class ScriptTemplate(_ContainerEntry):
     """
 
     source: str
+
+    def __hash__(self):
+        return hash((self.image, self.source))
 
 
 # ----------------------------------------------------------------------------
@@ -122,7 +133,7 @@ class Step(BaseModel):
     .. _Step: https://argo-workflows.readthedocs.io/en/latest/fields/#workflowstep
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     name: str
 
@@ -135,8 +146,11 @@ class Step(BaseModel):
 
     continueOn: Any | None = None
     hooks: Any | None = None
-    withItems: list[Any] | None = None
+    withItems: Array[Any] | None = None
     withSequence: Any | None = None
+
+    def __hash__(self):
+        return hash((self.name, self.template, self.templateRef))
 
 
 class TemplateRef(BaseModel):
@@ -146,7 +160,7 @@ class TemplateRef(BaseModel):
     .. _TemplateRef: https://argo-workflows.readthedocs.io/en/latest/fields/#templateref
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     clusterScope: bool | None = None
     name: str
