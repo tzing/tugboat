@@ -174,3 +174,4 @@ class TestSimpleReferenceTag:
     def test_format(self):
         assert SimpleReferenceTag.format(("foo", "bar")) == "{{ foo.bar }}"
         assert SimpleReferenceTag.format(("foo",)) == "{{ foo }}"
+        assert SimpleReferenceTag.format(()) is None

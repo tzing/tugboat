@@ -26,6 +26,7 @@ class ArgoTemplateLexer(RegexLexer):
             (words(("{{=",)), Punctuation, "expression"),
             (words(("{{",)), Punctuation, "simple-reference"),
             (r"[^{]+", Text),
+            (r"{", Text),
         ],
         "simple-reference": [
             (r"\s+", Whitespace),

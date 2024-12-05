@@ -141,7 +141,7 @@ def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagn
             yield {
                 "code": "VAR002",
                 "loc": loc,
-                "summary": "Misused reference",
+                "summary": "Invalid reference",
                 "msg": (
                     f"Invalid parameter reference '{".".join(ref)}' in parameter '{param.name}'."
                 ),
@@ -245,7 +245,7 @@ def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diag
                     f"Invalid artifact reference '{".".join(ref)}' in artifact '{artifact.name}'."
                 ),
                 "input": str(node),
-                "fix": node.format(closest) if closest else None,
+                "fix": node.format(closest),
             }
 
     for loc, text in param_sources.items():
@@ -266,7 +266,7 @@ def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diag
                     """
                 ),
                 "input": str(node),
-                "fix": node.format(closest) if closest else None,
+                "fix": node.format(closest),
             }
 
 
