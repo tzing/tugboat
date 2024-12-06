@@ -4,7 +4,7 @@ import pytest
 from dirty_equals import IsInstance
 
 from tugboat.parsers import Node
-from tugboat.references import get_global_context, get_workflow_context_c
+from tugboat.references import get_global_context, get_workflow_context
 from tugboat.references.cache import LruDict, cache
 from tugboat.references.context import AnyStr, Context, ReferenceCollection
 from tugboat.schemas import Workflow
@@ -228,7 +228,7 @@ class TestGetWorkflowContext:
             }
         )
 
-        ctx = get_workflow_context_c(workflow)
+        ctx = get_workflow_context(workflow)
         assert isinstance(ctx, Context)
 
         assert ("workflow", "name") in ctx.parameters
