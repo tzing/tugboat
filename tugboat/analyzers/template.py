@@ -11,7 +11,7 @@ from tugboat.constraints import (
 )
 from tugboat.core import hookimpl
 from tugboat.parsers import parse_template, report_syntax_errors
-from tugboat.references import get_workflow_context_c
+from tugboat.references import get_workflow_context
 from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:
@@ -59,7 +59,7 @@ def check_input_parameters(
     if not template.inputs:
         return
 
-    ctx = get_workflow_context_c(workflow)
+    ctx = get_workflow_context(workflow)
 
     # check fields for each parameter; also count the number of times each name appears
     parameters = collections.defaultdict(list)
@@ -158,7 +158,7 @@ def check_input_artifacts(
     if not template.inputs:
         return
 
-    ctx = get_workflow_context_c(workflow)
+    ctx = get_workflow_context(workflow)
 
     # check fields for each artifact; also count the number of times each name appears
     artifacts = collections.defaultdict(list)
