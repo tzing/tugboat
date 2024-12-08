@@ -11,7 +11,7 @@ from tugboat.constraints import (
 )
 from tugboat.core import hookimpl
 from tugboat.parsers import parse_template, report_syntax_errors
-from tugboat.references import get_workflow_context
+from tugboat.references import get_template_context, get_workflow_context
 from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:
@@ -278,6 +278,8 @@ def check_output_parameters(
     if not template.outputs:
         return
 
+    context = get_template_context(workflow, template)
+
     # check fields for each parameter; also count the number of times each name appears
     parameters = collections.defaultdict(list)
     for idx, param in enumerate(template.outputs.parameters or []):
@@ -286,7 +288,7 @@ def check_output_parameters(
         if param.name:
             parameters[param.name].append(loc)
 
-        yield from prepend_loc(loc, _check_output_parameter(param))
+        yield from prepend_loc(loc, _check_output_parameter(param, context))
 
     # report duplicates
     for name, locs in parameters.items():
@@ -301,7 +303,7 @@ def check_output_parameters(
                 }
 
 
-def _check_output_parameter(param: Parameter) -> Iterable[Diagnosis]:
+def _check_output_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
     sources = {}
 
     # check fields
@@ -337,6 +339,25 @@ def _check_output_parameter(param: Parameter) -> Iterable[Diagnosis]:
         if param.valueFrom.parameter:
             sources["valueFrom", "parameter"] = param.valueFrom.parameter
 
+    # check references
+    for loc, text in sources.items():
+        doc = parse_template(text)
+        yield from prepend_loc(loc, report_syntax_errors(doc))
+
+        for node, ref, closest in context.parameters.filter_unknown(
+            doc.iter_references()
+        ):
+            yield {
+                "code": "VAR002",
+                "loc": loc,
+                "summary": "Invalid reference",
+                "msg": (
+                    f"""The parameter reference '{".".join(ref)}' used in parameter '{param.name}' is invalid."""
+                ),
+                "input": str(node),
+                "fix": node.format(closest),
+            }
+
 
 @hookimpl(specname="analyze_template")
 def check_output_artifacts(
@@ -344,6 +365,8 @@ def check_output_artifacts(
 ) -> Iterable[Diagnosis]:
     if not template.outputs:
         return
+
+    context = get_template_context(workflow, template)
 
     # check fields for each artifact; also count the number of times each name appears
     artifacts = collections.defaultdict(list)
@@ -353,7 +376,7 @@ def check_output_artifacts(
         if artifact.name:
             artifacts[artifact.name].append(loc)
 
-        yield from prepend_loc(loc, _check_output_artifact(artifact))
+        yield from prepend_loc(loc, _check_output_artifact(artifact, context))
 
     # report duplicates
     for name, locs in artifacts.items():
@@ -368,7 +391,7 @@ def check_output_artifacts(
                 }
 
 
-def _check_output_artifact(artifact: Artifact) -> Iterable[Diagnosis]:
+def _check_output_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
     artifact_sources = {}
 
     # check fields
@@ -423,3 +446,22 @@ def _check_output_artifact(artifact: Artifact) -> Iterable[Diagnosis]:
         artifact_sources["from",] = artifact.from_
 
     # TODO artifact.fromExpression
+
+    # check references
+    for loc, text in artifact_sources.items():
+        doc = parse_template(text)
+        yield from prepend_loc(loc, report_syntax_errors(doc))
+
+        for node, ref, closest in context.artifacts.filter_unknown(
+            doc.iter_references()
+        ):
+            yield {
+                "code": "VAR002",
+                "loc": loc,
+                "summary": "Invalid reference",
+                "msg": (
+                    f"""The artifact reference '{".".join(ref)}' used in artifact '{artifact.name}' is invalid."""
+                ),
+                "input": str(node),
+                "fix": node.format(closest),
+            }

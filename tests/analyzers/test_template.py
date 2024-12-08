@@ -193,6 +193,24 @@ class TestRules:
             )
             in diagnoses
         )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "VAR002",
+                    "loc": (
+                        "spec",
+                        "templates",
+                        0,
+                        "outputs",
+                        "parameters",
+                        1,
+                        "valueFrom",
+                        "parameter",
+                    ),
+                }
+            )
+            in diagnoses
+        )
 
     def test_check_output_artifacts(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_OUTPUT_ARTIFACTS)
@@ -228,6 +246,15 @@ class TestRules:
                         0,
                         "archive",
                     ),
+                }
+            )
+            in diagnoses
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "VAR002",
+                    "loc": ("spec", "templates", 0, "outputs", "artifacts", 1, "from"),
                 }
             )
             in diagnoses
