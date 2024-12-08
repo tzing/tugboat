@@ -307,7 +307,7 @@ def analyze_raw(manifest: dict) -> list[Diagnosis]:
 
 
 def _get_manifest_name(manifest: dict) -> str | None:
-    metadata = manifest.get("metadata", {})
+    metadata = manifest.get("metadata") or {}
     if name := metadata.get("name"):
         return name
     if name := metadata.get("generateName"):

@@ -17,6 +17,11 @@ class Manifest[T_Spec: BaseModel](BaseModel):
     metadata: Metadata
     spec: T_Spec
 
+    @property
+    def name(self) -> str | None:
+        """Short-cut to the name of the manifest."""
+        return self.metadata.name or self.metadata.generateName
+
 
 class Metadata(BaseModel):
     """
