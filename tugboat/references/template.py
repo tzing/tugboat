@@ -61,63 +61,72 @@ def get_template_context(
                 for param in template.outputs.parameters or []
             }
 
-    # steps template
-    workflow_templates = {
-        tmpl.name: tmpl for tmpl in workflow.spec.templates or [] if tmpl.name
-    }
-
-    if template.steps:
-        ctx.parameters |= {("steps", "name")}
-
-        for step in itertools.chain.from_iterable(template.steps):
-            # default step parameters
-            ctx.parameters |= {
-                ("steps", step.name, "id"),
-                ("steps", step.name, "ip"),
-                ("steps", step.name, "status"),
-                ("steps", step.name, "exitCode"),
-                ("steps", step.name, "startedAt"),
-                ("steps", step.name, "finishedAt"),
-                ("steps", step.name, "hostNodeName"),
-                ("steps", step.name, "outputs", "result"),
-            }
-
-            # parallel steps
-            if step.withItems or step.withParam:
-                ctx.parameters |= {
-                    ("step", step.name, "outputs", "parameters"),
-                }
-
-            # step outputs
-            reference_template = None
-            if step.template:
-                reference_template = workflow_templates.get(step.template)
-            elif step.templateRef and step.templateRef.name == workflow.name:
-                reference_template = workflow_templates.get(step.templateRef.template)
-            elif step.inline:
-                reference_template = step.inline
-
-            if reference_template and reference_template.outputs:
-                ctx.parameters |= {
-                    ("steps", step.name, "outputs", "parameters", param.name)
-                    for param in reference_template.outputs.parameters or []
-                    if param.name
-                }
-                ctx.artifacts |= {
-                    ("steps", step.name, "outputs", "artifacts", artifact.name)
-                    for artifact in reference_template.outputs.artifacts or []
-                    if artifact.name
-                }
-
-            if not reference_template:
-                ctx.parameters |= {
-                    ("steps", step.name, "outputs", "parameters", AnyStr),
-                }
-                ctx.artifacts |= {
-                    ("steps", step.name, "outputs", "artifacts", AnyStr),
-                }
-
+    # add template-type specific references
+    _add_step_references(ctx, template, workflow)
     # TODO dag template
     # TODO http template
 
     return ctx
+
+
+def _add_step_references(
+    ctx: Context,
+    template: Template,
+    workflow: Workflow | WorkflowTemplate,
+):
+    if not template.steps:
+        return
+
+    workflow_templates = {
+        tmpl.name: tmpl for tmpl in workflow.spec.templates or [] if tmpl.name
+    }
+
+    ctx.parameters |= {("steps", "name")}
+
+    for step in itertools.chain.from_iterable(template.steps):
+        # default step parameters
+        ctx.parameters |= {
+            ("steps", step.name, "id"),
+            ("steps", step.name, "ip"),
+            ("steps", step.name, "status"),
+            ("steps", step.name, "exitCode"),
+            ("steps", step.name, "startedAt"),
+            ("steps", step.name, "finishedAt"),
+            ("steps", step.name, "hostNodeName"),
+            ("steps", step.name, "outputs", "result"),
+        }
+
+        # parallel steps
+        if step.withItems or step.withParam:
+            ctx.parameters |= {
+                ("step", step.name, "outputs", "parameters"),
+            }
+
+        # step outputs
+        reference_template = None
+        if step.template:
+            reference_template = workflow_templates.get(step.template)
+        elif step.templateRef and step.templateRef.name == workflow.name:
+            reference_template = workflow_templates.get(step.templateRef.template)
+        elif step.inline:
+            reference_template = step.inline
+
+        if reference_template and reference_template.outputs:
+            ctx.parameters |= {
+                ("steps", step.name, "outputs", "parameters", param.name)
+                for param in reference_template.outputs.parameters or []
+                if param.name
+            }
+            ctx.artifacts |= {
+                ("steps", step.name, "outputs", "artifacts", artifact.name)
+                for artifact in reference_template.outputs.artifacts or []
+                if artifact.name
+            }
+
+        if not reference_template:
+            ctx.parameters |= {
+                ("steps", step.name, "outputs", "parameters", AnyStr),
+            }
+            ctx.artifacts |= {
+                ("steps", step.name, "outputs", "artifacts", AnyStr),
+            }
