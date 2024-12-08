@@ -260,6 +260,32 @@ class TestRules:
             in diagnoses
         )
 
+    def test_check_field_references(self):
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_REFERENCES)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        assert (
+            IsPartialDict(
+                {
+                    "code": "VAR002",
+                    "loc": ("spec", "templates", 0, "container", "args", 1),
+                    "msg": "The parameter reference 'inputs.parameters.command' used in template 'container-template' is invalid.",
+                    "fix": "{{ inputs.parameters.cmd }}",
+                }
+            )
+            in diagnoses
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "VAR002",
+                    "loc": ("spec", "templates", 1, "script", "source"),
+                    "msg": "The parameter reference 'inputs.artifacts.data' used in template 'script-template' is invalid.",
+                    "fix": "{{ inputs.artifacts.data.path }}",
+                }
+            )
+            in diagnoses
+        )
+
 
 MANIFEST_AMBIGUOUS_TYPE = """
 apiVersion: argoproj.io/v1alpha1
@@ -350,4 +376,33 @@ spec:
             archive: {} # M004
           - name: data # TPL005
             from: '{{ invalid }}'
+"""
+
+MANIFEST_INVALID_REFERENCES = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  entrypoint: container-template
+  templates:
+    - name: container-template
+      inputs:
+        parameters:
+          - name: cmd
+      container:
+        image: python:alpine3.13
+        command: [ python ]
+        args:
+          - -c
+          - '{{ inputs.parameters.command }}'  # VAR002
+    - name: script-template
+      inputs:
+        artifacts:
+          - name: data
+      script:
+        image: python:alpine3.13
+        command: [ python ]
+        source: |-
+          print('Hello world, {{ inputs.artifacts.data }}!')  # VAR002
 """
