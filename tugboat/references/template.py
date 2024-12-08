@@ -103,6 +103,8 @@ def _add_step_references(
             }
 
         # step outputs
+        # when the referenced template is in the same workflow, we can resolve the outputs
+        # otherwise, we can only assume the outputs are available
         reference_template = None
         if step.template:
             reference_template = workflow_templates.get(step.template)
