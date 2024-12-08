@@ -10,8 +10,10 @@ Reference
 __all__ = [
     "Context",
     "get_global_context",
+    "get_template_context",
     "get_workflow_context",
 ]
 
 from tugboat.references.context import Context
+from tugboat.references.template import get_template_context
 from tugboat.references.workflow import get_global_context, get_workflow_context

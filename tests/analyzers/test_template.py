@@ -193,6 +193,24 @@ class TestRules:
             )
             in diagnoses
         )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "VAR002",
+                    "loc": (
+                        "spec",
+                        "templates",
+                        0,
+                        "outputs",
+                        "parameters",
+                        1,
+                        "valueFrom",
+                        "parameter",
+                    ),
+                }
+            )
+            in diagnoses
+        )
 
     def test_check_output_artifacts(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_OUTPUT_ARTIFACTS)
@@ -228,6 +246,41 @@ class TestRules:
                         0,
                         "archive",
                     ),
+                }
+            )
+            in diagnoses
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "VAR002",
+                    "loc": ("spec", "templates", 0, "outputs", "artifacts", 1, "from"),
+                }
+            )
+            in diagnoses
+        )
+
+    def test_check_field_references(self):
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_REFERENCES)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        assert (
+            IsPartialDict(
+                {
+                    "code": "VAR002",
+                    "loc": ("spec", "templates", 0, "container", "args", 1),
+                    "msg": "The parameter reference 'inputs.parameters.command' used in template 'container-template' is invalid.",
+                    "fix": "{{ inputs.parameters.cmd }}",
+                }
+            )
+            in diagnoses
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "VAR002",
+                    "loc": ("spec", "templates", 1, "script", "source"),
+                    "msg": "The parameter reference 'inputs.artifacts.data' used in template 'script-template' is invalid.",
+                    "fix": "{{ inputs.artifacts.data.path }}",
                 }
             )
             in diagnoses
@@ -323,4 +376,33 @@ spec:
             archive: {} # M004
           - name: data # TPL005
             from: '{{ invalid }}'
+"""
+
+MANIFEST_INVALID_REFERENCES = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  entrypoint: container-template
+  templates:
+    - name: container-template
+      inputs:
+        parameters:
+          - name: cmd
+      container:
+        image: python:alpine3.13
+        command: [ python ]
+        args:
+          - -c
+          - '{{ inputs.parameters.command }}'  # VAR002
+    - name: script-template
+      inputs:
+        artifacts:
+          - name: data
+      script:
+        image: python:alpine3.13
+        command: [ python ]
+        source: |-
+          print('Hello world, {{ inputs.artifacts.data }}!')  # VAR002
 """

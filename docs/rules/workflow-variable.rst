@@ -5,6 +5,17 @@ The code ``VAR`` identifies potential issues with `workflow variables`_, includi
 
 .. _workflow variables: https://argo-workflows.readthedocs.io/en/latest/variables/
 
+.. note::
+
+   Currently, Tugboat supports only "simple" template tags. This means:
+
+   .. code-block:: none
+
+      {{ inputs.parameters.foo }} can be checked
+      but {{= inputs.parameters.foo }} will be ignored
+
+   We are planning to add support for expression template tags in an upcoming release.
+
 
 :bdg:`VAR001` Syntax error
 --------------------------
@@ -44,3 +55,12 @@ If a reference used in the manifest is not found in the defined references, an e
            args: ["{{ inputs.artifacts.message }}"]
            #       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
            #       Reference not found - We can't reference artifact here
+
+.. admonition:: Limited validation of step outputs
+   :class: note
+
+   Tugboat can only validate references within the same manifest.
+
+   The outputs of a step are defined by the template it refers to.
+   Tugboat cannot validate these outputs because their definitions are not included in the same manifest.
+   This means Tugboat cannot verify references that point to the outputs of other steps.

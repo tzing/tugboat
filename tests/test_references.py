@@ -4,7 +4,11 @@ import pytest
 from dirty_equals import IsInstance
 
 from tugboat.parsers import Node
-from tugboat.references import get_global_context, get_workflow_context
+from tugboat.references import (
+    get_global_context,
+    get_template_context,
+    get_workflow_context,
+)
 from tugboat.references.cache import LruDict, cache
 from tugboat.references.context import AnyStr, Context, ReferenceCollection
 from tugboat.schemas import Workflow
@@ -241,3 +245,137 @@ class TestGetWorkflowContext:
         ) in ctx.parameters
 
         assert ("workflow", "outputs", "artifacts", "my-global-art") in ctx.artifacts
+
+
+class TestTemplateContext:
+
+    def test_container(self):
+        workflow = Workflow.model_validate(
+            {
+                "apiVersion": "argoproj.io/v1alpha1",
+                "kind": "Workflow",
+                "metadata": {"generateName": "test-"},
+                "spec": {
+                    "templates": [
+                        {
+                            "name": "echo",
+                            "inputs": {"parameters": [{"name": "message"}]},
+                            "retryStrategy": {
+                                "limit": 3,
+                            },
+                            "container": {
+                                "image": "alpine:latest",
+                                "command": ["sh", "-c"],
+                                "args": [
+                                    "echo {{inputs.parameters.message}} | tee {{output.parameters.foo.path}}"
+                                ],
+                            },
+                            "outputs": {
+                                "parameters": [
+                                    {
+                                        "name": "foo",
+                                        "valueFrom": {"path": "/tmp/message.txt"},
+                                    }
+                                ],
+                                "artifacts": [
+                                    {"name": "bar", "path": "/tmp/message.txt"}
+                                ],
+                            },
+                        },
+                        {
+                            "name": "hello-world",
+                            "container": {
+                                "image": "busybox",
+                                "command": ["echo"],
+                                "args": ["hello world"],
+                            },
+                        },
+                    ],
+                },
+            }
+        )
+        assert workflow.spec.templates  # satisfy pyright
+
+        ctx = get_template_context(workflow, workflow.spec.templates[0])
+        assert ("workflow", "name") in ctx.parameters
+        assert ("workflow", "status") in ctx.parameters
+        assert ("retries",) in ctx.parameters
+        assert ("inputs", "parameters", "message") in ctx.parameters
+        assert ("outputs", "parameters", "foo", "path") in ctx.parameters
+        assert ("outputs", "artifacts", "bar", "path") in ctx.parameters
+
+        ctx = get_template_context(workflow, workflow.spec.templates[1])
+        assert ("workflow", "name") in ctx.parameters
+        assert ("retries",) not in ctx.parameters
+        assert ("inputs", "parameters", "message") not in ctx.parameters
+
+    def test_step(self):
+        workflow = Workflow.model_validate(
+            {
+                "apiVersion": "argoproj.io/v1alpha1",
+                "kind": "Workflow",
+                "metadata": {"generateName": "loops-"},
+                "spec": {
+                    "entrypoint": "loop-example",
+                    "templates": [
+                        {
+                            "name": "loop-example",
+                            "steps": [
+                                [
+                                    {
+                                        "name": "print-message-loop",
+                                        "template": "print-message",
+                                        "arguments": {
+                                            "parameters": [
+                                                {"name": "message", "value": "{{item}}"}
+                                            ]
+                                        },
+                                        "withItems": ["hello world", "goodbye world"],
+                                    },
+                                    {
+                                        "name": "extra-step",
+                                        "templateRef": {
+                                            "name": "demo",
+                                            "template": "print-message",
+                                        },
+                                    },
+                                ]
+                            ],
+                        },
+                        {
+                            "name": "print-message",
+                            "inputs": {"parameters": [{"name": "message"}]},
+                            "outputs": {"parameters": [{"name": "echo"}]},
+                            "container": {
+                                "image": "busybox",
+                                "command": ["echo"],
+                                "args": ["{{inputs.parameters.message}}"],
+                            },
+                        },
+                    ],
+                },
+            }
+        )
+        assert workflow.spec.templates  # satisfy pyright
+
+        ctx = get_template_context(workflow, workflow.spec.templates[0])
+        assert ("workflow", "name") in ctx.parameters
+        assert ("steps", "print-message-loop", "id") in ctx.parameters
+        assert (
+            "steps",
+            "print-message-loop",
+            "outputs",
+            "parameters",
+            "echo",
+        ) in ctx.parameters
+        assert (
+            "steps",
+            "extra-step",
+            "outputs",
+            "parameters",
+            "WHATEVER",
+        ) in ctx.parameters
+
+        ctx = get_template_context(workflow, workflow.spec.templates[1])
+        assert ("workflow", "name") in ctx.parameters
+        assert ("steps", "print-message-loop", "id") not in ctx.parameters
