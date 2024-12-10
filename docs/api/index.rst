@@ -6,6 +6,7 @@ If you're looking for information on a specific function, class or method, this 
 .. toctree::
 
    tugboat
+   tugboat.hookspecs
 
 .. note::
 
