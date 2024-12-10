@@ -29,6 +29,11 @@ def parse_manifest(manifest: dict) -> Manifest | None:  # type: ignore[reportRet
     if the format is recognized by the handler. Returns :py:obj:`None` if the
     format is not recognized.
 
+    During this hook, the framework captures the :py:exc:`pydantic_core.ValidationError`
+    raised when parsing the manifest and converts it into a diagnosis. This allows
+    the handler to focus on the manifest structure and content, and leave the
+    validation to Pydantic and the framework.
+
     Parameters
     ----------
     manifest : dict
