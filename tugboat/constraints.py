@@ -1,5 +1,24 @@
 """
 This module provides some generic constraints that can be used on linting models.
+
+All functions in this module are generators that yield :py:class:`tugboat.Diagnosis`
+objects when a constraint is not met. These functions can be used in analysis
+hooks, yielding results using the :py:keyword:`yield from <yield>` syntax.
+
+A typical usage of these functions is as follows:
+
+.. code-block:: python
+
+   from tugboat import hookimpl
+   from tugboat.constraints import require_exactly_one
+
+   @hookimpl
+   def analyze_workflow(workflow: Workflow) -> Iterator[Diagnosis]:
+       yield from require_exactly_one(
+           model=workflow.metadata,
+           loc=("metadata",),
+           fields=["name", "generateName"],
+       )
 """
 
 from __future__ import annotations
@@ -19,8 +38,11 @@ def accept_none(
     *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
 ) -> Iterator[Diagnosis]:
     """
-    This constraint checks if all the specified fields are set to None. For each
-    field that is not None, error M005 is yielded.
+    Check if all the specified fields are not set.
+
+    Yield
+    -----
+    :ref:`code.m005` for each unexpected field.
     """
     for field in fields:
         if getattr(model, field, None) is not None:
@@ -38,12 +60,12 @@ def mutually_exclusive(
     *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
 ) -> Iterator[Diagnosis]:
     """
-    Requires that at most one of the specified fields in the model is set. But
-    does not forace that any of them are set. If the constraint is not met,
-    following errors are yielded:
+    Ensures that at most one of the specified fields in the model is set, but
+    does not require any of them to be set.
 
-    M006:
-       When more than one were set.
+    Yield
+    -----
+    :ref:`code.m006` when more than one were set.
     """
     fields_with_values = [
         field for field in fields if getattr(model, field, None) is not None
@@ -65,8 +87,11 @@ def require_all(
     *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
 ) -> Iterator[Diagnosis]:
     """
-    This constraint requires that all of the specified fields in the model are set.
-    If any of the fields are missing, error M004 is yielded.
+    Requires that all of the specified fields in the model are set.
+
+    Yield
+    -----
+    :ref:`code.m004` for any of the missing fields.
     """
     for field in fields:
         value = getattr(model, field, None)
@@ -92,13 +117,12 @@ def require_exactly_one(
     *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
 ) -> Iterator[Diagnosis]:
     """
-    This constraint requires that exactly one of the specified fields in the
-    model is set. If the constraint is not met, following errors are yielded:
+    Requires that exactly one of the specified fields in the model is set.
 
-    M004:
-       When none of the fields are set.
-    M006:
-       When more than one were set.
+    Yield
+    -----
+    :ref:`code.m004` when none of the fields are set.
+    :ref:`code.m006` when more than one were set.
     """
     # check if any of the fields are set
     any_field_set = False

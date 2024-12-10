@@ -8,6 +8,17 @@ from tugboat.schemas.basic import Dict
 class Manifest[T_Spec: BaseModel](BaseModel):
     """
     The base schema for the Kubernetes manifest.
+
+    This schema is generic and must be inherited with the ``T_Spec`` type
+    parameter, which is the schema for the :data:`spec` field of the manifest:
+
+    .. code-block:: python
+
+        class MyManifestSpec(BaseModel):
+            ...
+
+        class MyManifest(Manifest[MyManifestSpec]):
+            ...
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)

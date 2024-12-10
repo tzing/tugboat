@@ -135,14 +135,12 @@ For more information on how to use Tugboat, runs its help command:
 
 .. toctree::
    :hidden:
-   :maxdepth: 1
    :caption: Advanced Usage
 
    advanced/junit
 
 .. toctree::
    :hidden:
-   :maxdepth: 1
    :caption: Rules
 
    rules/cron-workflow
@@ -152,3 +150,9 @@ For more information on how to use Tugboat, runs its help command:
    rules/workflow
    rules/workflow-template
    rules/workflow-variable
+
+.. toctree::
+   :hidden:
+   :caption: Development
+
+   api/index

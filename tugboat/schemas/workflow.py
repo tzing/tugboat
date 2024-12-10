@@ -85,6 +85,7 @@ class Workflow(Manifest[WorkflowSpec]):
 
     apiVersion: Literal["argoproj.io/v1alpha1"]  # type: ignore[reportIncompatibleVariableOverride]
     kind: Literal["Workflow"]  # type: ignore[reportIncompatibleVariableOverride]
+    spec: WorkflowSpec
 
 
 class WorkflowTemplate(Workflow):

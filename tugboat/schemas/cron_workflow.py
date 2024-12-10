@@ -41,8 +41,9 @@ class CronWorkflow(Manifest[CronWorkflowSpec]):
     """
     `CronWorkflows`_ are workflows that run on a schedule.
 
-    .. _CronWorkflow: https://argo-workflows.readthedocs.io/en/latest/cron-workflows/
+    .. _CronWorkflows: https://argo-workflows.readthedocs.io/en/latest/cron-workflows/
     """
 
     apiVersion: Literal["argoproj.io/v1alpha1"]  # type: ignore[reportIncompatibleVariableOverride]
     kind: Literal["CronWorkflow"]  # type: ignore[reportIncompatibleVariableOverride]
+    spec: CronWorkflowSpec

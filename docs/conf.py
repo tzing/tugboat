@@ -20,7 +20,9 @@ project = "Tugboat"
 author = "tzing"
 copyright = f"{this_year}, {author}"
 
-release = importlib.metadata.version("argo-tugboat")
+version = importlib.metadata.version("argo-tugboat")
+release = version
+
 if not is_tag_release:
     commit = (
         subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
@@ -43,6 +45,18 @@ extensions = [
 templates_path = ["_templates"]
 exclude_patterns = []
 
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "pluggy": ("https://pluggy.readthedocs.io/en/stable/", None),
+    "pydantic": ("https://docs.pydantic.dev/latest/", None),
+}
+
+
+# -- Options for autodoc -----------------------------------------------------
+autodoc_default_options = {
+    "exclude-members": "model_computed_fields, model_config, model_fields",
+}
+
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -50,16 +64,23 @@ exclude_patterns = []
 html_theme = "shibuya"
 html_static_path = ["_static"]
 
+html_context = {
+    "source_type": "github",
+    "source_user": "tzing",
+    "source_repo": "tugboat",
+}
+
 html_theme_options = {
     "accent_color": "tomato",
     "color_mode": "light",
     "github_url": "https://github.com/tzing/tugboat",
 }
 
+
 if not is_tag_release:
     html_theme_options["announcement"] = (
         """
         This is the development version of the documentation.
+        See <a href="https://argo-tugboat.readthedocs.io/en/stable/">stable version</a> for the latest release.
         """
-        # See <a href="https://tugboat.readthedocs.io/en/stable/">stable version</a> for the latest release.
     )
