@@ -11,10 +11,17 @@ if typing.TYPE_CHECKING:
 
 
 hookimpl = pluggy.HookimplMarker("tugboat")
+"""The hook implementation marker for the Tugboat framework."""
 
 
 class Diagnosis(typing.TypedDict):
-    """A diagnosis reported by the analyzer."""
+    """
+    A diagnosis reported by the analyzer.
+
+    This class serves as the fundamental structure for a diagnosis. It is used
+    to report issues identified by the analyzer. All analyzers must return a
+    diagnosis or a list of diagnoses when they are registered with the framework.
+    """
 
     type: NotRequired[Literal["error", "failure", "skipped"]]
     """
