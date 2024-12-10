@@ -51,6 +51,7 @@ For instance, the following manifest lacks the required ``source`` field within 
            image: alpine:latest
            # <-- expected 'source' field here but missing
 
+.. _code.m005:
 
 :bdg:`M005` Found redundant field
 ---------------------------------
@@ -73,6 +74,7 @@ For instance, the following manifest contains an extra field, ``extraField``, wi
    extraField: value
    #^^^^^^^^^^^^^^^^ unexpected field here
 
+.. _code.m006:
 
 :bdg:`M006` Mutually exclusive fields
 -------------------------------------
