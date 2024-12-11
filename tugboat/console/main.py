@@ -10,6 +10,7 @@ import cloup
 import colorlog
 
 from tugboat.analyze import analyze_yaml
+from tugboat.console.utils import VirtualPath, cached_read
 from tugboat.version import __version__
 
 if typing.TYPE_CHECKING:
@@ -62,9 +63,7 @@ logger = logging.getLogger(__name__)
     ),
 )
 @cloup.version_option(__version__)
-@cloup.pass_context
-def entrypoint(
-    ctx: cloup.Context,
+def main(
     manifest: Sequence[Path],
     color: bool | None,
     output_format: str,
@@ -95,94 +94,46 @@ def entrypoint(
       # Read from stdin
       cat my-workflow.yaml | tugboat -
     """
-
-
-@cloup.command(
-    context_settings={
-        "help_option_names": ["-h", "--help"],
-    }
-)
-@cloup.argument(
-    "path",
-    type=cloup.path(exists=True),
-    nargs=-1,
-    help="List of files or directories to check. [default: .]",
-)
-@cloup.option_group(
-    "Output options",
-    cloup.option(
-        "--color",
-        type=cloup.BOOL,
-        help="Use colors in output. [default: auto]",
-    ),
-    cloup.option(
-        "--output-format",
-        type=cloup.Choice(["console", "junit"]),
-        default="console",
-        show_default=True,
-        help="Output serialization format.",
-    ),
-    cloup.option(
-        "-o",
-        "--output-file",
-        type=cloup.file_path(writable=True),
-        help="File to write the diagnostic output to.",
-    ),
-)
-@cloup.option_group(
-    "Logging options",
-    cloup.option(
-        "-v",
-        "--verbose",
-        count=True,
-        help="Print more information.",
-    ),
-)
-@cloup.version_option(__version__)
-def main(
-    path: Sequence[Path],
-    color: bool | None,
-    output_format: str,
-    output_file: Path | None,
-    verbose: int,
-):
-    """
-    Linter to streamline your Argo Workflows with precision and confidence.
-    """
     # setup logging
     setup_logging(verbose)
     logger.debug("Tugboat sets sail!")
 
-    # check how many files to analyze
-    target_files: list[Path] = []
+    # determine the inputs
+    manifest_paths: list[Path] = []
+    if "-" in map(str, manifest):
+        if len(manifest) > 1:
+            raise click.BadArgumentUsage(
+                "Cannot read from stdin and file at the same time."
+            )
 
-    if not path:
-        path = [Path(".")]
+        stdin = VirtualPath(sys.stdin.name, sys.stdin)
+        manifest_paths += [typing.cast(Path, stdin)]
 
-    for subpath in path:
-        if subpath.is_dir():
-            target_files += sorted(find_yaml(subpath))
-        else:
-            target_files.append(subpath)
+    else:
+        for path in manifest:
+            if path.is_dir():
+                manifest_paths += find_yaml(path)
+            else:
+                manifest_paths += [path]
 
-    logger.info("Found %d YAML files to analyze.", len(target_files))
+    if not manifest_paths:
+        raise click.UsageError("No manifest found.")
 
-    if not target_files:
-        logger.warning("No YAML file found.")
-        raise click.Abort
+    manifest_paths = sorted(manifest_paths)
+    logger.info("Found %d manifest(s) to analyze.", len(manifest_paths))
 
-    # analyze files
+    # analyze manifests
     diagnoses: dict[Path, list[AugmentedDiagnosis]] = {}
-    for i, file_path in enumerate(target_files, 1):
-        logger.info("[%d/%d] Analyzing file %s", i, len(target_files), file_path)
+    for i, path in enumerate(manifest_paths, 1):
+        logger.info("[%d/%d] Analyzing file %s", i, len(manifest_paths), path)
         try:
-            manifest = file_path.read_text()
+            content = cached_read(path)
         except Exception:
-            logger.error("Failed to read file %s", file_path)
+            logger.error("Failed to read file %s", path)
             logger.debug("Error details:", exc_info=True)
             raise click.Abort from None
 
-        diagnoses[file_path] = analyze_yaml(manifest)
+        diagnoses[path] = analyze_yaml(content)
 
     logger.debug(
         "Analysis completed. Found %d diagnoses.",

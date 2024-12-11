@@ -33,6 +33,9 @@ class VirtualPath:
     def __repr__(self) -> str:
         return f"VirtualPath({self.name!r})"
 
+    def __str__(self) -> str:
+        return self.name
+
     @functools.cache
     def read_text(self) -> str:
         return self._stream.read()
@@ -43,7 +46,7 @@ class VirtualPath:
         return io.StringIO(self.read_text())
 
 
-@functools.lru_cache()
+@functools.lru_cache
 def cached_read(path: Path) -> str:
     """
     Read the content of a file and cache it.
