@@ -26,6 +26,83 @@ logger = logging.getLogger(__name__)
     }
 )
 @cloup.argument(
+    "manifest",
+    nargs=-1,
+    type=cloup.path(),
+    help="List of files or directories to check. Use '-' for stdin. [default: .]",
+)
+@cloup.option_group(
+    "Output options",
+    cloup.option(
+        "--color",
+        type=cloup.BOOL,
+        help="Use colors in output. [default: auto]",
+    ),
+    cloup.option(
+        "--output-format",
+        type=cloup.Choice(["console", "junit"]),
+        default="console",
+        show_default=True,
+        help="Output serialization format.",
+    ),
+    cloup.option(
+        "-o",
+        "--output-file",
+        type=cloup.file_path(writable=True),
+        help="File to write the diagnostic output to.",
+    ),
+)
+@cloup.option_group(
+    "Logging options",
+    cloup.option(
+        "-v",
+        "--verbose",
+        count=True,
+        help="Print more information.",
+    ),
+)
+@cloup.version_option(__version__)
+@cloup.pass_context
+def entrypoint(
+    ctx: cloup.Context,
+    manifest: Sequence[Path],
+    color: bool | None,
+    output_format: str,
+    output_file: Path | None,
+    verbose: int,
+):
+    """
+    Linter to streamline your Argo Workflows with precision and confidence.
+
+    This command performs static analysis on Argo Workflow manifests to catch
+    common issues and improve the quality of your workflows.
+
+    Examples:
+
+    \b
+      # Check all YAML files in the current directory
+      tugboat
+
+    \b
+      # Check specific files
+      tugboat my-workflow-1.yaml my-workflow-2.yaml
+
+    \b
+      # Analyze all YAML files in a directory
+      tugboat my-workflows/
+
+    \b
+      # Read from stdin
+      cat my-workflow.yaml | tugboat -
+    """
+
+
+@cloup.command(
+    context_settings={
+        "help_option_names": ["-h", "--help"],
+    }
+)
+@cloup.argument(
     "path",
     type=cloup.path(exists=True),
     nargs=-1,
