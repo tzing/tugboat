@@ -144,16 +144,13 @@ def main(
     generate_report(diagnoses, output_format, output_file, color)
 
     # finalize
-    summary, is_failed = summarize(diagnoses)
-
-    print(summary, file=sys.stderr)
-
-    if is_failed:
+    is_success = summarize(diagnoses)
+    if not is_success:
         sys.exit(2)
 
 
 def find_yaml(dirpath: Path) -> Iterator[Path]:
-    for root, _, files in dirpath.walk():
+    for root, _, files in dirpath.walk(follow_symlinks=True):
         for name in files:
             path = root / name
             if path.suffix in (".yaml", ".yml"):
@@ -221,12 +218,10 @@ def generate_report(
         output_stream.close()
 
 
-def summarize(
-    aggregated_diagnoses: dict[Path, list[AugmentedDiagnosis]]
-) -> tuple[str, bool]:
+def summarize(aggregated_diagnoses: dict[Path, list[AugmentedDiagnosis]]) -> bool:
     """
-    Summarize the diagnoses. Return a tuple of the summary message and a
-    boolean indicating whether the diagnoses contain any error or failure.
+    Summarize the diagnoses.
+    Return a boolean indicating whether the checks passed or not.
     """
     counts = {
         "error": 0,
@@ -247,9 +242,8 @@ def summarize(
         summary_parts.append(f"{count} skipped checks")
 
     if summary_parts:
-        msg = "Found " + ", ".join(summary_parts)
+        click.echo("Found " + ", ".join(summary_parts), err=True)
     else:
-        msg = "All passed!"
+        click.echo("All passed!", err=True)
 
-    is_failed = any((counts["error"], counts["failure"]))
-    return msg, is_failed
+    return not any((counts["error"], counts["failure"]))
