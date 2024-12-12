@@ -3,10 +3,10 @@ from __future__ import annotations
 import functools
 import io
 import typing
-from pathlib import Path
 
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
+    from pathlib import Path
     from typing import TextIO
 
 
@@ -26,6 +26,7 @@ class VirtualPath:
     def __init__(self, name: str, stream: TextIO):
         self.name = name
         self._stream = stream
+        self._content = None
 
     def __fspath__(self) -> str:
         return self.name
@@ -36,9 +37,10 @@ class VirtualPath:
     def __str__(self) -> str:
         return self.name
 
-    @functools.cache
     def read_text(self) -> str:
-        return self._stream.read()
+        if self._content is None:
+            self._content = self._stream.read()
+        return self._content
 
     def open(self, mode: str = "r") -> TextIO:
         if "r" not in mode:
