@@ -118,7 +118,12 @@ def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
             entrypoints.setdefault(template.name, []).append(("spec", "templates", idx))
 
     # if the spec has an entrypoint, check that it exists
-    if workflow.spec.entrypoint and workflow.spec.entrypoint not in entrypoints:
+    if (
+        True
+        and workflow.spec.entrypoint
+        and entrypoints
+        and workflow.spec.entrypoint not in entrypoints
+    ):
         suggestion, _, _ = extractOne(workflow.spec.entrypoint, entrypoints.keys())
         entrypoints_ = sorted(entrypoints)
         yield {
