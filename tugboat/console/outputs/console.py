@@ -101,8 +101,9 @@ def report_diagnosis(echo: Callable, file: Path, diagnosis: AugmentedDiagnosis):
     echo()
 
     # print the details
-    echo(textwrap.indent(diagnosis["msg"], " " * (line_number_width + 1)))
-    echo()
+    if details := diagnosis["msg"]:
+        echo(textwrap.indent(details, " " * (line_number_width + 1)))
+        echo()
 
     # print the suggestion
     if fix := diagnosis["fix"]:
