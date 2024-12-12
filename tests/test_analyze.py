@@ -81,7 +81,7 @@ class TestAnalyzeYaml:
                 "manifest": None,
                 "loc": (),
                 "summary": "Malformed YAML document",
-                "msg": "found unexpected end of stream",
+                "msg": ContainsSubStrings("found unexpected end of stream"),
                 "input": None,
                 "fix": None,
             }

@@ -108,6 +108,11 @@ def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
         if e.problem_mark:
             line = e.problem_mark.line + 1
             column = e.problem_mark.column + 1
+
+        msg = e.problem or e.context
+        if msg and e.context_mark:
+            msg += f"\n{e.context_mark}"  # note: context_mark is not a string
+
         return [
             {
                 "line": line,
@@ -117,7 +122,7 @@ def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
                 "manifest": None,
                 "loc": (),
                 "summary": "Malformed YAML document",
-                "msg": e.problem,
+                "msg": msg,
                 "input": None,
                 "fix": None,
             }
