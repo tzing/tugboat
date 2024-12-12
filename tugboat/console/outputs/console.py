@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import functools
 import textwrap
 import typing
 
 import click
 
-from tugboat.console.utils import format_loc
+from tugboat.console.utils import cached_read, format_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -116,17 +115,12 @@ def report_diagnosis(echo: Callable, file: Path, diagnosis: AugmentedDiagnosis):
         echo()
 
 
-def get_content_near(file: Path, target_line: int) -> Iterator[tuple[int, str]]:
+def get_content_near(path: Path, target_line: int) -> Iterator[tuple[int, str]]:
     target_line -= 1  # 1-based to 0-based
-    content = read_file(file).splitlines()
+    content = cached_read(path).splitlines()
     start = max(0, target_line - LINES_AHEAD)
     end = min(len(content), target_line + LINES_BEHIND)
     yield from enumerate(content[start : end + 1], start + 1)
-
-
-@functools.lru_cache(1)
-def read_file(path: Path) -> str:
-    return path.read_text()
 
 
 def _calc_highlight_range(line: str, offset: int, input_: Any):

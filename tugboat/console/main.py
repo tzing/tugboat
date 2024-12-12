@@ -10,6 +10,8 @@ import cloup
 import colorlog
 
 from tugboat.analyze import analyze_yaml
+from tugboat.console.utils import VirtualPath, cached_read
+from tugboat.utils import join_with_and
 from tugboat.version import __version__
 
 if typing.TYPE_CHECKING:
@@ -26,10 +28,10 @@ logger = logging.getLogger(__name__)
     }
 )
 @cloup.argument(
-    "path",
-    type=cloup.path(exists=True),
+    "manifest",
     nargs=-1,
-    help="List of files or directories to check. [default: .]",
+    type=cloup.path(),
+    help="List of files or directories to check. Use '-' for stdin. [default: .]",
 )
 @cloup.option_group(
     "Output options",
@@ -63,7 +65,7 @@ logger = logging.getLogger(__name__)
 )
 @cloup.version_option(__version__)
 def main(
-    path: Sequence[Path],
+    manifest: Sequence[Path],
     color: bool | None,
     output_format: str,
     output_file: Path | None,
@@ -71,41 +73,71 @@ def main(
 ):
     """
     Linter to streamline your Argo Workflows with precision and confidence.
+
+    This command performs static analysis on Argo Workflow manifests to catch
+    common issues and improve the quality of your workflows.
+
+    Examples:
+
+    \b
+      # Check all YAML files in the current directory
+      tugboat
+
+    \b
+      # Check specific files
+      tugboat my-workflow-1.yaml my-workflow-2.yaml
+
+    \b
+      # Analyze all YAML files in a directory
+      tugboat my-workflows/
+
+    \b
+      # Read from stdin
+      cat my-workflow.yaml | tugboat -
     """
     # setup logging
     setup_logging(verbose)
     logger.debug("Tugboat sets sail!")
 
-    # check how many files to analyze
-    target_files: list[Path] = []
+    # determine the inputs
+    if not manifest:
+        manifest = [Path.cwd()]  # default to the current directory
 
-    if not path:
-        path = [Path(".")]
+    manifest_paths: list[Path] = []
+    if "-" in map(str, manifest):
+        if len(manifest) > 1:
+            raise click.BadArgumentUsage(
+                "Cannot read from stdin and file at the same time."
+            )
 
-    for subpath in path:
-        if subpath.is_dir():
-            target_files += sorted(find_yaml(subpath))
-        else:
-            target_files.append(subpath)
+        stdin = VirtualPath(sys.stdin.name, sys.stdin)
+        manifest_paths += [typing.cast(Path, stdin)]
 
-    logger.info("Found %d YAML files to analyze.", len(target_files))
+    else:
+        for path in manifest:
+            if path.is_dir():
+                manifest_paths += find_yaml(path)
+            else:
+                manifest_paths += [path]
 
-    if not target_files:
-        logger.warning("No YAML file found.")
-        raise click.Abort
+    if not manifest_paths:
+        raise click.UsageError("No manifest found.")
 
-    # analyze files
+    manifest_paths = sorted(manifest_paths)
+    logger.info("Found %d manifest(s) to analyze.", len(manifest_paths))
+
+    # analyze manifests
     diagnoses: dict[Path, list[AugmentedDiagnosis]] = {}
-    for i, file_path in enumerate(target_files, 1):
-        logger.info("[%d/%d] Analyzing file %s", i, len(target_files), file_path)
+    for i, path in enumerate(manifest_paths, 1):
+        logger.info("[%d/%d] Analyzing file %s", i, len(manifest_paths), path)
         try:
-            manifest = file_path.read_text()
+            content = cached_read(path)
         except Exception:
-            logger.error("Failed to read file %s", file_path)
+            logger.error("Failed to read file %s", path)
             logger.debug("Error details:", exc_info=True)
             raise click.Abort from None
 
-        diagnoses[file_path] = analyze_yaml(manifest)
+        diagnoses[path] = analyze_yaml(content)
 
     logger.debug(
         "Analysis completed. Found %d diagnoses.",
@@ -116,16 +148,13 @@ def main(
     generate_report(diagnoses, output_format, output_file, color)
 
     # finalize
-    summary, is_failed = summarize(diagnoses)
-
-    print(summary, file=sys.stderr)
-
-    if is_failed:
+    is_success = summarize(diagnoses)
+    if not is_success:
         sys.exit(2)
 
 
 def find_yaml(dirpath: Path) -> Iterator[Path]:
-    for root, _, files in dirpath.walk():
+    for root, _, files in dirpath.walk(follow_symlinks=True):
         for name in files:
             path = root / name
             if path.suffix in (".yaml", ".yml"):
@@ -193,12 +222,10 @@ def generate_report(
         output_stream.close()
 
 
-def summarize(
-    aggregated_diagnoses: dict[Path, list[AugmentedDiagnosis]]
-) -> tuple[str, bool]:
+def summarize(aggregated_diagnoses: dict[Path, list[AugmentedDiagnosis]]) -> bool:
     """
-    Summarize the diagnoses. Return a tuple of the summary message and a
-    boolean indicating whether the diagnoses contain any error or failure.
+    Summarize the diagnoses.
+    Return a boolean indicating whether the checks passed or not.
     """
     counts = {
         "error": 0,
@@ -219,9 +246,9 @@ def summarize(
         summary_parts.append(f"{count} skipped checks")
 
     if summary_parts:
-        msg = "Found " + ", ".join(summary_parts)
+        summary = join_with_and(summary_parts, quote=False)
+        click.echo(f"Found {summary}", err=True)
     else:
-        msg = "All passed!"
+        click.echo("All passed!", err=True)
 
-    is_failed = any((counts["error"], counts["failure"]))
-    return msg, is_failed
+    return not any((counts["error"], counts["failure"]))
