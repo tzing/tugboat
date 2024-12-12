@@ -2,12 +2,14 @@ import io
 import logging
 import logging.handlers
 import shutil
+import typing
 from pathlib import Path
 
 import click.testing
 import colorlog
 import pytest
 
+from tugboat.analyze import AugmentedDiagnosis
 from tugboat.console.main import generate_report, main, setup_logging, summarize
 
 
@@ -49,18 +51,51 @@ class TestMain:
         shutil.copy(fixture_dir / "sample-workflow.yaml", tmp_path / "workflow.yaml")
 
         runner = click.testing.CliRunner()
-        result = runner.invoke(main)
+        result = runner.invoke(main, ["--output-format", "junit"])
 
         assert result.exit_code == 0
         assert "All passed!" in result.output
+
+    @pytest.mark.usefixtures("_reset_logging")
+    def test_stdin(self):
+        runner = click.testing.CliRunner()
+        result = runner.invoke(
+            main,
+            ["-"],
+            input=(
+                """
+                apiVersion: argoproj.io/v1alpha1
+                kind: Workflow
+                metadata:
+                  generateName: hello-world-
+                spec:
+                  entrypoint: hello-world
+                  templates:
+                    - name: hello-world
+                      container:
+                        image: busybox
+                        command: [echo]
+                        args: ["hello world"]
+                """
+            ),
+        )
+        assert result.exit_code == 0
+        assert "All passed!" in result.output
+
+    @pytest.mark.usefixtures("_reset_logging")
+    def test_mixed_input_source(self, tmp_path: Path):
+        runner = click.testing.CliRunner()
+        result = runner.invoke(main, ["-", str(tmp_path)])
+        assert result.exit_code == 2
+        assert "Cannot read from stdin and file at the same time." in result.output
 
     @pytest.mark.usefixtures("_reset_logging")
     def test_no_yaml_found(self, tmp_path: Path):
         runner = click.testing.CliRunner()
         result = runner.invoke(main, [str(tmp_path)])
 
-        assert result.exit_code == 1
-        assert "No YAML file found" in result.output
+        assert result.exit_code == 2
+        assert "No manifest found." in result.output
 
     @pytest.mark.usefixtures("_reset_logging")
     def test_read_file_error(self, tmp_path: Path):
@@ -124,6 +159,7 @@ class TestSetupLogging:
 
 
 class TestGenerateReport:
+
     def test_output_stream(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
         def _mock_console_report(diagnostics, output_stream, color):
             output_stream.write("mock report")
@@ -154,51 +190,55 @@ class TestGenerateReport:
 
 
 class TestSummarize:
-    def test_pass(self):
-        assert summarize({}) == ("All passed!", False)
 
-    def test_error_only(self):
-        message, is_failed = summarize(
+    def create_diagnoses(self, type_: str) -> AugmentedDiagnosis:
+        return typing.cast(AugmentedDiagnosis, {"type": type_})
+
+    def test_pass(self, capsys: pytest.CaptureFixture):
+        assert summarize({}) is True
+        assert "All passed!" in capsys.readouterr().err
+
+    def test_error_only(self, capsys: pytest.CaptureFixture):
+        ok = summarize(
             {
-                Path(__file__): [
-                    {"type": "error"},
-                ]
+                Path(__file__): [self.create_diagnoses("error")],
             }
         )
-        assert message == "Found 1 errors"
-        assert is_failed is True
+        assert ok is False
+        assert "Found 1 errors" in capsys.readouterr().err
 
-    def test_failure_only(self):
-        message, is_failed = summarize(
+    def test_failure_only(self, capsys: pytest.CaptureFixture):
+        ok = summarize(
             {
-                Path(__file__): [
-                    {"type": "failure"},
-                ]
+                Path(__file__): [self.create_diagnoses("failure")],
             }
         )
-        assert message == "Found 1 failures"
-        assert is_failed is True
+        assert ok is False
+        assert "Found 1 failures" in capsys.readouterr().err
 
-    def test_skipped_only(self):
-        message, is_failed = summarize(
+    def test_skipped_only(self, capsys: pytest.CaptureFixture):
+        ok = summarize(
             {
                 Path(__file__): [
-                    {"type": "skipped"},
-                    {"type": "skipped"},
-                ]
+                    self.create_diagnoses("skipped"),
+                    self.create_diagnoses("skipped"),
+                ],
             }
         )
-        assert message == "Found 2 skipped checks"
-        assert is_failed is False
+        assert ok is True
+        assert "Found 2 skipped checks" in capsys.readouterr().err
 
-    def test_mixed(self):
-        message, is_failed = summarize(
+    def test_mixed(self, capsys: pytest.CaptureFixture):
+        ok = summarize(
             {
                 Path(__file__): [
-                    {"type": "error"},
-                    {"type": "skipped"},
-                ]
+                    self.create_diagnoses("error"),
+                    self.create_diagnoses("failure"),
+                    self.create_diagnoses("skipped"),
+                ],
             }
         )
-        assert message == "Found 1 errors, 1 skipped checks"
-        assert is_failed is True
+        assert ok is False
+        assert (
+            "Found 1 errors, 1 failures and 1 skipped checks" in capsys.readouterr().err
+        )

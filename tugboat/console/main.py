@@ -11,6 +11,7 @@ import colorlog
 
 from tugboat.analyze import analyze_yaml
 from tugboat.console.utils import VirtualPath, cached_read
+from tugboat.utils import join_with_and
 from tugboat.version import __version__
 
 if typing.TYPE_CHECKING:
@@ -99,6 +100,9 @@ def main(
     logger.debug("Tugboat sets sail!")
 
     # determine the inputs
+    if not manifest:
+        manifest = [Path.cwd()]  # default to the current directory
+
     manifest_paths: list[Path] = []
     if "-" in map(str, manifest):
         if len(manifest) > 1:
@@ -242,7 +246,8 @@ def summarize(aggregated_diagnoses: dict[Path, list[AugmentedDiagnosis]]) -> boo
         summary_parts.append(f"{count} skipped checks")
 
     if summary_parts:
-        click.echo("Found " + ", ".join(summary_parts), err=True)
+        summary = join_with_and(summary_parts, quote=False)
+        click.echo(f"Found {summary}", err=True)
     else:
         click.echo("All passed!", err=True)
 
