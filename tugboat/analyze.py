@@ -10,7 +10,7 @@ from typing import Any, Literal, TypedDict
 import ruamel.yaml
 from pydantic import ValidationError
 from rapidfuzz.process import extractOne
-from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.comments import CommentedBase, CommentedMap
 from ruamel.yaml.error import MarkedYAMLError
 
 from tugboat.core import get_plugin_manager
@@ -22,7 +22,6 @@ if typing.TYPE_CHECKING:
     from typing import Any
 
     from pydantic_core import ErrorDetails
-    from ruamel.yaml.comments import CommentedBase
 
     from tugboat.core import Diagnosis
 
@@ -108,6 +107,11 @@ def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
         if e.problem_mark:
             line = e.problem_mark.line + 1
             column = e.problem_mark.column + 1
+
+        msg = e.problem or e.context
+        if msg and e.context_mark:
+            msg += f"\n{e.context_mark}"  # note: context_mark is not a string
+
         return [
             {
                 "line": line,
@@ -117,7 +121,7 @@ def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
                 "manifest": None,
                 "loc": (),
                 "summary": "Malformed YAML document",
-                "msg": e.problem,
+                "msg": msg,
                 "input": None,
                 "fix": None,
             }
@@ -127,6 +131,22 @@ def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
     for document in documents:
         if document is None:
             continue
+
+        if not isinstance(document, CommentedBase):
+            return [
+                {
+                    "line": 1,
+                    "column": 1,
+                    "type": "error",
+                    "code": "F002",
+                    "manifest": None,
+                    "loc": (),
+                    "summary": "Malformed YAML document",
+                    "msg": "The input is not a YAML document",
+                    "input": None,
+                    "fix": None,
+                }
+            ]
 
         if not isinstance(document, CommentedMap):
             return [

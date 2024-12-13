@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections
+import json
 import typing
 
 from tugboat.constraints import (
@@ -26,6 +27,8 @@ if typing.TYPE_CHECKING:
         Workflow,
         WorkflowTemplate,
     )
+
+    type DocumentMap = dict[tuple[str | int, ...], str]
 
 
 @hookimpl
@@ -85,7 +88,7 @@ def check_input_parameters(
 
 
 def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
-    sources = {}
+    sources: DocumentMap = {}
 
     # check fields
     yield from require_all(
@@ -100,7 +103,10 @@ def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagn
     )
 
     if param.value:
-        sources["value",] = param.value
+        if isinstance(param.value, int | bool):
+            sources["value",] = json.dumps(param.value)
+        else:
+            sources["value",] = param.value
 
     if param.valueFrom:
         yield from require_exactly_one(
@@ -131,8 +137,8 @@ def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagn
         # TODO check expression
 
     # check references
-    for loc, text in sources.items():
-        doc = parse_template(text)
+    for loc, value in sources.items():
+        doc = parse_template(value)
         yield from prepend_loc(loc, report_syntax_errors(doc))
 
         for node, ref, closest in context.parameters.filter_unknown(
@@ -184,8 +190,8 @@ def check_input_artifacts(
 
 
 def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
-    param_sources = {}
-    artifact_sources = {}
+    param_sources: DocumentMap = {}
+    artifact_sources: DocumentMap = {}
 
     # check fields
     yield from require_all(
@@ -304,7 +310,7 @@ def check_output_parameters(
 
 
 def _check_output_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
-    sources = {}
+    sources: DocumentMap = {}
 
     # check fields
     yield from require_all(
@@ -392,7 +398,7 @@ def check_output_artifacts(
 
 
 def _check_output_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
-    artifact_sources = {}
+    artifact_sources: DocumentMap = {}
 
     # check fields
     yield from require_all(
@@ -498,7 +504,7 @@ def check_field_references(
     - `steps` - handled separately in another hook
     """
     # collect fields
-    fields = {}
+    fields: DocumentMap = {}
 
     if template.container:
         for i, command in enumerate(template.container.command or []):
@@ -507,7 +513,8 @@ def check_field_references(
             fields["container", "args", i] = arg
 
         fields["container", "image"] = template.container.image
-        fields["container", "workingDir"] = template.container.workingDir
+        if template.container.workingDir:
+            fields["container", "workingDir"] = template.container.workingDir
 
     if template.script:
         for i, command in enumerate(template.script.command or []):
@@ -515,7 +522,8 @@ def check_field_references(
 
         fields["script", "image"] = template.script.image
         fields["script", "source"] = template.script.source
-        fields["script", "workingDir"] = template.script.workingDir
+        if template.script.workingDir:
+            fields["script", "workingDir"] = template.script.workingDir
 
     if not fields:
         return
@@ -524,9 +532,6 @@ def check_field_references(
     ctx = get_template_context(workflow, template)
 
     for loc, value in fields.items():
-        if not value:
-            continue
-
         doc = parse_template(value)
         yield from prepend_loc(loc, report_syntax_errors(doc))
 
