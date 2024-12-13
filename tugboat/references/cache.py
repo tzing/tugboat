@@ -25,7 +25,7 @@ class cache:
         self.max_size = max_size
         self.store = LruDict(max_size=max_size)
 
-    def __call__(self, func: Callable[..., Context]) -> Callable[..., Context]:
+    def __call__[**P](self, func: Callable[P, Context]) -> Callable[P, Context]:
         @functools.wraps(func)
         def _wrapper(*args, **kwargs):
             assert not kwargs
