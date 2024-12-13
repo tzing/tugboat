@@ -66,6 +66,27 @@ class TestAnalyzeYaml:
             }
         ]
 
+    def test_plain_text(self):
+        diagnoses = analyze_yaml(
+            """
+            This is a plain text document.
+            """
+        )
+        assert diagnoses == [
+            {
+                "line": 1,
+                "column": 1,
+                "type": "error",
+                "code": "F002",
+                "manifest": None,
+                "loc": (),
+                "summary": "Malformed YAML document",
+                "msg": "The input is not a YAML document",
+                "input": None,
+                "fix": None,
+            }
+        ]
+
     def test_yaml_error(self):
         diagnoses = analyze_yaml(
             """
