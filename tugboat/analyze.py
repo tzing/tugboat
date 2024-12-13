@@ -266,16 +266,10 @@ def analyze_raw(manifest: dict) -> list[Diagnosis]:
     logger.debug("Parsed manifest '%s' as %s object", name, type(manifest_obj))
 
     if not manifest_obj:
-        kind = manifest.get("kind")
-        return [
-            {
-                "type": "skipped",
-                "code": "M002",
-                "loc": ("kind",),
-                "msg": f"Manifest of kind '{kind}' is not supported",
-                "input": kind,
-            }
-        ]
+        logger.debug(
+            "Manifest '%s' (kind %s) is not supported", name, manifest.get("kind")
+        )
+        return []
 
     if not isinstance(manifest_obj, Manifest):
         return [

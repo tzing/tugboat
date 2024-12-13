@@ -296,15 +296,7 @@ class TestAnalyzeRaw:
                 "kind": "Unrecognized",
             }
         )
-        assert diagnoses == [
-            {
-                "type": "skipped",
-                "code": "M002",
-                "loc": ("kind",),
-                "msg": "Manifest of kind 'Unrecognized' is not supported",
-                "input": "Unrecognized",
-            }
-        ]
+        assert diagnoses == []
 
     def test_not_manifest_obj(self, plugin_manager):
         plugin_manager.register(self)
