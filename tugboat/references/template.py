@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import itertools
+import logging
 import typing
 
 from tugboat.references.cache import cache
-from tugboat.references.context import AnyStr, Context
+from tugboat.references.context import AnyStr
 from tugboat.references.workflow import get_workflow_context
 
 if typing.TYPE_CHECKING:
+    from tugboat.references.context import Context
     from tugboat.schemas import Template, Workflow, WorkflowTemplate
+
+logger = logging.getLogger(__name__)
 
 
 @cache(16)
@@ -126,6 +130,13 @@ def _add_step_references(
             }
 
         if not reference_template:
+            logger.debug(
+                "The referenced template %s is not available. "
+                "Allow `steps.%s.outputs.parameters.ANY` and `steps.%s.outputs.artifacts.ANY`.",
+                step.template,
+                step.name,
+                step.name,
+            )
             ctx.parameters |= {
                 ("steps", step.name, "outputs", "parameters", AnyStr),
             }

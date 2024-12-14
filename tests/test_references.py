@@ -6,6 +6,7 @@ from dirty_equals import IsInstance
 from tugboat.parsers import Node
 from tugboat.references import (
     get_global_context,
+    get_step_context,
     get_template_context,
     get_workflow_context,
 )
@@ -379,3 +380,57 @@ class TestTemplateContext:
         ctx = get_template_context(workflow, workflow.spec.templates[1])
         assert ("workflow", "name") in ctx.parameters
         assert ("steps", "print-message-loop", "id") not in ctx.parameters
+
+
+class TestStepContext:
+
+    def test(self):
+        workflow = Workflow.model_validate(
+            {
+                "apiVersion": "argoproj.io/v1alpha1",
+                "kind": "Workflow",
+                "metadata": {"generateName": "loops-"},
+                "spec": {
+                    "templates": [
+                        {
+                            "steps": [
+                                [
+                                    {
+                                        "name": "step-1",
+                                        "withItems": [{"message": "hello world"}],
+                                    },
+                                    {
+                                        "name": "step-2",
+                                        "withParam": '[{"message": "hello world"}]',
+                                    },
+                                    {
+                                        "name": "step-2",
+                                        "withParam": "{{ inputs.parameters }}",
+                                    },
+                                ]
+                            ],
+                        },
+                    ],
+                },
+            }
+        )
+        assert workflow.spec.templates
+
+        (template,) = workflow.spec.templates
+        assert template.steps
+
+        step_1, step_2, step_3 = template.steps[0]
+
+        ctx = get_step_context(workflow, template, step_1)
+        assert ("inputs", "parameters") in ctx.parameters
+        assert ("item",) in ctx.parameters
+        assert ("item", "message") in ctx.parameters
+        assert ("item", "foo") not in ctx.parameters
+
+        ctx = get_step_context(workflow, template, step_2)
+        assert ("item", "message") in ctx.parameters
+        assert ("item", "foo") not in ctx.parameters
+
+        ctx = get_step_context(workflow, template, step_3)
+        assert ("item", "message") in ctx.parameters
+        assert ("item", "foo") in ctx.parameters
