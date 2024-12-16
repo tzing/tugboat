@@ -72,7 +72,7 @@ def check_input_parameters(
         if param.name:
             parameters[param.name].append(loc)
 
-        yield from prepend_loc(loc, _check_input_parameter(param, ctx))
+        yield from prepend_loc(loc, check_input_parameter(param, ctx))
 
     # report duplicates
     for name, locs in parameters.items():
@@ -87,7 +87,7 @@ def check_input_parameters(
                 }
 
 
-def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
+def check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
     sources: DocumentMap = {}
 
     # check fields
@@ -174,7 +174,7 @@ def check_input_artifacts(
         if artifact.name:
             artifacts[artifact.name].append(loc)
 
-        yield from prepend_loc(loc, _check_input_artifact(artifact, ctx))
+        yield from prepend_loc(loc, check_input_artifact(artifact, ctx))
 
     # report duplicates
     for name, locs in artifacts.items():
@@ -189,7 +189,7 @@ def check_input_artifacts(
                 }
 
 
-def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
+def check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
     param_sources: DocumentMap = {}
     artifact_sources: DocumentMap = {}
 
