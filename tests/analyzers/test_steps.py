@@ -25,9 +25,15 @@ class TestRules:
             in diagnoses
         )
 
-        # TPL002: Duplicated input parameter name
-        assert IsPartialDict({"code": "TPL002", "loc": (*loc_prefix, 0)}) in diagnoses
-        assert IsPartialDict({"code": "TPL002", "loc": (*loc_prefix, 1)}) in diagnoses
+        # STP002: Duplicated input parameter name
+        assert (
+            IsPartialDict({"code": "STP002", "loc": (*loc_prefix, 0, "name")})
+            in diagnoses
+        )
+        assert (
+            IsPartialDict({"code": "STP002", "loc": (*loc_prefix, 1, "name")})
+            in diagnoses
+        )
 
         # VAR002: Invalid reference
         assert (

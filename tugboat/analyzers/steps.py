@@ -42,8 +42,8 @@ def check_argument_parameters(
         if len(locs) > 1:
             for loc in locs:
                 yield {
-                    "code": "TPL002",
-                    "loc": loc,
+                    "code": "STP002",
+                    "loc": (*loc, "name"),
                     "summary": "Duplicated parameter name",
                     "msg": f"Parameter name '{name}' is duplicated.",
                     "input": name,

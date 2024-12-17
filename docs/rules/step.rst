@@ -37,3 +37,30 @@ The template contains multiple steps with the same name.
                  parameters:
                    - name: message
                      value: "hello-2"
+
+
+:bdg:`STP002` Duplicated input parameter name
+---------------------------------------------
+
+The step contains multiple input parameters with the same name.
+
+.. code-block:: yaml
+
+   apiVersion: argoproj.io/v1alpha1
+   kind: WorkflowTemplate
+   metadata:
+     name: demo
+   spec:
+     templates:
+       - name: main
+         steps:
+           - - name: hello
+               template: print-message
+               arguments:
+                 parameters:
+                   - name: message
+                     #     ^^^^^^^ This parameter is duplicated
+                     value: hello-1
+                   - name: message
+                     #     ^^^^^^^ This parameter is duplicated
+                     value: hello-2
