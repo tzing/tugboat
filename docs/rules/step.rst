@@ -47,10 +47,11 @@ The step contains multiple input parameters with the same name.
 .. code-block:: yaml
 
    apiVersion: argoproj.io/v1alpha1
-   kind: WorkflowTemplate
+   kind: Workflow
    metadata:
-     name: demo
+     name: test-
    spec:
+     entrypoint: main
      templates:
        - name: main
          steps:
@@ -64,3 +65,32 @@ The step contains multiple input parameters with the same name.
                    - name: message
                      #     ^^^^^^^ This parameter is duplicated
                      value: hello-2
+
+:bdg:`TPL003` Duplicated input artifact name
+--------------------------------------------
+
+The step contains multiple input artifacts with the same name.
+
+.. code-block:: yaml
+
+   apiVersion: argoproj.io/v1alpha1
+   kind: Workflow
+   metadata:
+     name: test-
+   spec:
+     entrypoint: main
+     templates:
+       - name: main
+         steps:
+           - - name: hello
+               template: print-message
+               arguments:
+                 artifacts:
+                   - name: message
+                     #     ^^^^^^^ This argument is duplicated
+                     raw:
+                       data: hello-1
+                   - name: message
+                     #     ^^^^^^^ This argument is duplicated
+                     raw:
+                       data: hello-2
