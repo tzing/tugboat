@@ -474,6 +474,29 @@ def _check_output_artifact(artifact: Artifact, context: Context) -> Iterable[Dia
 
 
 @hookimpl(specname="analyze_template")
+def check_step_names(template: Template):
+    if not template.steps:
+        return
+
+    steps = collections.defaultdict(list)
+    for idx_stage, stage in enumerate(template.steps or []):
+        for idx_step, step in enumerate(stage):
+            if step.name:
+                steps[step.name].append(("steps", idx_stage, idx_step, "name"))
+
+    for name, locs in steps.items():
+        if len(locs) > 1:
+            for loc in locs:
+                yield {
+                    "code": "STP001",
+                    "loc": loc,
+                    "summary": "Duplicated step name",
+                    "msg": f"Step name '{name}' is duplicated.",
+                    "input": name,
+                }
+
+
+@hookimpl(specname="analyze_template")
 def check_field_references(
     template: Template, workflow: Workflow | WorkflowTemplate
 ) -> Iterable[Diagnosis]:
