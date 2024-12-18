@@ -142,11 +142,11 @@ class Step(BaseModel):
     template: str | None = None
     templateRef: TemplateRef | None = None
     when: str | None = None
+    withItems: Array[str | bool | int | dict[str, Any]] | None = None
     withParam: str | None = None
 
     continueOn: Any | None = None
     hooks: Any | None = None
-    withItems: Array[Any] | None = None
     withSequence: Any | None = None
 
     def __hash__(self):

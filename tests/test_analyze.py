@@ -352,6 +352,8 @@ class TestArgoExamples:
                 "exit-handler-step-level.yaml",
                 "template-on-exit.yaml",
                 "webhdfs-input-output-artifacts.yaml",
+                # invalid reference
+                "event-consumer-workflowtemplate.yaml",
                 # name too long
                 "global-parameters-from-configmap-referenced-as-local-variable.yaml",
             ):

@@ -72,7 +72,7 @@ def check_input_parameters(
         if param.name:
             parameters[param.name].append(loc)
 
-        yield from prepend_loc(loc, _check_input_parameter(param, ctx))
+        yield from prepend_loc(loc, check_input_parameter(param, ctx))
 
     # report duplicates
     for name, locs in parameters.items():
@@ -87,7 +87,7 @@ def check_input_parameters(
                 }
 
 
-def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
+def check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
     sources: DocumentMap = {}
 
     # check fields
@@ -174,7 +174,7 @@ def check_input_artifacts(
         if artifact.name:
             artifacts[artifact.name].append(loc)
 
-        yield from prepend_loc(loc, _check_input_artifact(artifact, ctx))
+        yield from prepend_loc(loc, check_input_artifact(artifact, ctx))
 
     # report duplicates
     for name, locs in artifacts.items():
@@ -189,7 +189,7 @@ def check_input_artifacts(
                 }
 
 
-def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
+def check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
     param_sources: DocumentMap = {}
     artifact_sources: DocumentMap = {}
 
@@ -471,6 +471,29 @@ def _check_output_artifact(artifact: Artifact, context: Context) -> Iterable[Dia
                 "input": str(node),
                 "fix": node.format(closest),
             }
+
+
+@hookimpl(specname="analyze_template")
+def check_step_names(template: Template):
+    if not template.steps:
+        return
+
+    steps = collections.defaultdict(list)
+    for idx_stage, stage in enumerate(template.steps or []):
+        for idx_step, step in enumerate(stage):
+            if step.name:
+                steps[step.name].append(("steps", idx_stage, idx_step, "name"))
+
+    for name, locs in steps.items():
+        if len(locs) > 1:
+            for loc in locs:
+                yield {
+                    "code": "STP001",
+                    "loc": loc,
+                    "summary": "Duplicated step name",
+                    "msg": f"Step name '{name}' is duplicated.",
+                    "input": name,
+                }
 
 
 @hookimpl(specname="analyze_template")

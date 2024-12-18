@@ -91,7 +91,7 @@ def require_all(
 
     Yield
     -----
-    :ref:`code.m004` for any of the missing fields.
+    :ref:`code.m004` for any of the missing or empty fields.
     """
     for field in fields:
         value = getattr(model, field, None)

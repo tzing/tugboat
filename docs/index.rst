@@ -146,6 +146,7 @@ For more information on how to use Tugboat, runs its help command:
    rules/cron-workflow
    rules/fatal-errors
    rules/manifest-errors
+   rules/step
    rules/template
    rules/workflow
    rules/workflow-template

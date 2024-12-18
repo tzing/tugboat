@@ -286,6 +286,28 @@ class TestRules:
             in diagnoses
         )
 
+    def test_check_duplicate_step_names(self):
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_STEP_NAMES)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        assert (
+            IsPartialDict(
+                {
+                    "code": "STP001",
+                    "loc": ("spec", "templates", 0, "steps", 0, 0, "name"),
+                }
+            )
+            in diagnoses
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "STP001",
+                    "loc": ("spec", "templates", 0, "steps", 1, 0, "name"),
+                }
+            )
+            in diagnoses
+        )
+
 
 MANIFEST_AMBIGUOUS_TYPE = """
 apiVersion: argoproj.io/v1alpha1
@@ -405,4 +427,30 @@ spec:
         command: [ python ]
         source: |-
           print('Hello world, {{ inputs.artifacts.data }}!')  # VAR002
+"""
+
+MANIFEST_DUPLICATE_STEP_NAMES = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: steps-
+spec:
+  entrypoint: hello-hello
+  templates:
+    - name: hello-hello
+      steps:
+        - - name: hello
+            #     ^^^^^ This step is duplicated
+            template: print-message
+            arguments:
+              parameters:
+                - name: message
+                  value: "hello-1"
+        - - name: hello
+            #     ^^^^^ This step is duplicated
+            template: print-message
+            arguments:
+              parameters:
+                - name: message
+                  value: "hello-2"
 """
