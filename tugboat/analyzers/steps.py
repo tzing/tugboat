@@ -4,7 +4,6 @@ import collections
 import typing
 
 from tugboat.analyzers.template import check_input_artifact, check_input_parameter
-from tugboat.constraints import mutually_exclusive, require_all, require_exactly_one
 from tugboat.core import hookimpl
 from tugboat.references import get_step_context
 from tugboat.utils import prepend_loc
