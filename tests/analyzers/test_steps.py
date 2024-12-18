@@ -4,7 +4,6 @@ import logging
 from dirty_equals import IsPartialDict
 
 import tugboat.analyze
-from tests.utils import ContainsSubStrings
 
 logger = logging.getLogger(__name__)
 
