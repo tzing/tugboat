@@ -9,29 +9,7 @@ from tests.utils import ContainsSubStrings
 logger = logging.getLogger(__name__)
 
 
-class TestRules:
-
-    def test_analyze_template(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_AMBIGUOUS_TYPE)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-        assert (
-            IsPartialDict(
-                {
-                    "code": "M006",
-                    "loc": ("spec", "templates", 0, "container"),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialDict(
-                {
-                    "code": "M006",
-                    "loc": ("spec", "templates", 0, "script"),
-                }
-            )
-            in diagnoses
-        )
+class TestInputRules:
 
     def test_check_input_parameters(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_PARAMETERS)
@@ -150,6 +128,71 @@ class TestRules:
                         "from",
                     ),
                     "msg": "The artifact reference 'invalid' used in artifact 'data' is invalid.",
+                }
+            )
+            in diagnoses
+        )
+
+
+MANIFEST_INVALID_INPUT_PARAMETERS = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  entrypoint: test
+  templates:
+    - name: main
+      inputs:
+        parameters:
+          - name: message # TPL002
+            valueFrom:
+              path: /malformed # M005
+          - name: message # TPL002
+            value: "{{ workflow.name " # VAR001
+          - name: message-3
+            value: "{{ workflow.invalid}}" # VAR002
+"""
+
+MANIFEST_INVALID_INPUT_ARTIFACTS = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  entrypoint: test
+  templates:
+    - name: test
+      inputs:
+        artifacts:
+          - name: data # TPL003
+            raw:
+              data:
+                This is a message from {{ workflow.namee }}. # VAR002
+          - name: data # TPL003
+            from: "{{ invalid }}" # VAR002
+"""
+
+
+class TestRules:
+
+    def test_analyze_template(self):
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_AMBIGUOUS_TYPE)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        assert (
+            IsPartialDict(
+                {
+                    "code": "M006",
+                    "loc": ("spec", "templates", 0, "container"),
+                }
+            )
+            in diagnoses
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "M006",
+                    "loc": ("spec", "templates", 0, "script"),
                 }
             )
             in diagnoses
@@ -325,44 +368,6 @@ spec:
         source: print("hello world!")
 """
 
-MANIFEST_INVALID_INPUT_PARAMETERS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  entrypoint: test
-  templates:
-    - name: main
-      inputs:
-        parameters:
-          - name: message # TPL002
-            valueFrom:
-              path: /malformed # M005
-          - name: message # TPL002
-            value: "{{ workflow.name " # VAR001
-          - name: message-3
-            value: "{{ workflow.invalid}}" # VAR002
-"""
-
-MANIFEST_INVALID_INPUT_ARTIFACTS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  entrypoint: test
-  templates:
-    - name: test
-      inputs:
-        artifacts:
-          - name: data # TPL003
-            raw:
-              data:
-                This is a message from {{ workflow.namee }}. # VAR002
-          - name: data # TPL003
-            from: "{{ invalid }}" # VAR002
-"""
 
 MANIFEST_INVALID_OUTPUT_PARAMETERS = """
 apiVersion: argoproj.io/v1alpha1
