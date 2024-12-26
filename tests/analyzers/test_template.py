@@ -174,29 +174,7 @@ spec:
 """
 
 
-class TestRules:
-
-    def test_analyze_template(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_AMBIGUOUS_TYPE)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-        assert (
-            IsPartialDict(
-                {
-                    "code": "M006",
-                    "loc": ("spec", "templates", 0, "container"),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialDict(
-                {
-                    "code": "M006",
-                    "loc": ("spec", "templates", 0, "script"),
-                }
-            )
-            in diagnoses
-        )
+class TestOutputRules:
 
     def test_check_output_parameters(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_OUTPUT_PARAMETERS)
@@ -303,6 +281,68 @@ class TestRules:
             in diagnoses
         )
 
+
+MANIFEST_INVALID_OUTPUT_PARAMETERS = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  entrypoint: main
+  templates:
+    - name: main
+      container:
+        image: busybox:latest
+      outputs:
+        parameters:
+          - name: message # TPL004
+          - name: message # TPL004
+            valueFrom:
+              parameter: "{{ workflow.invalid}}" # VAR002
+"""
+
+MANIFEST_INVALID_OUTPUT_ARTIFACTS = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  templates:
+    - name: main
+      outputs:
+        artifacts:
+          - name: data # TPL005
+            path: /data
+            archive: {} # M004
+          - name: data # TPL005
+            from: '{{ invalid }}'
+"""
+
+
+class TestRules:
+
+    def test_analyze_template(self):
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_AMBIGUOUS_TYPE)
+        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        assert (
+            IsPartialDict(
+                {
+                    "code": "M006",
+                    "loc": ("spec", "templates", 0, "container"),
+                }
+            )
+            in diagnoses
+        )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "M006",
+                    "loc": ("spec", "templates", 0, "script"),
+                }
+            )
+            in diagnoses
+        )
+
     def test_check_field_references(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_REFERENCES)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
@@ -368,42 +408,6 @@ spec:
         source: print("hello world!")
 """
 
-
-MANIFEST_INVALID_OUTPUT_PARAMETERS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  entrypoint: main
-  templates:
-    - name: main
-      container:
-        image: busybox:latest
-      outputs:
-        parameters:
-          - name: message # TPL004
-          - name: message # TPL004
-            valueFrom:
-              parameter: "{{ workflow.invalid}}" # VAR002
-"""
-
-MANIFEST_INVALID_OUTPUT_ARTIFACTS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  templates:
-    - name: main
-      outputs:
-        artifacts:
-          - name: data # TPL005
-            path: /data
-            archive: {} # M004
-          - name: data # TPL005
-            from: '{{ invalid }}'
-"""
 
 MANIFEST_INVALID_REFERENCES = """
 apiVersion: argoproj.io/v1alpha1

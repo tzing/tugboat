@@ -82,12 +82,14 @@ def get_plugin_manager() -> pluggy.PluginManager:
     import tugboat.analyzers.cron_workflow
     import tugboat.analyzers.steps
     import tugboat.analyzers.template.inputs
+    import tugboat.analyzers.template.outputs
     import tugboat.analyzers.workflow
     import tugboat.analyzers.workflow_template
 
     pm.register(tugboat.analyzers.cron_workflow)
     pm.register(tugboat.analyzers.steps)
     pm.register(tugboat.analyzers.template.inputs)
+    pm.register(tugboat.analyzers.template.outputs)
     pm.register(tugboat.analyzers.workflow)
     pm.register(tugboat.analyzers.workflow_template)
 
