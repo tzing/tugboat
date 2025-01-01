@@ -31,14 +31,15 @@ For instance, the following workflow specifies an entrypoint that does not exist
            image: alpine:latest
 
 
-:bdg:`WT002` Duplicated parameter name
+:bdg:`WF002` Duplicated parameter name
 --------------------------------------
 
-The workflow contains multiple argument parameters with the same name.
+The workflow contains multiple input parameters (``.spec.arguments.parameters``) with the same name.
 
 In the following example, the template ``message`` is duplicated:
 
 .. code-block:: yaml
+   :emphasize-lines: 8,10
 
    apiVersion: argoproj.io/v1alpha1
    kind: Workflow
@@ -48,21 +49,20 @@ In the following example, the template ``message`` is duplicated:
      arguments:
        parameters:
          - name: message
-           #     ^^^^^^^ This parameter is duplicated
            value: "Hello, World!"
          - name: message
-           #     ^^^^^^^ This parameter is duplicated
            value: "Hello, Tugboat!"
 
 
-:bdg:`WT003` Duplicated artifact name
+:bdg:`WF003` Duplicated artifact name
 -------------------------------------
 
-The workflow contains multiple argument artifacts with the same name.
+The workflow contains multiple input artifacts (``.spec.arguments.artifacts``) with the same name.
 
 In the following example, the artifact ``message`` is duplicated:
 
 .. code-block:: yaml
+   :emphasize-lines: 8,11
 
    apiVersion: argoproj.io/v1alpha1
    kind: Workflow
@@ -72,11 +72,9 @@ In the following example, the artifact ``message`` is duplicated:
      arguments:
        artifacts:
          - name: message
-           #     ^^^^^^^ This parameter is duplicated
            raw:
               data: "Hello, World!"
          - name: message
-           #     ^^^^^^^ This parameter is duplicated
            raw:
               data: >-
                 Hello, Tugboat!

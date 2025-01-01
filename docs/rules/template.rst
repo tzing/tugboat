@@ -6,7 +6,7 @@ Code ``TPL`` is used for errors specifically related to the `template`_, the reu
 .. _template: https://argo-workflows.readthedocs.io/en/latest/fields/#template
 
 
-:bdg:`TPL001` Duplicated template name
+:bdg:`TPL001` Duplicate template names
 --------------------------------------
 
 The workflow or workflow template contains multiple templates with the same name.
@@ -14,6 +14,7 @@ The workflow or workflow template contains multiple templates with the same name
 In the following example, the template ``hello`` is duplicated:
 
 .. code-block:: yaml
+   :emphasize-lines: 7,10
 
    apiVersion: argoproj.io/v1alpha1
    kind: WorkflowTemplate
@@ -22,21 +23,20 @@ In the following example, the template ``hello`` is duplicated:
    spec:
      templates:
        - name: hello
-         #     ^^^^^ This template is duplicated
          container:
            image: alpine:latest
        - name: hello
-         #     ^^^^^ This template is duplicated
          container:
-           image: alpine:latest
+           image: busybox:latest
 
 
-:bdg:`TPL002` Duplicated input parameter name
+:bdg:`TPL002` Duplicate input parameter names
 ---------------------------------------------
 
-The template contains multiple input parameters with the same name.
+The template contains multiple input parameters (``<template>.inputs.parameters``) with the same name.
 
 .. code-block:: yaml
+   :emphasize-lines: 10,11
 
    apiVersion: argoproj.io/v1alpha1
    kind: WorkflowTemplate
@@ -44,20 +44,21 @@ The template contains multiple input parameters with the same name.
      name: demo
    spec:
      templates:
-        - name: main
-          inputs:
-            parameters:
-              - name: message
-              - name: message
-                #     ^^^^^^^ This parameter is duplicated
+       - name: main
+         inputs:
+           parameters:
+             - name: data
+             - name: data
+         ...
 
 
-:bdg:`TPL003` Duplicated input artifact name
+:bdg:`TPL003` Duplicate input artifact names
 --------------------------------------------
 
-The template contains multiple input artifacts with the same name.
+The template contains multiple input artifacts (``<template>.inputs.artifacts``) with the same name.
 
 .. code-block:: yaml
+   :emphasize-lines: 10,12
 
    apiVersion: argoproj.io/v1alpha1
    kind: WorkflowTemplate
@@ -65,20 +66,23 @@ The template contains multiple input artifacts with the same name.
      name: demo
    spec:
      templates:
-        - name: main
-          inputs:
-            artifacts:
-              - name: data
-              - name: data
-                #     ^^^^ This artifact is duplicated
+       - name: main
+         inputs:
+           artifacts:
+             - name: data
+               path: /data/foo
+             - name: data
+               path: /data/bar
+         ...
 
 
-:bdg:`TPL004` Duplicated output parameter name
+:bdg:`TPL004` Duplicate output parameter names
 ----------------------------------------------
 
-The template contains multiple output parameters with the same name.
+The template contains multiple output parameters (``<template>.outputs.parameters``) with the same name.
 
 .. code-block:: yaml
+   :emphasize-lines: 11,14
 
    apiVersion: argoproj.io/v1alpha1
    kind: WorkflowTemplate
@@ -87,19 +91,24 @@ The template contains multiple output parameters with the same name.
    spec:
      templates:
         - name: main
+          ...
           outputs:
             parameters:
               - name: message
+                valueFrom:
+                  path: /tmp/message.txt
               - name: message
-                #     ^^^^^^^ This parameter is duplicated
+                valueFrom:
+                  path: /tmp/msg.txt
 
 
-:bdg:`TPL005` Duplicated output artifact name
+:bdg:`TPL005` Duplicate output artifact names
 ---------------------------------------------
 
-The template contains multiple output artifacts with the same name.
+The template contains multiple output artifacts (``<template>.outputs.artifacts``) with the same name.
 
 .. code-block:: yaml
+   :emphasize-lines: 11,13
 
    apiVersion: argoproj.io/v1alpha1
    kind: WorkflowTemplate
@@ -108,8 +117,10 @@ The template contains multiple output artifacts with the same name.
    spec:
      templates:
         - name: main
+          ...
           outputs:
             artifacts:
               - name: data
+                path: /data/foo
               - name: data
-                #     ^^^^ This artifact is duplicated
+                path: /data/bar

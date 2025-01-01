@@ -43,7 +43,7 @@ def check_argument_parameters(
                 yield {
                     "code": "STP002",
                     "loc": (*loc, "name"),
-                    "summary": "Duplicated parameter name",
+                    "summary": "Duplicate parameter name",
                     "msg": f"Parameter name '{name}' is duplicated.",
                     "input": name,
                 }
@@ -75,7 +75,7 @@ def check_argument_artifacts(
                 yield {
                     "code": "STP003",
                     "loc": (*loc, "name"),
-                    "summary": "Duplicated artifact name",
+                    "summary": "Duplicate artifact name",
                     "msg": f"Artifact name '{name}' is duplicated.",
                     "input": name,
                 }

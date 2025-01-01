@@ -7,12 +7,13 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
 .. _template: https://argo-workflows.readthedocs.io/en/latest/fields/#template
 
 
-:bdg:`STP001` Duplicated step name
+:bdg:`STP001` Duplicate step names
 ----------------------------------
 
 The template contains multiple steps with the same name.
 
 .. code-block:: yaml
+   :emphasize-lines: 10,16
 
    apiVersion: argoproj.io/v1alpha1
    kind: Workflow
@@ -24,14 +25,12 @@ The template contains multiple steps with the same name.
        - name: hello-hello
          steps:
            - - name: hello
-               #     ^^^^^ This step is duplicated
                template: print-message
                arguments:
                  parameters:
                    - name: message
                      value: "hello-1"
            - - name: hello
-               #     ^^^^^ This step is duplicated
                template: print-message
                arguments:
                  parameters:
@@ -39,12 +38,14 @@ The template contains multiple steps with the same name.
                      value: "hello-2"
 
 
-:bdg:`STP002` Duplicated input parameter name
----------------------------------------------
+:bdg:`STP002` Duplicate input parameters
+----------------------------------------
 
-The step contains multiple input parameters with the same name.
+The step includes several input parameters (``<step>.arguments.parameters``) that share the same name.
+The parameter was set multiple times.
 
 .. code-block:: yaml
+   :emphasize-lines: 14,16
 
    apiVersion: argoproj.io/v1alpha1
    kind: Workflow
@@ -60,18 +61,18 @@ The step contains multiple input parameters with the same name.
                arguments:
                  parameters:
                    - name: message
-                     #     ^^^^^^^ This parameter is duplicated
                      value: hello-1
                    - name: message
-                     #     ^^^^^^^ This parameter is duplicated
                      value: hello-2
 
-:bdg:`TPL003` Duplicated input artifact name
---------------------------------------------
+:bdg:`STP003` Duplicate input artifacts
+---------------------------------------
 
-The step contains multiple input artifacts with the same name.
+The step includes several input artifacts (``<step>.arguments.artifacts``) that share the same name.
+The artifact was set multiple times.
 
 .. code-block:: yaml
+   :emphasize-lines: 14,17
 
    apiVersion: argoproj.io/v1alpha1
    kind: Workflow
@@ -87,10 +88,8 @@ The step contains multiple input artifacts with the same name.
                arguments:
                  artifacts:
                    - name: message
-                     #     ^^^^^^^ This argument is duplicated
                      raw:
                        data: hello-1
                    - name: message
-                     #     ^^^^^^^ This argument is duplicated
                      raw:
                        data: hello-2

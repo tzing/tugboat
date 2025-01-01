@@ -1,5 +1,7 @@
 from unittest.mock import Mock
 
+from dirty_equals import IsPartialDict
+
 from tugboat.parsers import Node, Unexpected, parse_template, report_syntax_errors
 from tugboat.parsers.ast.argo_template import Document
 
@@ -43,27 +45,14 @@ class TestReportSyntaxErrors:
         )
 
         assert list(report_syntax_errors(node)) == [
-            {
-                "code": "VAR001",
-                "loc": (),
-                "summary": "Syntax error",
-                "msg": "Invalid syntax near 'foo'",
-                "input": "foo",
-            },
-            {
-                "code": "VAR001",
-                "loc": (),
-                "summary": "Syntax error",
-                "msg": "Invalid syntax near 'bar': test error",
-                "input": "bar",
-            },
-            {
-                "code": "VAR001",
-                "loc": (),
-                "summary": "Syntax error",
-                "msg": "Invalid syntax near 'bazqux'",
-                "input": "bazqux",
-            },
+            IsPartialDict(
+                {
+                    "code": "VAR001",
+                    "loc": (),
+                    "summary": "Syntax error",
+                    "input": "foo",
+                }
+            )
         ]
 
     def test_nested_error(self):

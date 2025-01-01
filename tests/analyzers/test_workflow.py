@@ -229,13 +229,13 @@ class TestRules:
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
-                {"code": "WT002", "loc": ("spec", "arguments", "parameters", 0)}
+                {"code": "WF002", "loc": ("spec", "arguments", "parameters", 0)}
             )
             in diagnoses
         )
         assert (
             IsPartialDict(
-                {"code": "WT002", "loc": ("spec", "arguments", "parameters", 1)}
+                {"code": "WF002", "loc": ("spec", "arguments", "parameters", 1)}
             )
             in diagnoses
         )
@@ -274,13 +274,13 @@ class TestRules:
 
         assert (
             IsPartialDict(
-                {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 0)}
+                {"code": "WF003", "loc": ("spec", "arguments", "artifacts", 0)}
             )
             in diagnoses
         )
         assert (
             IsPartialDict(
-                {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 1)}
+                {"code": "WF003", "loc": ("spec", "arguments", "artifacts", 1)}
             )
             in diagnoses
         )
