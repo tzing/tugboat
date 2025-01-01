@@ -1,9 +1,56 @@
 Template Rules (``TPL``)
 ========================
 
-Code ``TPL`` is used for errors specifically related to the `template`_, the reusable and composable unit of execution in a workflow or workflow template.
+Code ``TPL`` is used for errors specifically related to `the template <https://argo-workflows.readthedocs.io/en/latest/fields/#template>`_, the reusable and composable unit of execution in a workflow or workflow template.
 
-.. _template: https://argo-workflows.readthedocs.io/en/latest/fields/#template
+Argo Workflows offers various types of templates. However, Tugboat currently supports only a few of them:
+
+.. list-table::
+    :header-rows: 1
+
+    * - Template Type
+      - Schema check [#schm-chk]_
+      - Static analysis [#sttc-chk]_
+
+    * - Container template
+      - :octicon:`alert` Partial; Check against :py:class:`~tugboat.schemas.ContainerTemplate`
+      - :octicon:`alert` Partial; Adapted :doc:`workflow-variable`
+
+    * - `Container set template <https://argo-workflows.readthedocs.io/en/latest/container-set-template/>`_
+      - :octicon:`x`
+      - :octicon:`x`
+
+    * - `DAG template <https://argo-workflows.readthedocs.io/en/latest/walk-through/dag/>`_
+      - :octicon:`x`
+      - :octicon:`x`
+
+    * - `Data template <https://argo-workflows.readthedocs.io/en/latest/data-sourcing-and-transformation/>`_
+      - :octicon:`x`
+      - :octicon:`x`
+
+    * - `HTTP template <https://argo-workflows.readthedocs.io/en/latest/http-template/>`_
+      - :octicon:`x`
+      - :octicon:`x`
+
+    * - `Resource template <https://argo-workflows.readthedocs.io/en/latest/walk-through/kubernetes-resources/>`_
+      - :octicon:`x`
+      - :octicon:`x`
+
+    * - `Script template <https://argo-workflows.readthedocs.io/en/latest/walk-through/scripts-and-results/>`_
+      - :octicon:`alert` Partial; Check against :py:class:`~tugboat.schemas.ScriptTemplate`
+      - :octicon:`alert` Partial; Adapted :doc:`workflow-variable`
+
+    * - `Steps template <https://argo-workflows.readthedocs.io/en/latest/walk-through/steps/>`_
+      - :octicon:`alert` Partial; Check against :py:class:`~tugboat.schemas.Step`
+      - :octicon:`check` Covered by :doc:`step`
+
+    * - `Suspend template <https://argo-workflows.readthedocs.io/en/latest/walk-through/suspending/>`_
+      - :octicon:`x`
+      - :octicon:`x`
+
+.. [#schm-chk] The schema check validates the manifest against the schema defined in the official `field reference`_ document. It identifies missing or extra fields, incorrect data types, and other basic errors. These errors will be reported as :doc:`manifest-errors`.
+.. [#sttc-chk] The static analysis examines the manifest's fields and values according to a set of rules. It detects unusual values, misused parameters, and potential runtime issues like duplicate names.
+.. _Field Reference: https://argo-workflows.readthedocs.io/en/latest/fields/
 
 
 :bdg:`TPL001` Duplicate template names
