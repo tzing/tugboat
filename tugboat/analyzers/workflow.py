@@ -145,7 +145,7 @@ def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
                 yield {
                     "code": "TPL001",
                     "loc": loc,
-                    "summary": "Duplicated template name",
+                    "summary": "Duplicate template name",
                     "msg": f"Template name '{name}' is duplicated.",
                     "input": name,
                 }

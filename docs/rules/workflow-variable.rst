@@ -35,7 +35,7 @@ Tugboat checks the references used in the manifest against a list of references 
 If a reference used in the manifest is not found in the defined references, an error is reported.
 
 .. code-block:: yaml
-  :emphasize-lines: 17
+   :emphasize-lines: 17
 
    apiVersion: argoproj.io/v1alpha1
    kind: Workflow

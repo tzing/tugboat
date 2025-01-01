@@ -57,7 +57,7 @@ def check_input_parameters(
                 yield {
                     "code": "TPL002",
                     "loc": loc,
-                    "summary": "Duplicated parameter name",
+                    "summary": "Duplicate parameter name",
                     "msg": f"Parameter name '{name}' is duplicated.",
                     "input": name,
                 }
@@ -159,7 +159,7 @@ def check_input_artifacts(
                 yield {
                     "code": "TPL003",
                     "loc": loc,
-                    "summary": "Duplicated parameter name",
+                    "summary": "Duplicate parameter name",
                     "msg": f"Parameter name '{name}' is duplicated.",
                     "input": name,
                 }

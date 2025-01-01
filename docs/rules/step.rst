@@ -13,7 +13,7 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
 The template contains multiple steps with the same name.
 
 .. code-block:: yaml
-  :emphasize-lines: 10,16
+   :emphasize-lines: 10,16
 
    apiVersion: argoproj.io/v1alpha1
    kind: Workflow
@@ -45,7 +45,7 @@ The step includes several input parameters (``<step>.arguments.parameters``) tha
 The parameter was set multiple times.
 
 .. code-block:: yaml
-  :emphasize-lines: 14,16
+   :emphasize-lines: 14,16
 
    apiVersion: argoproj.io/v1alpha1
    kind: Workflow
@@ -72,7 +72,7 @@ The step includes several input artifacts (``<step>.arguments.artifacts``) that 
 The artifact was set multiple times.
 
 .. code-block:: yaml
-  :emphasize-lines: 14,17
+   :emphasize-lines: 14,17
 
    apiVersion: argoproj.io/v1alpha1
    kind: Workflow

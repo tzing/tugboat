@@ -56,7 +56,7 @@ def check_output_parameters(
                 yield {
                     "code": "TPL004",
                     "loc": loc,
-                    "summary": "Duplicated parameter name",
+                    "summary": "Duplicate parameter name",
                     "msg": f"Parameter name '{name}' is duplicated.",
                     "input": name,
                 }
@@ -144,7 +144,7 @@ def check_output_artifacts(
                 yield {
                     "code": "TPL005",
                     "loc": loc,
-                    "summary": "Duplicated parameter name",
+                    "summary": "Duplicate parameter name",
                     "msg": f"Parameter name '{name}' is duplicated.",
                     "input": name,
                 }
