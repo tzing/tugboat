@@ -20,7 +20,7 @@ The code ``VAR`` identifies potential issues with `workflow variables`_, includi
 :bdg:`VAR001` Syntax error
 --------------------------
 
-This error occurs when a workflow variable contains any syntax error.
+This error occurs when a workflow variable fails to parse due to a syntax error.
 
 Note that most parsers report syntax errors as soon as they encounter the first issue.
 This means the error message might not always indicate the exact location of the problem, but it provides a useful starting point for debugging.
@@ -35,6 +35,7 @@ Tugboat checks the references used in the manifest against a list of references 
 If a reference used in the manifest is not found in the defined references, an error is reported.
 
 .. code-block:: yaml
+  :emphasize-lines: 17
 
    apiVersion: argoproj.io/v1alpha1
    kind: Workflow
@@ -53,8 +54,8 @@ If a reference used in the manifest is not found in the defined references, an e
            image: docker/whalesay:latest
            command: [cowsay]
            args: ["{{ inputs.artifacts.message }}"]
-           #       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-           #       Reference not found - We can't reference artifact here
+
+In the example above, ``inputs.artifacts.message`` is invalid because referencing artifacts in this field is not allowed.
 
 .. admonition:: Limited validation of step outputs
    :class: note

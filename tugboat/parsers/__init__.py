@@ -84,9 +84,21 @@ def report_syntax_errors(node: Node) -> Iterator[Diagnosis]:
                 "code": "VAR001",
                 "loc": (),
                 "summary": "Syntax error",
-                "msg": f"Invalid syntax near '{text}'",
+                "msg": (
+                    f"""
+                    Failed to parse the Argo workflow variable due to a syntax error.
+
+                    This error is likely caused by an invalid character or an unexpected token in the variable definition.
+                    The syntax error is near the following text: {text}
+                    """
+                ),
                 "input": text,
             }
+            # TODO
+            # ideally we should yield each abnormal node as a separate diagnosis
+            # but currently reporting does not look good, so we just return
+            # the first one and skip the rest.
+            return
 
         else:
             # recursively check the children
