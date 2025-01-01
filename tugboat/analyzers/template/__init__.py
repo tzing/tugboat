@@ -65,7 +65,7 @@ def check_step_names(template: Template):
                 yield {
                     "code": "STP001",
                     "loc": loc,
-                    "summary": "Duplicated step name",
+                    "summary": "Duplicate step name",
                     "msg": f"Step name '{name}' is duplicated.",
                     "input": name,
                 }
