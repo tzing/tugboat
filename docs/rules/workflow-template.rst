@@ -15,6 +15,7 @@ The specified entrypoint does not exist in the workflow template.
 For instance, the following workflow specifies an entrypoint that does not exist:
 
 .. code-block:: yaml
+   :emphasize-lines: 6
 
    apiVersion: argoproj.io/v1alpha1
    kind: WorkflowTemplate
@@ -22,21 +23,21 @@ For instance, the following workflow specifies an entrypoint that does not exist
      name: demo
    spec:
      entrypoint: non-existent
-     #           ^^^^^^^^^^^^ This entrypoint does not exist
      templates:
        - name: hello
          container:
            image: alpine:latest
 
 
-:bdg:`WT002` Duplicated parameter name
+:bdg:`WT002` Duplicate parameter names
 --------------------------------------
 
-The workflow template contains multiple argument parameters with the same name.
+The workflow template contains multiple input parameters (``.spec.arguments.parameters``) with the same name.
 
 In the following example, the template ``message`` is duplicated:
 
 .. code-block:: yaml
+   :emphasize-lines: 8,10
 
    apiVersion: argoproj.io/v1alpha1
    kind: WorkflowTemplate
@@ -46,21 +47,20 @@ In the following example, the template ``message`` is duplicated:
      arguments:
        parameters:
          - name: message
-           #     ^^^^^^^ This parameter is duplicated
            value: "Hello, World!"
          - name: message
-           #     ^^^^^^^ This parameter is duplicated
            value: "Hello, Tugboat!"
 
 
-:bdg:`WT003` Duplicated artifact name
+:bdg:`WT003` Duplicate artifact names
 -------------------------------------
 
-The workflow template contains multiple argument artifacts with the same name.
+The workflow template contains multiple input artifacts (``.spec.arguments.artifacts``) with the same name.
 
 In the following example, the artifact ``message`` is duplicated:
 
 .. code-block:: yaml
+   :emphasize-lines: 8,11
 
    apiVersion: argoproj.io/v1alpha1
    kind: WorkflowTemplate
@@ -70,11 +70,9 @@ In the following example, the artifact ``message`` is duplicated:
      arguments:
        artifacts:
          - name: message
-           #     ^^^^^^^ This parameter is duplicated
            raw:
               data: "Hello, World!"
          - name: message
-           #     ^^^^^^^ This parameter is duplicated
            raw:
               data: >-
                 Hello, Tugboat!
@@ -89,11 +87,11 @@ While Argo Workflows does not strictly enforce this, it is recommended to use th
 This is because the workflow template will be referenced by its name in the workflow, and a randomly generated name can be difficult to remember.
 
 .. code-block:: yaml
+   :emphasize-lines: 4
 
    apiVersion: argoproj.io/v1alpha1
    kind: WorkflowTemplate
    metadata:
      generateName: demo-
-     #^^^^^^^^^^^^^^^^^^ Use `name` instead of `generateName`
    spec:
      templates: []

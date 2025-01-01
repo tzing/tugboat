@@ -208,9 +208,9 @@ def check_argument_parameters(workflow: WorkflowCompatible) -> Iterator[Diagnosi
         if len(locs) > 1:
             for loc in locs:
                 yield {
-                    "code": "WT002",
+                    "code": "WF002",
                     "loc": loc,
-                    "summary": "Duplicated parameter name",
+                    "summary": "Duplicate parameter name",
                     "msg": f"Parameter name '{name}' is duplicated.",
                     "input": name,
                 }
@@ -265,9 +265,9 @@ def check_argument_artifacts(workflow: WorkflowCompatible) -> Iterator[Diagnosis
         if len(locs) > 1:
             for loc in locs:
                 yield {
-                    "code": "WT003",
+                    "code": "WF003",
                     "loc": loc,
-                    "summary": "Duplicated artifact name",
+                    "summary": "Duplicate artifact name",
                     "msg": f"Artifact name '{name}' is duplicated.",
                     "input": name,
                 }
