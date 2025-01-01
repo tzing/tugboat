@@ -62,17 +62,19 @@ Prepare workflow manifest
 
 Make sure you have an Argo Workflow manifest ready. It should be a valid YAML file.
 
-For testing, you can use this minimal example which has a few issues:
+For testing, you can use this minimal example:
 
 .. code-block:: yaml
    :caption: whalesay.yaml
    :linenos:
+   :emphasize-lines: 6,17
 
    apiVersion: argoproj.io/v1alpha1
    kind: Workflow
    metadata:
      generateName: test-
    spec:
+     entrypoint: ducksay
      templates:
        - name: whalesay
          inputs:
@@ -83,7 +85,12 @@ For testing, you can use this minimal example which has a few issues:
            image: docker/whalesay:latest
            command: [cowsay]
            args:
-             - "{{ inputs.parameters.messages }}" # typo: parameter's'
+             - "{{ inputs.parameters.messages }}"
+
+This manifest has two issues:
+
+- The entrypoint ``ducksay`` is not defined in any template.
+- The parameter reference is typo; it should be ``message`` instead of ``messages``.
 
 Save this as ``whalesay.yaml``.
 
@@ -101,22 +108,26 @@ This will output a list of issues found in the manifest:
 
 .. code-block:: none
 
-   whalesay.yaml:5:1: M004 Missing required field 'entrypoint'
+   whalesay.yaml:6:3: WF001 Invalid entrypoint
 
-    3 | metadata:
     4 |   generateName: test-
     5 | spec:
-      | └ M004 at .spec.entrypoint in test-
-    6 |   templates:
-    7 |     - name: whalesay
+    6 |   entrypoint: ducksay
+      |               ^^^^^^^
+      |               └ WF001 at .spec.entrypoint in test-
+    7 |   templates:
+    8 |     - name: whalesay
 
-      Field 'entrypoint' is required in the 'spec' section but missing
+      Entrypoint 'ducksay' is not defined in any template.
+      Defined entrypoints: 'whalesay'.
 
-   whalesay.yaml:16:13: VAR002 Invalid reference
+      Do you mean: whalesay
 
-    14 |         command: [cowsay]
-    15 |         args:
-    16 |           - "{{ inputs.parameters.messages }}" # typo: parameter's'
+   whalesay.yaml:17:13: VAR002 Invalid reference
+
+    15 |         command: [cowsay]
+    16 |         args:
+    17 |           - "{{ inputs.parameters.messages }}"
        |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
        |              └ VAR002 at .spec.templates.0.container.args.0 in test-
 
