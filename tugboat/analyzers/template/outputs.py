@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import collections
 import typing
 
+from tugboat.analyzers.generic import report_duplicate_names
 from tugboat.constraints import (
     accept_none,
     mutually_exclusive,
@@ -37,29 +37,23 @@ def check_output_parameters(
     if not template.outputs:
         return
 
+    # report duplicate names
+    for idx, name in report_duplicate_names(template.outputs.parameters or ()):
+        yield {
+            "code": "TPL004",
+            "loc": ("outputs", "parameters", idx),
+            "summary": "Duplicate parameter name",
+            "msg": f"Parameter name '{name}' is duplicated.",
+            "input": name,
+        }
+
+    # check fields for each parameter
     context = get_template_context(workflow, template)
 
-    # check fields for each parameter; also count the number of times each name appears
-    parameters = collections.defaultdict(list)
-    for idx, param in enumerate(template.outputs.parameters or []):
-        loc = ("outputs", "parameters", idx)
-
-        if param.name:
-            parameters[param.name].append(loc)
-
-        yield from prepend_loc(loc, _check_output_parameter(param, context))
-
-    # report duplicates
-    for name, locs in parameters.items():
-        if len(locs) > 1:
-            for loc in locs:
-                yield {
-                    "code": "TPL004",
-                    "loc": loc,
-                    "summary": "Duplicate parameter name",
-                    "msg": f"Parameter name '{name}' is duplicated.",
-                    "input": name,
-                }
+    for idx, param in enumerate(template.outputs.parameters or ()):
+        yield from prepend_loc(
+            ("outputs", "parameters", idx), _check_output_parameter(param, context)
+        )
 
 
 def _check_output_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
@@ -125,29 +119,23 @@ def check_output_artifacts(
     if not template.outputs:
         return
 
+    # report duplicate names
+    for idx, name in report_duplicate_names(template.outputs.artifacts or ()):
+        yield {
+            "code": "TPL005",
+            "loc": ("outputs", "artifacts", idx),
+            "summary": "Duplicate artifact name",
+            "msg": f"Artifact name '{name}' is duplicated.",
+            "input": name,
+        }
+
+    # check fields for each artifact
     context = get_template_context(workflow, template)
 
-    # check fields for each artifact; also count the number of times each name appears
-    artifacts = collections.defaultdict(list)
-    for idx, artifact in enumerate(template.outputs.artifacts or []):
-        loc = ("outputs", "artifacts", idx)
-
-        if artifact.name:
-            artifacts[artifact.name].append(loc)
-
-        yield from prepend_loc(loc, _check_output_artifact(artifact, context))
-
-    # report duplicates
-    for name, locs in artifacts.items():
-        if len(locs) > 1:
-            for loc in locs:
-                yield {
-                    "code": "TPL005",
-                    "loc": loc,
-                    "summary": "Duplicate parameter name",
-                    "msg": f"Parameter name '{name}' is duplicated.",
-                    "input": name,
-                }
+    for idx, artifact in enumerate(template.outputs.artifacts or ()):
+        yield from prepend_loc(
+            ("outputs", "artifacts", idx), _check_output_artifact(artifact, context)
+        )
 
 
 def _check_output_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
