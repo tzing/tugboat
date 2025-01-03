@@ -6,12 +6,12 @@ import typing
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
-    from tugboat.schemas import Artifact, Parameter
+    from tugboat.schemas import Artifact, Parameter, Template
 
-    type ArgumentType = Artifact | Parameter
+    type NamedModel = Artifact | Parameter | Template
 
 
-def report_duplicate_names(items: Sequence[ArgumentType]) -> Iterator[tuple[int, str]]:
+def report_duplicate_names(items: Sequence[NamedModel]) -> Iterator[tuple[int, str]]:
     # count the number of times each name appears
     names = collections.defaultdict(list)
     for idx, item in enumerate(items):

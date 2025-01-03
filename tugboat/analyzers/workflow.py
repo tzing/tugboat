@@ -5,6 +5,7 @@ import typing
 
 from rapidfuzz.process import extractOne
 
+from tugboat.analyzers.generic import report_duplicate_names
 from tugboat.analyzers.kubernetes import check_resource_name
 from tugboat.constraints import accept_none, require_all, require_exactly_one
 from tugboat.core import get_plugin_manager, hookimpl
@@ -111,6 +112,16 @@ def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
     if not workflow.spec.templates:
         return
 
+    # report duplicate names
+    for idx, name in report_duplicate_names(workflow.spec.templates or ()):
+        yield {
+            "code": "TPL001",
+            "loc": ("spec", "templates", idx),
+            "summary": "Duplicate template name",
+            "msg": f"Template name '{name}' is duplicated.",
+            "input": name,
+        }
+
     # count the number of times each name appears
     entrypoints = {}
     for idx, template in enumerate(workflow.spec.templates or []):
@@ -137,18 +148,6 @@ def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
             "input": workflow.spec.entrypoint,
             "fix": suggestion,
         }
-
-    # report duplicates
-    for name, locs in entrypoints.items():
-        if len(locs) > 1:
-            for loc in locs:
-                yield {
-                    "code": "TPL001",
-                    "loc": loc,
-                    "summary": "Duplicate template name",
-                    "msg": f"Template name '{name}' is duplicated.",
-                    "input": name,
-                }
 
 
 @hookimpl(specname="analyze_workflow")
