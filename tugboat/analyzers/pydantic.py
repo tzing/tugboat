@@ -100,15 +100,14 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
             }
 
         case "string_type":
-            input_type = get_type_name(error["input"])
-            msg = [f"Field '{field}' should be a valid string, got {input_type}."]
-            msg += _guess_string_problems(error["input"])
             return {
                 "type": "failure",
                 "code": "M007",
                 "loc": error["loc"],
                 "summary": "Input should be a valid string",
-                "msg": "\n".join(msg),
+                "msg": "\n".join(
+                    _compose_string_error_message(field_name, error["input"])
+                ),
                 "input": error["input"],
             }
 
@@ -166,12 +165,16 @@ def _extract_expects(literal: str) -> Iterator[str]:
             idx += 1
 
 
-def _guess_string_problems(value: Any):
+def _compose_string_error_message(field_name: str, value: Any) -> Iterable[str]:
     """
-    Guess the problems with the string input, return a list of suggestions.
+    Construct an error message for string type validation.
+    Includes user suggestions based on the value and common YAML parsing pitfalls.
 
     Ref: https://ruudvanasseldonk.com/2023/01/11/the-yaml-document-from-hell
     """
+    input_type = get_type_name(value)
+    yield f"Field '{field_name}' should be a valid string, got {input_type}."
+
     # the Norway problem
     if isinstance(value, bool):
         if value is True:

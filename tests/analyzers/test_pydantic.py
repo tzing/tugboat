@@ -7,8 +7,8 @@ from pydantic import TypeAdapter, ValidationError
 from pydantic_core import ErrorDetails
 
 from tugboat.analyzers.pydantic import (
+    _compose_string_error_message,
     _extract_expects,
-    _guess_string_problems,
     _to_sexagesimal,
     get_type_name,
 )
@@ -52,20 +52,23 @@ class TestGetTypeName:
         assert get_type_name(input_) == expected
 
 
-class TestGuessStringProblems:
+class TestComposeStringErrorMessage:
 
     def test_norway_problem(self):
-        assert list(_guess_string_problems(True)) == [
+        assert list(_compose_string_error_message("foo", True)) == [
+            "Field 'foo' should be a valid string, got boolean.",
             "Note that these inputs will be interpreted as boolean true: 'True', 'Yes', 'On', 'Y'.",
             "Try using quotes for strings to fix this issue.",
         ]
-        assert list(_guess_string_problems(False)) == [
+        assert list(_compose_string_error_message("foo", False)) == [
+            "Field 'foo' should be a valid string, got boolean.",
             "Note that these inputs will be interpreted as boolean false: 'False', 'No', 'Off', 'N'.",
             "Try using quotes for strings to fix this issue.",
         ]
 
     def test_sexagesimal(self):
-        assert list(_guess_string_problems(1342)) == [
+        assert list(_compose_string_error_message("foo", 1342)) == [
+            "Field 'foo' should be a valid string, got integer.",
             "Numbers separated by colons (e.g. 22:22) will be interpreted as sexagesimal.",
             "Try using quotes for strings to fix this issue.",
         ]
