@@ -194,12 +194,12 @@ class TestExtractExpects:
             world = "world"
 
         error = get_validation_error(MyEnum, {"x": ""})
-        expects = _extract_expects(error["ctx"]["expected"])  # type: ignore
+        expects = _extract_expects(error["ctx"]["expected"])
         assert list(expects) == ["hello", "world"]
 
     def test_literal(self):
-        error = get_validation_error(Literal["hello", "world", "hola'"], "")  # type: ignore
-        expects = _extract_expects(error["ctx"]["expected"])  # type: ignore
+        error = get_validation_error(Literal["hello", "world", "hola'"], "")
+        expects = _extract_expects(error["ctx"]["expected"])
         assert list(expects) == ["hello", "world", "hola'"]
 
     def test_empty(self):

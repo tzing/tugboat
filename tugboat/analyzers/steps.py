@@ -28,7 +28,7 @@ def check_argument_parameters(
     for idx, name in report_duplicate_names(step.arguments.parameters or ()):
         yield {
             "code": "STP002",
-            "loc": ("arguments", "parameters", idx),
+            "loc": ("arguments", "parameters", idx, "name"),
             "summary": "Duplicate parameter name",
             "msg": f"Parameter name '{name}' is duplicated.",
             "input": name,
@@ -54,7 +54,7 @@ def check_argument_artifacts(
     for idx, name in report_duplicate_names(step.arguments.artifacts or ()):
         yield {
             "code": "STP003",
-            "loc": ("arguments", "artifacts", idx),
+            "loc": ("arguments", "artifacts", idx, "name"),
             "summary": "Duplicate artifact name",
             "msg": f"Artifact name '{name}' is duplicated.",
             "input": name,
