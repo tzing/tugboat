@@ -113,7 +113,7 @@ def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
         return
 
     # report duplicate names
-    for idx, name in report_duplicate_names(workflow.spec.templates or ()):
+    for idx, name in report_duplicate_names(workflow.spec.templates):
         yield {
             "code": "TPL001",
             "loc": ("spec", "templates", idx),
@@ -122,20 +122,16 @@ def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
             "input": name,
         }
 
-    # count the number of times each name appears
-    entrypoints = {}
-    for idx, template in enumerate(workflow.spec.templates or []):
-        if template.name:
-            entrypoints.setdefault(template.name, []).append(("spec", "templates", idx))
+    # if the workflow has an entrypoint, check if it exists
+    entrypoints = (template.name for template in workflow.spec.templates)
+    entrypoints = set(filter(None, entrypoints))
 
-    # if the spec has an entrypoint, check that it exists
     if (
         True
         and workflow.spec.entrypoint
-        and entrypoints
         and workflow.spec.entrypoint not in entrypoints
     ):
-        suggestion, _, _ = extractOne(workflow.spec.entrypoint, entrypoints.keys())
+        suggestion, _, _ = extractOne(workflow.spec.entrypoint, entrypoints)
         entrypoints_ = sorted(entrypoints)
         yield {
             "code": "WF001",
