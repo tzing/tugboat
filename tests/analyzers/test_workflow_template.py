@@ -36,26 +36,26 @@ class TestRules:
 
         assert (
             IsPartialDict(
-                {"code": "WT002", "loc": ("spec", "arguments", "parameters", 0)}
+                {"code": "WT002", "loc": ("spec", "arguments", "parameters", 0, "name")}
             )
             in diagnoses
         )
         assert (
             IsPartialDict(
-                {"code": "WT002", "loc": ("spec", "arguments", "parameters", 1)}
+                {"code": "WT002", "loc": ("spec", "arguments", "parameters", 1, "name")}
             )
             in diagnoses
         )
 
         assert (
             IsPartialDict(
-                {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 0)}
+                {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 0, "name")}
             )
             in diagnoses
         )
         assert (
             IsPartialDict(
-                {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 1)}
+                {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 1, "name")}
             )
             in diagnoses
         )

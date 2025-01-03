@@ -164,7 +164,7 @@ class TestInputRules:
             IsPartialDict(
                 {
                     "code": "TPL002",
-                    "loc": ("spec", "templates", 0, "inputs", "parameters", 0),
+                    "loc": ("spec", "templates", 0, "inputs", "parameters", 0, "name"),
                 }
             )
             in diagnoses
@@ -173,7 +173,7 @@ class TestInputRules:
             IsPartialDict(
                 {
                     "code": "TPL002",
-                    "loc": ("spec", "templates", 0, "inputs", "parameters", 1),
+                    "loc": ("spec", "templates", 0, "inputs", "parameters", 1, "name"),
                 }
             )
             in diagnoses
@@ -224,7 +224,7 @@ class TestInputRules:
             IsPartialDict(
                 {
                     "code": "TPL003",
-                    "loc": ("spec", "templates", 0, "inputs", "artifacts", 0),
+                    "loc": ("spec", "templates", 0, "inputs", "artifacts", 0, "name"),
                 }
             )
             in diagnoses
@@ -233,7 +233,7 @@ class TestInputRules:
             IsPartialDict(
                 {
                     "code": "TPL003",
-                    "loc": ("spec", "templates", 0, "inputs", "artifacts", 1),
+                    "loc": ("spec", "templates", 0, "inputs", "artifacts", 1, "name"),
                 }
             )
             in diagnoses
@@ -329,7 +329,7 @@ class TestOutputRules:
             IsPartialDict(
                 {
                     "code": "TPL004",
-                    "loc": ("spec", "templates", 0, "outputs", "parameters", 0),
+                    "loc": ("spec", "templates", 0, "outputs", "parameters", 0, "name"),
                 }
             )
             in diagnoses
@@ -338,7 +338,7 @@ class TestOutputRules:
             IsPartialDict(
                 {
                     "code": "TPL004",
-                    "loc": ("spec", "templates", 0, "outputs", "parameters", 1),
+                    "loc": ("spec", "templates", 0, "outputs", "parameters", 1, "name"),
                 }
             )
             in diagnoses
@@ -386,7 +386,7 @@ class TestOutputRules:
             IsPartialDict(
                 {
                     "code": "TPL005",
-                    "loc": ("spec", "templates", 0, "outputs", "artifacts", 0),
+                    "loc": ("spec", "templates", 0, "outputs", "artifacts", 0, "name"),
                 }
             )
             in diagnoses
@@ -395,7 +395,7 @@ class TestOutputRules:
             IsPartialDict(
                 {
                     "code": "TPL005",
-                    "loc": ("spec", "templates", 0, "outputs", "artifacts", 1),
+                    "loc": ("spec", "templates", 0, "outputs", "artifacts", 1, "name"),
                 }
             )
             in diagnoses

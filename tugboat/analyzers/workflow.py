@@ -5,6 +5,7 @@ import typing
 
 from rapidfuzz.process import extractOne
 
+from tugboat.analyzers.generic import report_duplicate_names
 from tugboat.analyzers.kubernetes import check_resource_name
 from tugboat.constraints import accept_none, require_all, require_exactly_one
 from tugboat.core import get_plugin_manager, hookimpl
@@ -111,20 +112,26 @@ def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
     if not workflow.spec.templates:
         return
 
-    # count the number of times each name appears
-    entrypoints = {}
-    for idx, template in enumerate(workflow.spec.templates or []):
-        if template.name:
-            entrypoints.setdefault(template.name, []).append(("spec", "templates", idx))
+    # report duplicate names
+    for idx, name in report_duplicate_names(workflow.spec.templates):
+        yield {
+            "code": "TPL001",
+            "loc": ("spec", "templates", idx, "name"),
+            "summary": "Duplicate template name",
+            "msg": f"Template name '{name}' is duplicated.",
+            "input": name,
+        }
 
-    # if the spec has an entrypoint, check that it exists
+    # if the workflow has an entrypoint, check if it exists
+    entrypoints = (template.name for template in workflow.spec.templates)
+    entrypoints = set(filter(None, entrypoints))
+
     if (
         True
         and workflow.spec.entrypoint
-        and entrypoints
         and workflow.spec.entrypoint not in entrypoints
     ):
-        suggestion, _, _ = extractOne(workflow.spec.entrypoint, entrypoints.keys())
+        suggestion, _, _ = extractOne(workflow.spec.entrypoint, entrypoints)
         entrypoints_ = sorted(entrypoints)
         yield {
             "code": "WF001",
@@ -138,26 +145,23 @@ def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
             "fix": suggestion,
         }
 
-    # report duplicates
-    for name, locs in entrypoints.items():
-        if len(locs) > 1:
-            for loc in locs:
-                yield {
-                    "code": "TPL001",
-                    "loc": loc,
-                    "summary": "Duplicate template name",
-                    "msg": f"Template name '{name}' is duplicated.",
-                    "input": name,
-                }
-
 
 @hookimpl(specname="analyze_workflow")
 def check_argument_parameters(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
     if not workflow.spec.arguments:
         return
 
-    # check fields for each parameter; also count the number of times each name appears
-    parameters = {}
+    # report duplicate names
+    for idx, name in report_duplicate_names(workflow.spec.arguments.parameters or ()):
+        yield {
+            "code": "WF002",
+            "loc": ("spec", "arguments", "parameters", idx, "name"),
+            "summary": "Duplicate parameter name",
+            "msg": f"Parameter name '{name}' is duplicated.",
+            "input": name,
+        }
+
+    # check fields for each parameter
     for idx, param in enumerate(workflow.spec.arguments.parameters or []):
         loc = ("spec", "arguments", "parameters", idx)
 
@@ -176,9 +180,6 @@ def check_argument_parameters(workflow: WorkflowCompatible) -> Iterator[Diagnosi
             loc=loc,
             fields=["default", "enum"],
         )
-
-        if param.name:
-            parameters.setdefault(param.name, []).append(loc)
 
         if param.valueFrom:
             yield from require_exactly_one(
@@ -203,26 +204,23 @@ def check_argument_parameters(workflow: WorkflowCompatible) -> Iterator[Diagnosi
                 ],
             )
 
-    # report duplicates
-    for name, locs in parameters.items():
-        if len(locs) > 1:
-            for loc in locs:
-                yield {
-                    "code": "WF002",
-                    "loc": loc,
-                    "summary": "Duplicate parameter name",
-                    "msg": f"Parameter name '{name}' is duplicated.",
-                    "input": name,
-                }
-
 
 @hookimpl(specname="analyze_workflow")
 def check_argument_artifacts(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
     if not workflow.spec.arguments:
         return
 
+    # report duplicate names
+    for idx, name in report_duplicate_names(workflow.spec.arguments.artifacts or ()):
+        yield {
+            "code": "WF003",
+            "loc": ("spec", "arguments", "artifacts", idx, "name"),
+            "summary": "Duplicate artifact name",
+            "msg": f"Artifact name '{name}' is duplicated.",
+            "input": name,
+        }
+
     # check fields for each artifact; also count the number of times each name appears
-    artifacts = {}
     for idx, artifact in enumerate(workflow.spec.arguments.artifacts or []):
         loc = ("spec", "arguments", "artifacts", idx)
 
@@ -256,18 +254,3 @@ def check_argument_artifacts(workflow: WorkflowCompatible) -> Iterator[Diagnosis
                 "recurseMode",
             ],
         )
-
-        if artifact.name:
-            artifacts.setdefault(artifact.name, []).append(loc)
-
-    # report duplicates
-    for name, locs in artifacts.items():
-        if len(locs) > 1:
-            for loc in locs:
-                yield {
-                    "code": "WF003",
-                    "loc": loc,
-                    "summary": "Duplicate artifact name",
-                    "msg": f"Artifact name '{name}' is duplicated.",
-                    "input": name,
-                }
