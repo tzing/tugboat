@@ -31,8 +31,17 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
     Diagnosis
         The diagnosis object.
     """
-    field = error["loc"][-1]
+    # get the last string in the location tuple as the field name
+    field_name = None
+    for loc in reversed(error["loc"]):
+        if isinstance(loc, str):
+            field_name = loc
+            break
 
+    field_name = field_name
+    field_display = f"'{field_name}'" if field_name else "<unnamed>"
+
+    # translate the error based on the error type
     match error["type"]:
         case "bool_parsing" | "bool_type":
             input_type = get_type_name(error["input"])
@@ -42,7 +51,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                 "loc": error["loc"],
                 "summary": "Input should be a valid boolean",
                 "msg": f"""
-                    Field '{field}' should be a valid boolean, got {input_type}.
+                    Field {field_display} should be a valid boolean, got {input_type}.
                     Try using 'true' or 'false' without quotes.
                     """,
                 "input": error["input"],
@@ -61,7 +70,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                 "loc": error["loc"],
                 "summary": error["msg"],
                 "msg": f"""
-                    Input '{input_}' is not a valid value for field '{field}'.
+                    Input '{input_}' is not a valid value for field {field_display}.
                     Expected {expected_literal}.
                     """,
                 "input": error["input"],
@@ -75,8 +84,8 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                 "code": "M005",
                 "loc": error["loc"],
                 "summary": "Found redundant field",
-                "msg": f"Field '{field}' is not valid within {get_context_name(parents)}.",
-                "input": field,
+                "msg": f"Field {field_display} is not valid within {get_context_name(parents)}.",
+                "input": field_name,
             }
 
         case "int_parsing" | "int_type":
@@ -86,7 +95,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                 "code": "M007",
                 "loc": error["loc"],
                 "summary": "Input should be a valid integer",
-                "msg": f"Field '{field}' should be a valid integer, got {input_type}.",
+                "msg": f"Field {field_display} should be a valid integer, got {input_type}.",
                 "input": error["input"],
             }
 
@@ -96,7 +105,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                 "code": "M004",
                 "loc": error["loc"],
                 "summary": "Missing required field",
-                "msg": f"Field '{field}' is required but missing",
+                "msg": f"Field {field_display} is required but missing",
             }
 
         case "string_type":
@@ -106,7 +115,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                 "loc": error["loc"],
                 "summary": "Input should be a valid string",
                 "msg": "\n".join(
-                    _compose_string_error_message(field_name, error["input"])
+                    _compose_string_error_message(field_display, error["input"])
                 ),
                 "input": error["input"],
             }
@@ -165,7 +174,7 @@ def _extract_expects(literal: str) -> Iterator[str]:
             idx += 1
 
 
-def _compose_string_error_message(field_name: str, value: Any) -> Iterable[str]:
+def _compose_string_error_message(field: str, value: Any) -> Iterator[str]:
     """
     Construct an error message for string type validation.
     Includes user suggestions based on the value and common YAML parsing pitfalls.
@@ -173,7 +182,7 @@ def _compose_string_error_message(field_name: str, value: Any) -> Iterable[str]:
     Ref: https://ruudvanasseldonk.com/2023/01/11/the-yaml-document-from-hell
     """
     input_type = get_type_name(value)
-    yield f"Field '{field_name}' should be a valid string, got {input_type}."
+    yield f"Field {field} should be a valid string, got {input_type}."
 
     # the Norway problem
     if isinstance(value, bool):
