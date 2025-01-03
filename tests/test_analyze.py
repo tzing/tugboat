@@ -8,7 +8,12 @@ import ruamel.yaml
 from pydantic import BaseModel
 
 from tests.utils import ContainsSubStrings
-from tugboat.analyze import _get_line_column, analyze_raw, analyze_yaml
+from tugboat.analyze import (
+    _find_related_comments,
+    _get_line_column,
+    analyze_raw,
+    analyze_yaml,
+)
 from tugboat.core import hookimpl
 from tugboat.schemas import Manifest
 
@@ -150,6 +155,47 @@ class TestGetLineColumn:
     )
     def test(self, document, loc, expected):
         assert _get_line_column(document, loc) == expected
+
+
+class TestGetRelatedComments:
+
+    @pytest.fixture
+    def document(self):
+        yaml = ruamel.yaml.YAML()
+        return yaml.load(
+            textwrap.dedent(
+                """
+                spec:
+                  # lorem ipsum dolor
+                  # sit amet
+                  name: sample # consectetur adipiscing
+
+                  steps:
+                    # tempor incididunt
+                    - - name: baz # sed do
+                        data: 123 # et dolore
+                    - # ut enim ad minim
+                      name: qux
+                      var: {} # ullamco laboris nisi
+                """
+            )
+        )
+
+    @pytest.mark.parametrize(
+        ("loc", "expected"),
+        [
+            (("spec", "name"), "consectetur adipiscing"),
+            (("spec", "steps", 0, 0, "name"), "tempor incididunt"),
+            (("spec", "steps", 0, 0, "name"), "sed do"),
+            (("spec", "steps", 0, 0, "data"), "et dolore"),
+            (("spec", "steps", 1), "tempor incididunt"),
+            (("spec", "steps", 1, "var"), "ullamco laboris nisi"),
+        ],
+    )
+    def test_commented(self, document, loc, expected):
+        comments = list(_find_related_comments(document, loc))
+        logger.critical("related comments: %s", json.dumps(comments, indent=2))
+        assert ContainsSubStrings(expected) in comments
 
 
 class TestAnalyzeRaw:

@@ -17,7 +17,11 @@ from tugboat.schemas import Manifest
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
 
+    from ruamel.yaml.tokens import CommentToken
+
     from tugboat.types import AugmentedDiagnosis, Diagnosis
+
+    type CommentTokenSeq = Sequence[CommentToken]
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +153,50 @@ def _get_line_column(node: CommentedBase, loc: Sequence[int | str]) -> tuple[int
             break
 
     return last_known_pos
+
+
+def _find_related_comments(
+    node: CommentedBase, loc: Sequence[int | str]
+) -> Iterator[str]:
+    #  idx:   1     2     3
+    # node: foo > bar > baz
+    #             └── `node.ca.items.get` returns `baz`'s comment
+    for idx, part in enumerate(loc, 1):
+        if ca := node.ca.items.get(part):
+            pre, post = _extract_comment_tokens(ca)
+            # for parent nodes, return the leading comments
+            if pre:
+                yield _extract_comment_text(pre)
+            # for the last node, return the trailing comments
+            if idx >= len(loc) - 1 and post:
+                yield _extract_comment_text(post)
+
+        try:
+            node = node[part]  # type: ignore[reportIndexIssue]
+        except (KeyError, IndexError):
+            break
+
+        if not isinstance(node, CommentedBase):
+            break
+
+
+def _extract_comment_tokens(comment_items) -> Iterator[CommentTokenSeq]:
+    if len(comment_items) == 2:  # node is a list
+        pre, post = comment_items
+    elif len(comment_items) == 4:  # node is a mapping
+        _, _, post, pre = comment_items
+    else:
+        raise RuntimeError(f"Unexpected comment item: {comment_items:!r}")
+
+    pre: list[CommentToken] | None
+    post: CommentToken | None
+
+    yield pre or ()
+    yield [post] if post else ()
+
+
+def _extract_comment_text(seq: CommentTokenSeq) -> str:
+    return "".join(token.value for token in seq)
 
 
 def _get_summary(msg: str) -> str:
