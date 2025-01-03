@@ -116,7 +116,7 @@ def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
     for idx, name in report_duplicate_names(workflow.spec.templates):
         yield {
             "code": "TPL001",
-            "loc": ("spec", "templates", idx),
+            "loc": ("spec", "templates", idx, "name"),
             "summary": "Duplicate template name",
             "msg": f"Template name '{name}' is duplicated.",
             "input": name,
@@ -155,7 +155,7 @@ def check_argument_parameters(workflow: WorkflowCompatible) -> Iterator[Diagnosi
     for idx, name in report_duplicate_names(workflow.spec.arguments.parameters or ()):
         yield {
             "code": "WF002",
-            "loc": ("spec", "arguments", "parameters", idx),
+            "loc": ("spec", "arguments", "parameters", idx, "name"),
             "summary": "Duplicate parameter name",
             "msg": f"Parameter name '{name}' is duplicated.",
             "input": name,
@@ -214,7 +214,7 @@ def check_argument_artifacts(workflow: WorkflowCompatible) -> Iterator[Diagnosis
     for idx, name in report_duplicate_names(workflow.spec.arguments.artifacts or ()):
         yield {
             "code": "WF003",
-            "loc": ("spec", "arguments", "artifacts", idx),
+            "loc": ("spec", "arguments", "artifacts", idx, "name"),
             "summary": "Duplicate artifact name",
             "msg": f"Artifact name '{name}' is duplicated.",
             "input": name,

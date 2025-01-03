@@ -41,7 +41,7 @@ def check_output_parameters(
     for idx, name in report_duplicate_names(template.outputs.parameters or ()):
         yield {
             "code": "TPL004",
-            "loc": ("outputs", "parameters", idx),
+            "loc": ("outputs", "parameters", idx, "name"),
             "summary": "Duplicate parameter name",
             "msg": f"Parameter name '{name}' is duplicated.",
             "input": name,
@@ -123,7 +123,7 @@ def check_output_artifacts(
     for idx, name in report_duplicate_names(template.outputs.artifacts or ()):
         yield {
             "code": "TPL005",
-            "loc": ("outputs", "artifacts", idx),
+            "loc": ("outputs", "artifacts", idx, "name"),
             "summary": "Duplicate artifact name",
             "msg": f"Artifact name '{name}' is duplicated.",
             "input": name,

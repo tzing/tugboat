@@ -216,11 +216,11 @@ class TestRules:
             IsPartialDict({"code": "WF001", "loc": ("spec", "entrypoint")}) in diagnoses
         )
         assert (
-            IsPartialDict({"code": "TPL001", "loc": ("spec", "templates", 0)})
+            IsPartialDict({"code": "TPL001", "loc": ("spec", "templates", 0, "name")})
             in diagnoses
         )
         assert (
-            IsPartialDict({"code": "TPL001", "loc": ("spec", "templates", 2)})
+            IsPartialDict({"code": "TPL001", "loc": ("spec", "templates", 2, "name")})
             in diagnoses
         )
 
@@ -229,13 +229,13 @@ class TestRules:
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
-                {"code": "WF002", "loc": ("spec", "arguments", "parameters", 0)}
+                {"code": "WF002", "loc": ("spec", "arguments", "parameters", 0, "name")}
             )
             in diagnoses
         )
         assert (
             IsPartialDict(
-                {"code": "WF002", "loc": ("spec", "arguments", "parameters", 1)}
+                {"code": "WF002", "loc": ("spec", "arguments", "parameters", 1, "name")}
             )
             in diagnoses
         )
@@ -274,13 +274,13 @@ class TestRules:
 
         assert (
             IsPartialDict(
-                {"code": "WF003", "loc": ("spec", "arguments", "artifacts", 0)}
+                {"code": "WF003", "loc": ("spec", "arguments", "artifacts", 0, "name")}
             )
             in diagnoses
         )
         assert (
             IsPartialDict(
-                {"code": "WF003", "loc": ("spec", "arguments", "artifacts", 1)}
+                {"code": "WF003", "loc": ("spec", "arguments", "artifacts", 1, "name")}
             )
             in diagnoses
         )
