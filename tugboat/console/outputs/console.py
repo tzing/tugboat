@@ -6,6 +6,7 @@ import typing
 import click
 
 from tugboat.console.utils import cached_read, format_loc
+from tugboat.settings import settings
 
 if typing.TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -13,9 +14,6 @@ if typing.TYPE_CHECKING:
     from typing import IO, Any
 
     from tugboat.analyze import AugmentedDiagnosis
-
-LINES_AHEAD = 2
-LINES_BEHIND = 2
 
 
 def report(
@@ -119,8 +117,8 @@ def report_diagnosis(echo: Callable, file: Path, diagnosis: AugmentedDiagnosis):
 def get_content_near(path: Path, target_line: int) -> Iterator[tuple[int, str]]:
     target_line -= 1  # 1-based to 0-based
     content = cached_read(path).splitlines()
-    start = max(0, target_line - LINES_AHEAD)
-    end = min(len(content), target_line + LINES_BEHIND)
+    start = max(0, target_line - settings.console_output.snippet_lines_ahead)
+    end = min(len(content), target_line + settings.console_output.snippet_lines_behind)
     yield from enumerate(content[start : end + 1], start + 1)
 
 

@@ -161,7 +161,7 @@ def main(
     )
 
     # generate report
-    generate_report(diagnoses, output_format, output_file, color)
+    generate_report(diagnoses, output_file)
 
     # finalize
     is_success = summarize(diagnoses)
@@ -170,7 +170,7 @@ def main(
 
 
 def find_yaml(dirpath: Path) -> Iterator[Path]:
-    for root, _, files in dirpath.walk(follow_symlinks=True):
+    for root, _, files in dirpath.walk(follow_symlinks=settings.follow_symlinks):
         for name in files:
             path = root / name
             if path.suffix in (".yaml", ".yml"):
@@ -230,10 +230,7 @@ def update_settings(
 
 
 def generate_report(
-    diagnoses: dict[Path, list[AugmentedDiagnosis]],
-    output_format: str,
-    output_file: Path | None,
-    color: bool | None,
+    diagnoses: dict[Path, list[AugmentedDiagnosis]], output_file: Path | None
 ) -> None:
     logger.info("Generating diagnostic report...")
 
@@ -244,15 +241,16 @@ def generate_report(
         output_stream = sys.stdout
 
     # generate the report
-    if output_format == "console":
-        from tugboat.console.outputs.console import report
+    match settings.output_format:
+        case "console":
+            from tugboat.console.outputs.console import report
 
-        report(diagnoses, output_stream, color)
+            report(diagnoses, output_stream, settings.color)
 
-    elif output_format == "junit":
-        from tugboat.console.outputs.junit import report
+        case "junit":
+            from tugboat.console.outputs.junit import report
 
-        report(diagnoses, output_stream)
+            report(diagnoses, output_stream)
 
     # close the output stream
     if output_file:
