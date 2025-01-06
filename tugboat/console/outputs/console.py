@@ -54,7 +54,8 @@ def report_diagnosis(echo: Callable, file: Path, diagnosis: AugmentedDiagnosis):
     echo()
 
     # print the code snippet
-    line_number_width = len(str(diagnosis["line"] + LINES_BEHIND - 1)) + 1
+    max_line_number = diagnosis["line"] + settings.console_output.snippet_lines_behind
+    line_number_width = len(str(max_line_number - 1)) + 1
     line_number_delimiter = click.style(" | ", dim=True)
     for ln, line in get_content_near(file, diagnosis["line"]):
         echo(
