@@ -2,15 +2,18 @@ import io
 import logging
 import logging.handlers
 import shutil
-import typing
 from pathlib import Path
 
 import click.testing
 import colorlog
 import pytest
 
-from tugboat.analyze import AugmentedDiagnosis
-from tugboat.console.main import generate_report, main, setup_logging, summarize
+from tugboat.console.main import (
+    DiagnosesCounter,
+    generate_report,
+    main,
+    setup_logging,
+)
 
 
 @pytest.fixture
@@ -189,56 +192,33 @@ class TestGenerateReport:
         assert capsys.readouterr().out == "mock report"
 
 
-class TestSummarize:
+class TestDiagnosesCounter:
 
-    def create_diagnoses(self, type_: str) -> AugmentedDiagnosis:
-        return typing.cast(AugmentedDiagnosis, {"type": type_})
+    def test_pass(self):
+        counter = DiagnosesCounter()
+        assert counter.summary() == "All passed!"
+        assert not counter.has_any_error()
 
-    def test_pass(self, capsys: pytest.CaptureFixture):
-        assert summarize({}) is True
-        assert "All passed!" in capsys.readouterr().err
+    def test_errors(self):
+        counter = DiagnosesCounter(["error"])
+        assert counter.summary() == "Found 1 errors"
+        assert counter.has_any_error()
 
-    def test_error_only(self, capsys: pytest.CaptureFixture):
-        ok = summarize(
-            {
-                Path(__file__): [self.create_diagnoses("error")],
-            }
-        )
-        assert ok is False
-        assert "Found 1 errors" in capsys.readouterr().err
+    def test_failures(self):
+        counter = DiagnosesCounter(["failure"])
+        assert counter.summary() == "Found 1 failures"
+        assert counter.has_any_error()
 
-    def test_failure_only(self, capsys: pytest.CaptureFixture):
-        ok = summarize(
-            {
-                Path(__file__): [self.create_diagnoses("failure")],
-            }
-        )
-        assert ok is False
-        assert "Found 1 failures" in capsys.readouterr().err
+    def test_skipped(self):
+        counter = DiagnosesCounter(["skipped"])
+        assert counter.summary() == "Found 1 skipped checks"
+        assert not counter.has_any_error()
 
-    def test_skipped_only(self, capsys: pytest.CaptureFixture):
-        ok = summarize(
-            {
-                Path(__file__): [
-                    self.create_diagnoses("skipped"),
-                    self.create_diagnoses("skipped"),
-                ],
-            }
-        )
-        assert ok is True
-        assert "Found 2 skipped checks" in capsys.readouterr().err
-
-    def test_mixed(self, capsys: pytest.CaptureFixture):
-        ok = summarize(
-            {
-                Path(__file__): [
-                    self.create_diagnoses("error"),
-                    self.create_diagnoses("failure"),
-                    self.create_diagnoses("skipped"),
-                ],
-            }
-        )
-        assert ok is False
-        assert (
-            "Found 1 errors, 1 failures and 1 skipped checks" in capsys.readouterr().err
-        )
+    def test_mixed(self):
+        counter = DiagnosesCounter()
+        counter["error"] += 1
+        counter["error"] += 1
+        counter["failure"] += 1
+        counter["skipped"] += 1
+        assert counter.summary() == "Found 2 errors, 1 failures and 1 skipped checks"
+        assert counter.has_any_error()
