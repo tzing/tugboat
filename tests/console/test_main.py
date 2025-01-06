@@ -170,7 +170,7 @@ class TestGenerateReport:
 
         output_file = tmp_path / "output.txt"
 
-        generate_report({}, "console", output_file, None)
+        generate_report({}, output_file)
 
         assert output_file.read_text() == "mock report"
 
@@ -184,7 +184,7 @@ class TestGenerateReport:
             "tugboat.console.outputs.console.report", _mock_console_report
         )
 
-        generate_report({}, "console", None, None)
+        generate_report({}, None)
 
         assert capsys.readouterr().out == "mock report"
 
