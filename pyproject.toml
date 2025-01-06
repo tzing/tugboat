@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "argo-tugboat"
-version = "0.2.2-dev"
+version = "0.3.0-dev"
 description = "Streamline your Argo Workflows with precision and confidence"
 authors = ["Tzu-Ting <tzingshih@gmail.com>"]
 license = "Apache-2.0"
@@ -23,6 +23,7 @@ pluggy = "^1.5.0"
 pydantic = "^2.9.2"
 rapidfuzz = "^3.10.1"
 ruamel-yaml = "^0.18.6"
+pydantic-settings = "^2.7.1"
 
 [tool.poetry.group.dev.dependencies]
 dirty-equals = "^0.8.0"
@@ -42,7 +43,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.bumpver]
-current_version = "0.2.2-dev"
+current_version = "0.3.0-dev"
 version_pattern = "MAJOR.MINOR.PATCH[-TAG]"
 commit = false
 

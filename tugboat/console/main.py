@@ -11,6 +11,7 @@ import colorlog
 
 from tugboat.analyze import analyze_yaml
 from tugboat.console.utils import VirtualPath, cached_read
+from tugboat.settings import settings
 from tugboat.utils import join_with_and
 from tugboat.version import __version__
 
@@ -34,18 +35,24 @@ logger = logging.getLogger(__name__)
     help="List of files or directories to check. Use '-' for stdin. [default: .]",
 )
 @cloup.option_group(
+    "Input options",
+    cloup.option(
+        "--follow-symlinks",
+        is_flag=True,
+        help="Follow symbolic links when checking directories.",
+    ),
+)
+@cloup.option_group(
     "Output options",
     cloup.option(
         "--color",
         type=cloup.BOOL,
-        help="Use colors in output. [default: auto]",
+        help="Colorize the output. [default: auto]",
     ),
     cloup.option(
         "--output-format",
         type=cloup.Choice(["console", "junit"]),
-        default="console",
-        show_default=True,
-        help="Output serialization format.",
+        help="Output serialization format. [default: console]",
     ),
     cloup.option(
         "-o",
@@ -66,8 +73,9 @@ logger = logging.getLogger(__name__)
 @cloup.version_option(__version__)
 def main(
     manifest: Sequence[Path],
+    follow_symlinks: bool,
     color: bool | None,
-    output_format: str,
+    output_format: str | None,
     output_file: Path | None,
     verbose: int,
 ):
@@ -98,6 +106,14 @@ def main(
     # setup logging
     setup_logging(verbose)
     logger.debug("Tugboat sets sail!")
+
+    # update settings
+    update_settings(
+        follow_symlinks=follow_symlinks,
+        color=color,
+        output_format=output_format,
+    )
+    logger.debug("Current settings: %s", settings.model_dump_json(indent=2))
 
     # determine the inputs
     if not manifest:
@@ -145,7 +161,7 @@ def main(
     )
 
     # generate report
-    generate_report(diagnoses, output_format, output_file, color)
+    generate_report(diagnoses, output_file)
 
     # finalize
     is_success = summarize(diagnoses)
@@ -154,7 +170,7 @@ def main(
 
 
 def find_yaml(dirpath: Path) -> Iterator[Path]:
-    for root, _, files in dirpath.walk(follow_symlinks=True):
+    for root, _, files in dirpath.walk(follow_symlinks=settings.follow_symlinks):
         for name in files:
             path = root / name
             if path.suffix in (".yaml", ".yml"):
@@ -192,11 +208,29 @@ def setup_logging(verbose_level: int):
         logger.addHandler(handler)
 
 
-def generate_report(
-    diagnoses: dict[Path, list[AugmentedDiagnosis]],
-    output_format: str,
-    output_file: Path | None,
+def update_settings(
+    *,
+    follow_symlinks: bool,
     color: bool | None,
+    output_format: str | None,
+):
+    """Update the settings, if the option is provided by the user."""
+    update_args = {}
+
+    if follow_symlinks:
+        update_args["follow_symlinks"] = follow_symlinks
+    if color is not None:
+        update_args["color"] = color
+    if output_format:
+        update_args["output_format"] = output_format
+
+    # inplace update
+    # https://docs.pydantic.dev/latest/concepts/pydantic_settings/#in-place-reloading
+    settings.__init__(**update_args)
+
+
+def generate_report(
+    diagnoses: dict[Path, list[AugmentedDiagnosis]], output_file: Path | None
 ) -> None:
     logger.info("Generating diagnostic report...")
 
@@ -207,15 +241,16 @@ def generate_report(
         output_stream = sys.stdout
 
     # generate the report
-    if output_format == "console":
-        from tugboat.console.outputs.console import report
+    match settings.output_format:
+        case "console":
+            from tugboat.console.outputs.console import report
 
-        report(diagnoses, output_stream, color)
+            report(diagnoses, output_stream, settings.color)
 
-    elif output_format == "junit":
-        from tugboat.console.outputs.junit import report
+        case "junit":
+            from tugboat.console.outputs.junit import report
 
-        report(diagnoses, output_stream)
+            report(diagnoses, output_stream)
 
     # close the output stream
     if output_file:
