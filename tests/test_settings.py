@@ -49,7 +49,7 @@ class TestSettings:
         )
         monkeypatch.chdir(tmp_path)
 
-        monkeypatch.setenv("TUGBOAT_CONSOLE_OUTPUT__SNIPPET_LINES_AHEAD", "99")
+        monkeypatch.setenv("tugboat_console_output__snippet_lines_ahead", "99")
 
         settings = Settings(color=True)
         assert settings.color is True
