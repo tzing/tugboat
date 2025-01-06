@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import itertools
 import typing
+from pathlib import Path
 from typing import Literal
 
 import pydantic_settings
@@ -29,7 +31,6 @@ class Settings(BaseSettings):
         extra="ignore",
         nested_model_default_partial_update=True,
         pyproject_toml_table_header=("tool", "tugboat"),
-        toml_file=".tugboat.toml",
     )
 
     @classmethod
@@ -44,8 +45,12 @@ class Settings(BaseSettings):
         return (
             init_settings,
             env_settings,
-            pydantic_settings.TomlConfigSettingsSource(settings_cls),
-            pydantic_settings.PyprojectTomlConfigSettingsSource(settings_cls),
+            pydantic_settings.TomlConfigSettingsSource(
+                settings_cls, _find_config(".tugboat.toml")
+            ),
+            pydantic_settings.PyprojectTomlConfigSettingsSource(
+                settings_cls, _find_config("pyproject.toml")
+            ),
         )
 
     color: bool | None = None
@@ -59,6 +64,14 @@ class Settings(BaseSettings):
 
     output_format: Literal["console", "junit"] = "console"
     """Output serialization format."""
+
+
+def _find_config(name: str) -> Path | None:
+    cwd = Path.cwd()
+    for dir_ in itertools.chain([cwd], cwd.parents):
+        path = dir_ / name
+        if path.is_file():
+            return path
 
 
 settings = Settings()

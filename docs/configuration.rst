@@ -5,10 +5,10 @@ Tugboat can be configured in a few different ways.
 The most common way is to use a configuration file, but you can also use environment variables or command line arguments.
 
 
-Config file
------------
+Config file discovery
+---------------------
 
-Tugboat searches for a configuration file named ``.tugboat.toml`` or ``pyproject.toml`` in the current directory.
+Tugboat searches for the closest configuration file named ``.tugboat.toml`` or ``pyproject.toml`` in the current directory and all parent directories.
 
 Both files utilize the `TOML`_ format and share the same configuration options.
 The distinction is that the ``pyproject.toml`` file adheres to :pep:`518`, requiring all configurations to be placed under the ``tool.tugboat`` section.
