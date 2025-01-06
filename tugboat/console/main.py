@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import logging
 import sys
 import typing
@@ -143,6 +144,7 @@ def main(
     logger.info("Found %d manifest(s) to analyze.", len(manifest_paths))
 
     # analyze manifests
+    counter = DiagnosesCounter()
     diagnoses: dict[Path, list[AugmentedDiagnosis]] = {}
     for i, path in enumerate(manifest_paths, 1):
         logger.info("[%d/%d] Analyzing file %s", i, len(manifest_paths), path)
@@ -153,19 +155,18 @@ def main(
             logger.debug("Error details:", exc_info=True)
             raise click.Abort from None
 
-        diagnoses[path] = analyze_yaml(content)
+        diagnoses[path] = file_diagnoses = analyze_yaml(content)
+        counter.update(diag["type"] for diag in file_diagnoses)
 
-    logger.debug(
-        "Analysis completed. Found %d diagnoses.",
-        sum(map(len, diagnoses.values())),
-    )
+    logger.debug("Analysis completed. Found %d diagnoses.", sum(counter.values()))
 
     # generate report
     generate_report(diagnoses, output_file)
 
     # finalize
-    is_success = summarize(diagnoses)
-    if not is_success:
+    click.echo(counter.summary(), err=True)
+
+    if counter.has_any_error():
         sys.exit(2)
 
 
@@ -257,33 +258,22 @@ def generate_report(
         output_stream.close()
 
 
-def summarize(aggregated_diagnoses: dict[Path, list[AugmentedDiagnosis]]) -> bool:
-    """
-    Summarize the diagnoses.
-    Return a boolean indicating whether the checks passed or not.
-    """
-    counts = {
-        "error": 0,
-        "failure": 0,
-        "skipped": 0,
-    }
+class DiagnosesCounter(collections.Counter):
 
-    for diagnoses in aggregated_diagnoses.values():
-        for diagnosis in diagnoses:
-            counts[diagnosis["type"]] = counts.get(diagnosis["type"], 0) + 1
+    def summary(self) -> str:
+        parts = []
+        if count := self["error"]:
+            parts.append(f"{count} errors")
+        if count := self["failure"]:
+            parts.append(f"{count} failures")
+        if count := self["skipped"]:
+            parts.append(f"{count} skipped checks")
 
-    summary_parts = []
-    if count := counts["error"]:
-        summary_parts.append(f"{count} errors")
-    if count := counts["failure"]:
-        summary_parts.append(f"{count} failures")
-    if count := counts["skipped"]:
-        summary_parts.append(f"{count} skipped checks")
+        if parts:
+            summary = join_with_and(parts, quote=False)
+            return f"Found {summary}"
 
-    if summary_parts:
-        summary = join_with_and(summary_parts, quote=False)
-        click.echo(f"Found {summary}", err=True)
-    else:
-        click.echo("All passed!", err=True)
+        return "All passed!"
 
-    return not any((counts["error"], counts["failure"]))
+    def has_any_error(self) -> bool:
+        return any((self["error"], self["failure"]))
