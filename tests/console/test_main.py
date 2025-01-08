@@ -8,12 +8,7 @@ import click.testing
 import colorlog
 import pytest
 
-from tugboat.console.main import (
-    DiagnosesCounter,
-    generate_report,
-    main,
-    setup_logging,
-)
+from tugboat.console.main import DiagnosesCounter, main, setup_logging
 
 
 @pytest.fixture
@@ -31,7 +26,7 @@ class TestMain:
         target = fixture_dir / "sample-workflow.yaml"
 
         runner = click.testing.CliRunner()
-        result = runner.invoke(main, [str(target)])
+        result = runner.invoke(main, [str(target), "--color", "1"])
 
         assert result.exit_code == 0
         assert "All passed!" in result.output
@@ -54,7 +49,16 @@ class TestMain:
         shutil.copy(fixture_dir / "sample-workflow.yaml", tmp_path / "workflow.yaml")
 
         runner = click.testing.CliRunner()
-        result = runner.invoke(main, ["--output-format", "junit"])
+        result = runner.invoke(
+            main,
+            [
+                "--output-format",
+                "junit",
+                "--output-file",
+                str(tmp_path / "output.xml"),
+                "--follow-symlinks",
+            ],
+        )
 
         assert result.exit_code == 0
         assert "All passed!" in result.output
@@ -159,37 +163,6 @@ class TestSetupLogging:
         assert ("INF" in err) == has_inf
         assert ("DEB" in err) == has_deb
         assert ("EXT" in err) == has_ext
-
-
-class TestGenerateReport:
-
-    def test_output_stream(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-        def _mock_console_report(diagnostics, output_stream, color):
-            output_stream.write("mock report")
-
-        monkeypatch.setattr(
-            "tugboat.console.outputs.console.report", _mock_console_report
-        )
-
-        output_file = tmp_path / "output.txt"
-
-        generate_report({}, output_file)
-
-        assert output_file.read_text() == "mock report"
-
-    def test_stdout_stream(
-        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
-    ):
-        def _mock_console_report(diagnostics, output_stream, color):
-            output_stream.write("mock report")
-
-        monkeypatch.setattr(
-            "tugboat.console.outputs.console.report", _mock_console_report
-        )
-
-        generate_report({}, None)
-
-        assert capsys.readouterr().out == "mock report"
 
 
 class TestDiagnosesCounter:

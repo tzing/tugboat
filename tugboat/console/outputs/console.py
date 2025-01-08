@@ -1,126 +1,150 @@
 from __future__ import annotations
 
+import io
 import textwrap
 import typing
 
 import click
 
-from tugboat.console.utils import cached_read, format_loc
+from tugboat.console.outputs.base import OutputBuilder
+from tugboat.console.utils import format_loc
 from tugboat.settings import settings
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Iterator, Sequence
     from pathlib import Path
-    from typing import IO, Any
+    from typing import Any, TextIO
 
     from tugboat.analyze import AugmentedDiagnosis
 
 
-def report(
-    aggregated_diagnoses: dict[Path, list[AugmentedDiagnosis]],
-    stream: IO[str],
-    color: bool | None,
-) -> None:
-    def _echo(*args, nl: bool = True):
-        click.echo("".join(args), file=stream, color=color, nl=nl)
+class ConsoleOutputBuilder(OutputBuilder):
 
-    for path, diags in aggregated_diagnoses.items():
-        for diag in diags:
-            report_diagnosis(echo=_echo, file=path, diagnosis=diag)
+    def __init__(self):
+        super().__init__()
+        self._buffer = io.StringIO()
 
+    def update(
+        self, *, path: Path, content: str, diagnoses: Sequence[AugmentedDiagnosis]
+    ) -> None:
+        for diagnosis in diagnoses:
+            self.report_diagnosis(path=path, content=content, diagnosis=diagnosis)
 
-def report_diagnosis(echo: Callable, file: Path, diagnosis: AugmentedDiagnosis):
-    if diagnosis["type"] in ("error", "failure"):
-        error_style = {"fg": "red", "bold": True}
-    elif diagnosis["type"] == "skipped":
-        error_style = {"fg": "yellow", "bold": True}
-    else:
-        error_style = {"fg": "magenta", "bold": True}
+    def writeline(self, *values):
+        print(*values, sep="", file=self._buffer)
 
-    # print the summary
-    echo(
-        click.style(file, bold=True),
-        click.style(":", fg="cyan"),
-        click.style(diagnosis["line"]),
-        click.style(":", fg="cyan"),
-        click.style(diagnosis["column"]),
-        click.style(":", fg="cyan"),
-        " ",
-        click.style(diagnosis["code"], **error_style),
-        " ",
-        diagnosis["summary"],
-    )
+    def report_diagnosis(
+        self, *, path: Path, content: str, diagnosis: AugmentedDiagnosis
+    ):
+        match diagnosis["type"]:
+            case "error" | "failure":
+                emphasis = {"fg": "red", "bold": True}
+            case "skipped":
+                emphasis = {"fg": "yellow", "bold": True}
+            case _:
+                emphasis = {"fg": "magenta", "bold": True}
 
-    echo()
-
-    # print the code snippet
-    max_line_number = diagnosis["line"] + settings.console_output.snippet_lines_behind
-    line_number_width = len(str(max_line_number - 1)) + 1
-    line_number_delimiter = click.style(" | ", dim=True)
-    for ln, line in get_content_near(file, diagnosis["line"]):
-        echo(
-            click.style(f"{ln:{line_number_width}}", dim=True),
-            line_number_delimiter,
-            line,
+        # PART/ summary line
+        self.writeline(
+            click.style(path, bold=True),
+            click.style(":", fg="cyan"),
+            click.style(diagnosis["line"]),
+            click.style(":", fg="cyan"),
+            click.style(diagnosis["column"]),
+            click.style(":", fg="cyan"),
+            " ",
+            click.style(diagnosis["code"], **emphasis),
+            " ",
+            diagnosis["summary"],
         )
+        self.writeline()
 
-        if ln == diagnosis["line"]:
-            line_prefix = " " * line_number_width + line_number_delimiter
+        # PART/ code snippet
+        content_lines = content.splitlines()
 
-            # calculate the indent before the caret
-            # default to the column number, but if the input is present, use that instead
-            indent_before_caret = " " * max(diagnosis["column"] - 1, 0)
+        # calculate the width of the line numbers
+        max_line_number = (
+            diagnosis["line"] + settings.console_output.snippet_lines_behind
+        )
+        line_number_width = len(str(max_line_number - 1)) + 1
+        line_number_delimiter = click.style(" | ", dim=True)
 
-            if range_ := _calc_highlight_range(
-                line=line,
-                offset=diagnosis["column"] - 1,
-                input_=diagnosis["input"],
-            ):
-                col_start, col_end = range_
-                indent_before_caret = " " * col_start
-
-                # print the underline
-                echo(
-                    line_prefix,
-                    indent_before_caret,
-                    click.style("^" * (col_end - col_start), **error_style),
-                )
-
-            # print the caret
-            echo(
-                line_prefix,
-                indent_before_caret,
-                click.style(f"└ {diagnosis["code"]}", **error_style),
-                click.style(" at ", dim=True),
-                click.style(format_loc(diagnosis["loc"]), fg="cyan"),
-                click.style(" in ", dim=True),
-                click.style(diagnosis["manifest"] or "<unknown>", fg="blue"),
+        # print the code snippet
+        for line_no, line in get_lines_near(content_lines, diagnosis["line"]):
+            # general case: print the line number and the line
+            self.writeline(
+                click.style(f"{line_no:{line_number_width}}", dim=True),
+                line_number_delimiter,
+                line,
             )
 
-    echo()
+            # if this is the line with the error, print additional information
+            if line_no == diagnosis["line"]:
+                # will still print the delimiter, but the line number will be empty
+                padding = " " * line_number_width + line_number_delimiter
 
-    # print the details
-    if details := diagnosis["msg"]:
-        echo(textwrap.indent(details, " " * (line_number_width + 1)))
-        echo()
+                # if possible, calculate the range to highlight, and print the underline
+                if range_ := _calc_highlight_range(
+                    line=line,
+                    offset=diagnosis["column"] - 1,
+                    input_=diagnosis["input"],
+                ):
+                    col_start, col_end = range_
+                    padding += " " * col_start
 
-    # print the suggestion
-    if fix := diagnosis["fix"]:
-        echo(
-            " " * (line_number_width + 1),
-            click.style("Do you mean:", fg="cyan", bold=True),
-            " ",
-            click.style(fix, underline=True),
+                    self.writeline(
+                        padding,
+                        click.style("^" * (col_end - col_start), **emphasis),
+                    )
+
+                else:
+                    padding += " " * max(diagnosis["column"] - 1, 0)
+
+                # print the caret
+                self.writeline(
+                    padding,
+                    click.style(f"└ {diagnosis["code"]}", **emphasis),
+                    click.style(" at ", dim=True),
+                    click.style(format_loc(diagnosis["loc"]), fg="cyan"),
+                    click.style(" in ", dim=True),
+                    click.style(diagnosis["manifest"] or "<unknown>", fg="blue"),
+                )
+
+        self.writeline()
+
+        # PART/ details
+        if details := diagnosis["msg"]:
+            self.writeline(textwrap.indent(details, " " * (line_number_width + 1)))
+            self.writeline()
+
+        # PART/ suggestion
+        if fix := diagnosis["fix"]:
+            self.writeline(
+                " " * (line_number_width + 1),
+                click.style("Do you mean:", fg="cyan", bold=True),
+                " ",
+                click.style(fix, underline=True),
+            )
+            self.writeline()
+
+    def dump(self, stream: TextIO) -> None:
+        click.echo(
+            self._buffer.getvalue(),
+            file=stream,
+            color=settings.color,
+            nl=False,
         )
-        echo()
 
 
-def get_content_near(path: Path, target_line: int) -> Iterator[tuple[int, str]]:
-    target_line -= 1  # 1-based to 0-based
-    content = cached_read(path).splitlines()
-    start = max(0, target_line - settings.console_output.snippet_lines_ahead)
-    end = min(len(content), target_line + settings.console_output.snippet_lines_behind)
-    yield from enumerate(content[start : end + 1], start + 1)
+def get_lines_near(content: list[str], focus_line: int) -> Iterator[tuple[int, str]]:
+    snippet_lines_ahead = settings.console_output.snippet_lines_ahead
+    snippet_lines_behind = settings.console_output.snippet_lines_behind
+
+    focus_line -= 1  # 1-based to 0-based
+    line_starting = max(0, focus_line - snippet_lines_ahead)
+    line_ending = min(len(content), focus_line + snippet_lines_behind)
+
+    yield from enumerate(content[line_starting : line_ending + 1], line_starting + 1)
 
 
 def _calc_highlight_range(line: str, offset: int, input_: Any):

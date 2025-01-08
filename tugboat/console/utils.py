@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import functools
 import io
 import typing
 
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
-    from pathlib import Path
     from typing import TextIO
 
 
@@ -46,11 +44,3 @@ class VirtualPath:
         if "r" not in mode:
             return NotImplemented
         return io.StringIO(self.read_text())
-
-
-@functools.lru_cache
-def cached_read(path: Path) -> str:
-    """
-    Read the content of a file and cache it.
-    """
-    return path.read_text()
