@@ -13,16 +13,13 @@ import colorlog
 
 from tugboat.analyze import analyze_yaml
 from tugboat.console.outputs import get_output_builder
-from tugboat.console.utils import VirtualPath, cached_read
+from tugboat.console.utils import VirtualPath
 from tugboat.settings import settings
 from tugboat.utils import join_with_and
 from tugboat.version import __version__
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
-
-    from tugboat.analyze import AugmentedDiagnosis
-    from tugboat.console.outputs import OutputBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +150,7 @@ def main(
     for i, path in enumerate(manifest_paths, 1):
         logger.info("[%d/%d] Analyzing file %s", i, len(manifest_paths), path)
         try:
-            content = cached_read(path)
+            content = path.read_text()
         except Exception:
             logger.error("Failed to read file %s", path)
             logger.debug("Error details:", exc_info=True)
