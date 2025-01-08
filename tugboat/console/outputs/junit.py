@@ -1,88 +1,110 @@
 from __future__ import annotations
 
+import collections
 import datetime
 import logging
 import typing
 import xml.etree.ElementTree
 from xml.etree.ElementTree import Element, ElementTree, SubElement
 
+from tugboat.console.outputs.base import OutputBuilder
 from tugboat.console.utils import format_loc
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterable, Iterator, Sequence
     from pathlib import Path
-    from typing import IO
+    from typing import TextIO
 
     from tugboat.analyze import AugmentedDiagnosis
 
 logger = logging.getLogger(__name__)
 
 
-def report(
-    aggregated_diagnoses: dict[Path, list[AugmentedDiagnosis]],
-    stream: IO[str],
-) -> None:
-    now = datetime.datetime.now().astimezone()
-    root = Element("testsuites", timestamp=now.isoformat(), name="tugboat")
+class JUnitOutputBuilder(OutputBuilder):
 
-    total_counts = {"errors": 0, "failures": 0, "skipped": 0}
-    for path, file_diagnoses in aggregated_diagnoses.items():
-        for manifest, manifest_diagnoses in group_by_manifest(file_diagnoses):
-            # create a suite for each manifest
-            testsuite = SubElement(root, "testsuite", file=str(path))
-            if manifest:
-                testsuite.attrib["name"] = manifest
+    def __init__(self):
+        super().__init__()
+        now = datetime.datetime.now().astimezone()
+        self.root = Element("testsuites", timestamp=now.isoformat(), name="tugboat")
+        self.total_counts = collections.Counter()
 
-            # create a test case for each diagnosis
-            counts = {"errors": 0, "failures": 0, "skipped": 0}
-            for diag in manifest_diagnoses:
-                testcase = SubElement(
-                    testsuite,
-                    "testcase",
-                    name=diag["code"],
-                    classname=format_loc(diag["loc"]),
-                    file=str(path),
-                    line=str(diag["line"]),
-                )
-
-                match diag["type"]:
-                    case "error":
-                        state = SubElement(testcase, "error", message=diag["summary"])
-                        counts["errors"] += 1
-                    case "failure":
-                        state = SubElement(testcase, "failure", message=diag["summary"])
-                        counts["failures"] += 1
-                    case "skipped":
-                        state = SubElement(testcase, "skipped", message=diag["summary"])
-                        counts["skipped"] += 1
-                    case _:
-                        logger.warning("Skip unknown diagnostic type: %s", diag["type"])
-                        continue
-
-                state.text = diag["msg"]
-
-            # update the counts for the suite
-            testsuite.attrib.update(
-                {type_: str(count) for type_, count in counts.items() if count}
+    def update(
+        self, *, path: Path, content: str, diagnoses: Sequence[AugmentedDiagnosis]
+    ) -> None:
+        for manifest, manifest_diagnoses in group_by_manifest(diagnoses):
+            self.write_manifest_diagnoses(
+                path=path,
+                manifest=manifest,
+                diagnoses=manifest_diagnoses,
             )
 
-            # update the counts for the total report
-            for type_, count in counts.items():
-                total_counts[type_] += count
+    def write_manifest_diagnoses(
+        self,
+        *,
+        path: Path,
+        manifest: str | None,
+        diagnoses: Sequence[AugmentedDiagnosis],
+    ) -> None:
+        # create suite for each manifest
+        test_suite = SubElement(self.root, "testsuite", file=str(path))
+        if manifest:
+            test_suite.attrib["name"] = manifest
 
-    # update the counts for the total report
-    root.attrib.update(
-        {type_: str(count) for type_, count in total_counts.items() if count}
-    )
+        # create test cases for each diagnosis
+        counts = collections.Counter()
+        for diagnosis in diagnoses:
+            test_case = SubElement(
+                test_suite,
+                "testcase",
+                name=diagnosis["code"],
+                classname=format_loc(diagnosis["loc"]),
+                file=str(path),
+                line=str(diagnosis["line"]),
+            )
 
-    # write the XML
-    tree = ElementTree(root)
-    xml.etree.ElementTree.indent(tree, space="  ")
-    tree.write(
-        stream,
-        encoding="unicode",
-        xml_declaration=True,
-    )
+            # the key in counts may be different from the key in the diagnosis
+            match diagnosis["type"]:
+                case "error":
+                    counts["errors"] += 1
+                case "failure":
+                    counts["failures"] += 1
+                case "skipped":
+                    counts["skipped"] += 1
+                case _:
+                    logger.warning(
+                        "Skip unknown diagnostic type: %s", diagnosis["type"]
+                    )
+                    continue
+
+            state = SubElement(
+                test_case,
+                diagnosis["type"],
+                message=diagnosis["summary"],
+            )
+            state.text = diagnosis["msg"]
+
+        # set per-manifest counts
+        test_suite.attrib.update(
+            {type_: str(count) for type_, count in counts.items() if count}
+        )
+
+        # update total counts
+        self.total_counts.update(counts)
+
+    def dump(self, stream: TextIO) -> None:
+        # set the counts
+        self.root.attrib.update(
+            {type_: str(count) for type_, count in self.total_counts.items() if count}
+        )
+
+        # write the XML
+        tree = ElementTree(self.root)
+        xml.etree.ElementTree.indent(tree, space="  ")
+        tree.write(
+            stream,
+            encoding="unicode",
+            xml_declaration=True,
+        )
 
 
 def group_by_manifest(diagnoses: Iterable[AugmentedDiagnosis]) -> Iterator[

@@ -2,14 +2,17 @@ import io
 import re
 from pathlib import Path
 
-from tugboat.console.outputs.junit import report
+from tugboat.console.outputs.junit import JUnitOutputBuilder
 
 
-class TestReport:
+class TestJUnitOutputBuilder:
 
     def test_1(self):
-        diagnoses = {
-            Path("sample-workflow.yaml"): [
+        builder = JUnitOutputBuilder()
+        builder.update(
+            path=Path("sample-workflow.yaml"),
+            content="",
+            diagnoses=[
                 {
                     "type": "error",
                     "line": 1,
@@ -34,11 +37,11 @@ class TestReport:
                     "input": None,
                     "fix": None,
                 },
-            ]
-        }
+            ],
+        )
 
         with io.StringIO() as stream:
-            report(diagnoses, stream)
+            builder.dump(stream)
             xml = stream.getvalue()
 
         for line in (
@@ -51,8 +54,11 @@ class TestReport:
             assert line in xml
 
     def test_2(self):
-        diagnoses = {
-            Path("sample-workflow.yaml"): [
+        builder = JUnitOutputBuilder()
+        builder.update(
+            path=Path("sample-workflow.yaml"),
+            content="",
+            diagnoses=[
                 {
                     "type": "failure",
                     "line": 6,
@@ -84,11 +90,11 @@ class TestReport:
                     "manifest": None,
                     "loc": (),
                 },
-            ]
-        }
+            ],
+        )
 
         with io.StringIO() as stream:
-            report(diagnoses, stream)
+            builder.dump(stream)
             xml = stream.getvalue()
 
         for line in (
@@ -100,8 +106,10 @@ class TestReport:
             assert line in xml
 
     def test_empty_1(self):
+        builder = JUnitOutputBuilder()
+
         with io.StringIO() as stream:
-            report({}, stream)
+            builder.dump(stream)
             xml = stream.getvalue()
 
         assert "<?xml version='1.0' encoding='utf-8'?>" in xml
@@ -111,8 +119,16 @@ class TestReport:
         )
 
     def test_empty_2(self):
+        builder = JUnitOutputBuilder()
+
+        builder.update(
+            path=Path(__file__),
+            content="",
+            diagnoses=[],
+        )
+
         with io.StringIO() as stream:
-            report({Path(__file__): []}, stream)
+            builder.dump(stream)
             xml = stream.getvalue()
 
         assert "<?xml version='1.0' encoding='utf-8'?>" in xml

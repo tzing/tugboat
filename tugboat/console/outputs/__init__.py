@@ -13,4 +13,9 @@ def get_output_builder() -> OutputBuilder:
 
             return ConsoleOutputBuilder()
 
+        case "junit":
+            from tugboat.console.outputs.junit import JUnitOutputBuilder
+
+            return JUnitOutputBuilder()
+
     raise RuntimeError(f"Unsupported output format: {output_format}")
