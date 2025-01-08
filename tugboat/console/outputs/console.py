@@ -13,7 +13,7 @@ from tugboat.settings import settings
 if typing.TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
     from pathlib import Path
-    from typing import IO, Any
+    from typing import IO, Any, TextIO
 
     from tugboat.analyze import AugmentedDiagnosis
 
@@ -44,7 +44,7 @@ class ConsoleOutputBuilder(OutputBuilder):
             case _:
                 emphasis = {"fg": "magenta", "bold": True}
 
-        # PART: summary line
+        # PART/ summary line
         self.writeline(
             click.style(path, bold=True),
             click.style(":", fg="cyan"),
@@ -59,7 +59,7 @@ class ConsoleOutputBuilder(OutputBuilder):
         )
         self.writeline()
 
-        # PART: code snippet
+        # PART/ code snippet
         content_lines = content.splitlines()
 
         # calculate the width of the line numbers
@@ -112,12 +112,12 @@ class ConsoleOutputBuilder(OutputBuilder):
 
         self.writeline()
 
-        # PART: details
+        # PART/ details
         if details := diagnosis["msg"]:
             self.writeline(textwrap.indent(details, " " * (line_number_width + 1)))
             self.writeline()
 
-        # PART: suggestion
+        # PART/ suggestion
         if fix := diagnosis["fix"]:
             self.writeline(
                 " " * (line_number_width + 1),
@@ -127,15 +127,13 @@ class ConsoleOutputBuilder(OutputBuilder):
             )
             self.writeline()
 
-    def dumps(self) -> str:
-        with io.StringIO() as styling_buffer:
-            click.echo(
-                self._buffer.getvalue(),
-                file=styling_buffer,
-                color=settings.color,
-                nl=False,
-            )
-            return styling_buffer.getvalue()
+    def dump(self, stream: TextIO) -> None:
+        click.echo(
+            self._buffer.getvalue(),
+            file=stream,
+            color=settings.color,
+            nl=False,
+        )
 
 
 def report(

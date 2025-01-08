@@ -1,3 +1,4 @@
+import io
 from pathlib import Path
 
 import pytest
@@ -30,7 +31,11 @@ class TestConsoleOutputBuilder:
             ],
         )
 
-        assert builder.dumps().splitlines() == [
+        with io.StringIO() as buffer:
+            builder.dump(buffer)
+            lines = buffer.getvalue().splitlines()
+
+        assert lines == [
             "sample-workflow.yaml:1:1: T01 Test error",
             "",
             " 1 | apiVersion: argoproj.io/v1alpha1",
@@ -65,7 +70,11 @@ class TestConsoleOutputBuilder:
             ],
         )
 
-        assert builder.dumps().splitlines() == [
+        with io.StringIO() as buffer:
+            builder.dump(buffer)
+            lines = buffer.getvalue().splitlines()
+
+        assert lines == [
             "missing-script-source.yaml:6:15: T02 Test failure",
             "",
             " 4 |   generateName: hello-",
@@ -105,7 +114,11 @@ class TestConsoleOutputBuilder:
             ],
         )
 
-        assert builder.dumps().splitlines() == [
+        with io.StringIO() as buffer:
+            builder.dump(buffer)
+            lines = buffer.getvalue().splitlines()
+
+        assert lines == [
             "sample-workflow.yaml:2:1: T03 Test skipped",
             "",
             " 1 | apiVersion: argoproj.io/v1alpha1",
@@ -124,11 +137,8 @@ class TestConsoleOutputBuilder:
     def test_styled_output(
         self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path, diagnostic_type: str
     ):
-        """
-        Just for make sure the process is working.
-        The actual color or the output is not tested.
-        """
         monkeypatch.chdir(fixture_dir)
+        monkeypatch.setattr("tugboat.settings.settings.color", True)
 
         builder = ConsoleOutputBuilder()
         builder.update(
@@ -150,16 +160,25 @@ class TestConsoleOutputBuilder:
             ],
         )
 
-        assert isinstance(builder.dumps(), str)
+        with io.StringIO() as buffer:
+            builder.dump(buffer)
+            content = buffer.getvalue()
+
+        # verified that the output is styled
+        assert "\033[1m" in content
 
     def test_empty_1(self):
         builder = ConsoleOutputBuilder()
-        assert builder.dumps() == ""
+        with io.StringIO() as buffer:
+            builder.dump(buffer)
+            assert buffer.getvalue() == ""
 
     def test_empty_2(self):
         builder = ConsoleOutputBuilder()
         builder.update(path=Path("sample-workflow.yaml"), content="", diagnoses=[])
-        assert builder.dumps() == ""
+        with io.StringIO() as buffer:
+            builder.dump(buffer)
+            assert buffer.getvalue() == ""
 
 
 class TestCalcHighlightRange:

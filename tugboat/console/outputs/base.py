@@ -23,10 +23,5 @@ class OutputBuilder(ABC):
         """Write a diagnostic message for a given path."""
 
     @abstractmethod
-    def dumps(self) -> str:
-        """Serialize the data to a str."""
-
     def dump(self, stream: TextIO) -> None:
         """Serialize the data to a stream."""
-        stream.write(self.dumps())
-        stream.write("\n")

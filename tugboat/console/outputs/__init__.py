@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+__all__ = ["get_output_builder", "OutputBuilder"]
+
 import tugboat.settings
 from tugboat.console.outputs.base import OutputBuilder
 

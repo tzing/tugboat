@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections
+import contextlib
 import logging
 import sys
 import typing
@@ -11,6 +12,7 @@ import cloup
 import colorlog
 
 from tugboat.analyze import analyze_yaml
+from tugboat.console.outputs import get_output_builder
 from tugboat.console.utils import VirtualPath, cached_read
 from tugboat.settings import settings
 from tugboat.utils import join_with_and
@@ -20,6 +22,7 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
     from tugboat.analyze import AugmentedDiagnosis
+    from tugboat.console.outputs import OutputBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +148,8 @@ def main(
 
     # analyze manifests
     counter = DiagnosesCounter()
-    diagnoses: dict[Path, list[AugmentedDiagnosis]] = {}
+    output_builder = get_output_builder()
+
     for i, path in enumerate(manifest_paths, 1):
         logger.info("[%d/%d] Analyzing file %s", i, len(manifest_paths), path)
         try:
@@ -155,13 +159,21 @@ def main(
             logger.debug("Error details:", exc_info=True)
             raise click.Abort from None
 
-        diagnoses[path] = file_diagnoses = analyze_yaml(content)
-        counter.update(diag["type"] for diag in file_diagnoses)
+        diagnoses = analyze_yaml(content)
+
+        counter.update(diag["type"] for diag in diagnoses)
+        output_builder.update(path=path, content=content, diagnoses=diagnoses)
 
     logger.debug("Analysis completed. Found %d diagnoses.", sum(counter.values()))
 
-    # generate report
-    generate_report(diagnoses, output_file)
+    # write report
+    if output_file:
+        output_stream = output_file.open("w")
+    else:
+        output_stream = contextlib.nullcontext(sys.stdout)  # prevent __exit__ call
+
+    with output_stream as stream:
+        output_builder.dump(stream)
 
     # finalize
     click.echo(counter.summary(), err=True)
@@ -228,34 +240,6 @@ def update_settings(
     # inplace update
     # https://docs.pydantic.dev/latest/concepts/pydantic_settings/#in-place-reloading
     settings.__init__(**update_args)
-
-
-def generate_report(
-    diagnoses: dict[Path, list[AugmentedDiagnosis]], output_file: Path | None
-) -> None:
-    logger.info("Generating diagnostic report...")
-
-    # open the output stream
-    if output_file:
-        output_stream = output_file.open("w")
-    else:
-        output_stream = sys.stdout
-
-    # generate the report
-    match settings.output_format:
-        case "console":
-            from tugboat.console.outputs.console import report
-
-            report(diagnoses, output_stream, settings.color)
-
-        case "junit":
-            from tugboat.console.outputs.junit import report
-
-            report(diagnoses, output_stream)
-
-    # close the output stream
-    if output_file:
-        output_stream.close()
 
 
 class DiagnosesCounter(collections.Counter):
