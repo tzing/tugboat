@@ -1,26 +1,20 @@
-import io
 from pathlib import Path
 
 import pytest
 
-from tugboat.console.outputs.console import _calc_highlight_range, report
+from tugboat.console.outputs.console import ConsoleOutputBuilder, _calc_highlight_range
 
 
-class TestReport:
+class TestConsoleOutputBuilder:
 
-    def test_empty(self):
-        with io.StringIO() as stream:
-            report({}, stream, None)
-            assert stream.getvalue() == ""
-
-        with io.StringIO() as stream:
-            report({Path(__file__): []}, stream, None)
-            assert stream.getvalue() == ""
-
-    def test_error(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
+    def test_report_error(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
         monkeypatch.chdir(fixture_dir)
-        diagnoses = {
-            Path("sample-workflow.yaml"): [
+
+        builder = ConsoleOutputBuilder()
+        builder.update(
+            path=Path("sample-workflow.yaml"),
+            content=Path("sample-workflow.yaml").read_text(),
+            diagnoses=[
                 {
                     "type": "error",
                     "line": 1,
@@ -33,14 +27,10 @@ class TestReport:
                     "input": None,
                     "fix": None,
                 }
-            ]
-        }
+            ],
+        )
 
-        with io.StringIO() as stream:
-            report(diagnoses, stream, False)
-            output = stream.getvalue()
-
-        assert output.splitlines() == [
+        assert builder.dumps().splitlines() == [
             "sample-workflow.yaml:1:1: T01 Test error",
             "",
             " 1 | apiVersion: argoproj.io/v1alpha1",
@@ -52,11 +42,14 @@ class TestReport:
             "",
         ]
 
-    def test_failure(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
+    def test_report_failure(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
         monkeypatch.chdir(fixture_dir)
 
-        diagnoses = {
-            Path("missing-script-source.yaml"): [
+        builder = ConsoleOutputBuilder()
+        builder.update(
+            path=Path("missing-script-source.yaml"),
+            content=Path("missing-script-source.yaml").read_text(),
+            diagnoses=[
                 {
                     "type": "failure",
                     "line": 6,
@@ -69,14 +62,10 @@ class TestReport:
                     "input": "hello",
                     "fix": "world",
                 }
-            ]
-        }
+            ],
+        )
 
-        with io.StringIO() as stream:
-            report(diagnoses, stream, False)
-            output = stream.getvalue()
-
-        assert output.splitlines() == [
+        assert builder.dumps().splitlines() == [
             "missing-script-source.yaml:6:15: T02 Test failure",
             "",
             " 4 |   generateName: hello-",
@@ -93,10 +82,14 @@ class TestReport:
             "",
         ]
 
-    def test_skipped(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
+    def test_report_skipped(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
         monkeypatch.chdir(fixture_dir)
-        diagnoses = {
-            Path("sample-workflow.yaml"): [
+
+        builder = ConsoleOutputBuilder()
+        builder.update(
+            path=Path("sample-workflow.yaml"),
+            content=Path("sample-workflow.yaml").read_text(),
+            diagnoses=[
                 {
                     "type": "skipped",
                     "line": 2,
@@ -109,14 +102,10 @@ class TestReport:
                     "input": None,
                     "fix": None,
                 }
-            ]
-        }
+            ],
+        )
 
-        with io.StringIO() as stream:
-            report(diagnoses, stream, False)
-            output = stream.getvalue()
-
-        assert output.splitlines() == [
+        assert builder.dumps().splitlines() == [
             "sample-workflow.yaml:2:1: T03 Test skipped",
             "",
             " 1 | apiVersion: argoproj.io/v1alpha1",
@@ -132,7 +121,7 @@ class TestReport:
     @pytest.mark.parametrize(
         "diagnostic_type", ["failure", "error", "skipped", "INVALID"]
     )
-    def test_colored(
+    def test_styled_output(
         self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path, diagnostic_type: str
     ):
         """
@@ -140,10 +129,14 @@ class TestReport:
         The actual color or the output is not tested.
         """
         monkeypatch.chdir(fixture_dir)
-        diagnoses = {
-            Path("sample-workflow.yaml"): [
+
+        builder = ConsoleOutputBuilder()
+        builder.update(
+            path=Path("sample-workflow.yaml"),
+            content=Path("sample-workflow.yaml").read_text(),
+            diagnoses=[
                 {
-                    "type": diagnostic_type,
+                    "type": diagnostic_type,  # type: ignore[reportArgumentType]
                     "line": 1,
                     "column": 1,
                     "code": "T04",
@@ -154,14 +147,19 @@ class TestReport:
                     "input": None,
                     "fix": None,
                 }
-            ]
-        }
+            ],
+        )
 
-        with io.StringIO() as stream:
-            report(diagnoses, stream, False)
-            output = stream.getvalue()
+        assert isinstance(builder.dumps(), str)
 
-        assert isinstance(output, str)
+    def test_empty_1(self):
+        builder = ConsoleOutputBuilder()
+        assert builder.dumps() == ""
+
+    def test_empty_2(self):
+        builder = ConsoleOutputBuilder()
+        builder.update(path=Path("sample-workflow.yaml"), content="", diagnoses=[])
+        assert builder.dumps() == ""
 
 
 class TestCalcHighlightRange:
