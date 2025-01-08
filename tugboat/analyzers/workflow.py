@@ -131,7 +131,9 @@ def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
         and workflow.spec.entrypoint
         and workflow.spec.entrypoint not in entrypoints
     ):
-        suggestion, _, _ = extractOne(workflow.spec.entrypoint, entrypoints)
+        suggestion = None
+        if result := extractOne(workflow.spec.entrypoint, entrypoints):
+            suggestion, _, _ = result
         entrypoints_ = sorted(entrypoints)
         yield {
             "code": "WF001",
@@ -139,7 +141,7 @@ def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
             "summary": "Invalid entrypoint",
             "msg": f"""
                 Entrypoint '{workflow.spec.entrypoint}' is not defined in any template.
-                Defined entrypoints: {join_with_and(entrypoints_)}.
+                Defined entrypoints: {join_with_and(entrypoints_)}
                 """,
             "input": workflow.spec.entrypoint,
             "fix": suggestion,

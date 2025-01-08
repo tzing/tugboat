@@ -33,8 +33,11 @@ def join_items(
     """Join items with a separator."""
     if quote:
         items = [f"'{item}'" for item in items]
-    if len(items) == 1:
-        return items[0]
+    match len(items):
+        case 0:
+            return "(none)"
+        case 1:
+            return items[0]
     items, last = items[:-1], items[-1]
     return separator.join(items) + f" {conjunction} {last}"
 
