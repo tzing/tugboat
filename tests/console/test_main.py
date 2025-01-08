@@ -26,7 +26,7 @@ class TestMain:
         target = fixture_dir / "sample-workflow.yaml"
 
         runner = click.testing.CliRunner()
-        result = runner.invoke(main, [str(target)])
+        result = runner.invoke(main, [str(target), "--color", "1"])
 
         assert result.exit_code == 0
         assert "All passed!" in result.output
@@ -49,7 +49,16 @@ class TestMain:
         shutil.copy(fixture_dir / "sample-workflow.yaml", tmp_path / "workflow.yaml")
 
         runner = click.testing.CliRunner()
-        result = runner.invoke(main)  # TODO back to ["--output-format", "junit"]
+        result = runner.invoke(
+            main,
+            [
+                "--output-format",
+                "junit",
+                "--output-file",
+                str(tmp_path / "output.xml"),
+                "--follow-symlinks",
+            ],
+        )
 
         assert result.exit_code == 0
         assert "All passed!" in result.output
