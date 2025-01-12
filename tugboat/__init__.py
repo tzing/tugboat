@@ -21,5 +21,6 @@ __all__ = [
     "hookimpl",
 ]
 
-from tugboat.core import Diagnosis, hookimpl
+from tugboat.core import hookimpl
+from tugboat.types import Diagnosis
 from tugboat.version import __version__

@@ -13,7 +13,7 @@ if typing.TYPE_CHECKING:
 
     from pydantic_core import ErrorDetails
 
-    from tugboat.core import Diagnosis
+    from tugboat.types import Diagnosis
 
 
 def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:

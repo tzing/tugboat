@@ -8,7 +8,7 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
     from typing import Any
 
-    from tugboat.core import Diagnosis
+    from tugboat.types import Diagnosis
 
 
 def prepend_loc(

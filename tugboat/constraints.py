@@ -31,7 +31,7 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from typing import Any
 
-    from tugboat.core import Diagnosis
+    from tugboat.types import Diagnosis
 
 
 def accept_none(

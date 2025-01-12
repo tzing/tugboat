@@ -6,7 +6,7 @@ import typing
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from tugboat.core import Diagnosis
+    from tugboat.types import Diagnosis
 
 GENERATED_SUFFIX_LENGTH = 5
 

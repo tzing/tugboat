@@ -12,8 +12,8 @@ from tugboat.utils import prepend_loc
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from tugboat.core import Diagnosis
     from tugboat.schemas import WorkflowTemplate
+    from tugboat.types import Diagnosis
 
 
 @hookimpl(specname="analyze_workflow_template")
