@@ -15,7 +15,7 @@ class TestGatherPaths:
         (tmp_path / "dir1" / "file2.yaml").touch()
         (tmp_path / "dir2").mkdir()
         (tmp_path / "dir2" / "file3.yaml").touch()
-        yield tmp_path
+        return tmp_path
 
     def test_exclude_none(self, tmp_manifest_path: Path):
         paths = gather_paths([tmp_manifest_path], [])

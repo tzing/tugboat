@@ -10,8 +10,10 @@ from pathlib import Path
 import click
 import cloup
 import colorlog
+from pydantic import ValidationError
 
 from tugboat.analyze import analyze_yaml
+from tugboat.console.glob import gather_paths
 from tugboat.console.outputs import get_output_builder
 from tugboat.console.utils import VirtualPath
 from tugboat.settings import settings
@@ -19,7 +21,7 @@ from tugboat.utils import join_with_and
 from tugboat.version import __version__
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Sequence
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +34,18 @@ logger = logging.getLogger(__name__)
 @cloup.argument(
     "manifest",
     nargs=-1,
-    type=cloup.path(),
     help="List of files or directories to check. Use '-' for stdin. [default: .]",
 )
 @cloup.option_group(
     "Input options",
+    cloup.option(
+        "--exclude",
+        multiple=True,
+        help=(
+            "List of files or directories to exclude from the check. "
+            "This option can be used multiple times."
+        ),
+    ),
     cloup.option(
         "--follow-symlinks",
         is_flag=True,
@@ -73,7 +82,8 @@ logger = logging.getLogger(__name__)
 )
 @cloup.version_option(__version__)
 def main(
-    manifest: Sequence[Path],
+    manifest: Sequence[str],
+    exclude: Sequence[str],
     follow_symlinks: bool,
     color: bool | None,
     output_format: str | None,
@@ -108,34 +118,30 @@ def main(
     setup_logging(verbose)
     logger.debug("Tugboat sets sail!")
 
-    # update settings
+    # handle option: manifest
+    if manifest == ("-",):
+        include = ()
+    else:
+        include = manifest
+
+    # update and validate settings
     update_settings(
-        follow_symlinks=follow_symlinks,
         color=color,
+        exclude=exclude,
+        follow_symlinks=follow_symlinks,
+        include=include,
         output_format=output_format,
     )
     logger.debug("Current settings: %s", settings.model_dump_json(indent=2))
 
     # determine the inputs
-    if not manifest:
-        manifest = [Path.cwd()]  # default to the current directory
-
-    manifest_paths: list[Path] = []
-    if "-" in map(str, manifest):
-        if len(manifest) > 1:
-            raise click.BadArgumentUsage(
-                "Cannot read from stdin and file at the same time."
-            )
-
-        stdin = VirtualPath(sys.stdin.name, sys.stdin)
-        manifest_paths += [typing.cast(Path, stdin)]
-
+    if manifest == ("-",):
+        manifest_paths = [VirtualPath(sys.stdin.name, sys.stdin)]
+        manifest_paths = typing.cast(list[Path], manifest_paths)
     else:
-        for path in manifest:
-            if path.is_dir():
-                manifest_paths += find_yaml(path)
-            else:
-                manifest_paths += [path]
+        manifest_paths = gather_paths(
+            settings.include, settings.exclude, settings.follow_symlinks
+        )
 
     if not manifest_paths:
         raise click.UsageError("No manifest found.")
@@ -179,14 +185,6 @@ def main(
         sys.exit(2)
 
 
-def find_yaml(dirpath: Path) -> Iterator[Path]:
-    for root, _, files in dirpath.walk(follow_symlinks=settings.follow_symlinks):
-        for name in files:
-            path = root / name
-            if path.suffix in (".yaml", ".yml"):
-                yield path
-
-
 def setup_logging(verbose_level: int):
     """
     Setup logging
@@ -218,25 +216,33 @@ def setup_logging(verbose_level: int):
         logger.addHandler(handler)
 
 
-def update_settings(
-    *,
-    follow_symlinks: bool,
-    color: bool | None,
-    output_format: str | None,
-):
+def update_settings(**kwargs):
     """Update the settings, if the option is provided by the user."""
     update_args = {}
 
-    if follow_symlinks:
-        update_args["follow_symlinks"] = follow_symlinks
-    if color is not None:
-        update_args["color"] = color
-    if output_format:
-        update_args["output_format"] = output_format
+    # general settings
+    for key in (
+        "exclude",
+        "follow_symlinks",
+        "include",
+        "output_format",
+    ):
+        if value := kwargs.get(key):
+            update_args[key] = value
+
+    for key in ("color",):
+        if (value := kwargs.get(key)) is not None:
+            update_args[key] = value
 
     # inplace update
     # https://docs.pydantic.dev/latest/concepts/pydantic_settings/#in-place-reloading
-    settings.__init__(**update_args)
+    try:
+        settings.__init__(**update_args)
+    except ValidationError as e:
+        for err in e.errors():
+            field = ".".join(map(str, err["loc"]))
+            msg = err["msg"]
+            raise click.UsageError(f"{field}: {msg}") from None
 
 
 class DiagnosesCounter(collections.Counter):

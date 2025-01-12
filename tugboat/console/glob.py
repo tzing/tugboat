@@ -18,7 +18,7 @@ def gather_paths(
     includes: Iterable[Path | PathPattern],
     excludes: Iterable[Path | PathPattern],
     follow_symlinks: bool = False,
-):
+) -> list[Path]:
     """
     Gather paths from the given include patterns and exclude patterns.
     """
@@ -41,10 +41,14 @@ def gather_paths(
                 return True
         return False
 
-    # yield all the paths that are not excluded
+    # returns all the paths that are not excluded
+    output = set()
+
     for path in _collect_file_paths(includes, follow_symlinks):
         if not _is_excluded(path):
-            yield path
+            output.add(path)
+
+    return list(output)
 
 
 def _collect_file_paths(

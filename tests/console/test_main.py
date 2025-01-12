@@ -57,6 +57,7 @@ class TestMain:
                 "--output-file",
                 str(tmp_path / "output.xml"),
                 "--follow-symlinks",
+                str(tmp_path),
             ],
         )
 
@@ -94,7 +95,10 @@ class TestMain:
         runner = click.testing.CliRunner()
         result = runner.invoke(main, ["-", str(tmp_path)])
         assert result.exit_code == 2
-        assert "Cannot read from stdin and file at the same time." in result.output
+        assert (
+            "This option is only available when specified solely via the command line."
+            in result.output
+        )
 
     @pytest.mark.usefixtures("_reset_logging")
     def test_no_yaml_found(self, tmp_path: Path):
