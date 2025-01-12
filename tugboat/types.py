@@ -1,11 +1,23 @@
 from __future__ import annotations
 
+import glob
+import os
+import re
 import typing
+from pathlib import Path
 from typing import TypedDict
 
+import pydantic_core.core_schema
+
+import tugboat._vendor.glob
+
 if typing.TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
+    from os import PathLike
     from typing import Any, Literal, NotRequired
+
+    from pydantic import GetCoreSchemaHandler
+    from pydantic_core import CoreSchema
 
 
 class Diagnosis(TypedDict):
@@ -105,3 +117,58 @@ class AugmentedDiagnosis(TypedDict):
 
     fix: str | None
     """The possible fix for the issue."""
+
+
+class PathPattern:
+    """Wraps a glob pattern for path matching."""
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return pydantic_core.core_schema.union_schema(
+            [
+                pydantic_core.core_schema.is_instance_schema(cls),
+                pydantic_core.core_schema.no_info_after_validator_function(
+                    cls, pydantic_core.core_schema.str_schema()
+                ),
+            ]
+        )
+
+    def __init__(self, pattern: str | PathLike):
+        self.pattern = os.path.realpath(pattern)
+        self._compiled_pattern = re.compile(
+            tugboat._vendor.glob.translate(
+                self.pattern, recursive=True, include_hidden=True
+            )
+        )
+
+    def __str__(self) -> str:
+        return self.pattern
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.pattern!r})"
+
+    def __eq__(self, value) -> bool:
+        if isinstance(value, PathPattern):
+            value = str(value)
+        return self.match(value)
+
+    def match(self, value: str | Path) -> bool:
+        """Match the pattern against the given value."""
+        value = os.path.realpath(value)
+        return self._compiled_pattern.match(value) is not None
+
+    def iglob(
+        self,
+        *,
+        recursive: bool = False,
+        include_hidden: bool = False,
+    ) -> Iterator[Path]:
+        """Iterate over the files that match the pattern."""
+        for item in glob.iglob(
+            self.pattern,
+            recursive=recursive,
+            include_hidden=include_hidden,
+        ):
+            yield Path(item)
