@@ -1,8 +1,10 @@
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from tugboat.settings import Settings
+from tugboat.types import PathPattern
 
 
 class TestSettings:
@@ -55,3 +57,16 @@ class TestSettings:
         assert settings.color is True
         assert settings.console_output.snippet_lines_ahead == 99
         assert settings.console_output.snippet_lines_behind == 101
+
+    def test_include(self):
+        settings = Settings.model_validate({"include": [__file__, "foobar"]})
+
+        item1, item2 = settings.include
+        assert isinstance(item1, Path)
+        assert isinstance(item2, PathPattern)
+
+    def test_reject_dash(self):
+        with pytest.raises(ValidationError):
+            Settings(include=["foo", "-"])
+        with pytest.raises(ValidationError):
+            Settings(exclude=["-"])

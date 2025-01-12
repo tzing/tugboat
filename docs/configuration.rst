@@ -23,8 +23,8 @@ Here is an example configuration file:
 
         .. code-block:: toml
 
-           follow_symlinks = true
            output_format = "console"
+           exclude = ["helm-chart/templates/**"]
 
            [console_output]
            snippet_lines_ahead = 3
@@ -36,8 +36,8 @@ Here is an example configuration file:
         .. code-block:: toml
 
            [tool.tugboat]
-           follow_symlinks = true
            output_format = "console"
+           exclude = ["helm-chart/templates/**"]
 
            [tool.tugboat.console_output]
            snippet_lines_ahead = 3
@@ -56,14 +56,20 @@ For example, the :confval:`output_format` configuration can be set using:
 
 .. code-block:: bash
 
-   export TUGBOAT_OUTPUT_FORMAT=junit
+   export tugboat_output_format=junit
 
-For nested configuration keys, use double underscores to separate the keys.
-For example, the :confval:`snippet_lines_ahead` configuration can be set using:
+For nested configuration keys, use double underscores (``__``) to separate the keys.
+For example, the :confval:`snippet_lines_ahead` configuration is under the `console_output section`_, so it can be set using:
 
 .. code-block:: bash
 
    export TUGBOAT_CONSOLE_OUTPUT__SNIPPET_LINES_AHEAD=5
+
+Some configuration options request a list of values. In this case, the value should be JSON-formatted:
+
+.. code-block:: bash
+
+   export TUGBOAT_EXCLUDE='["helm-chart/templates/**"]'
 
 
 Settings
@@ -83,6 +89,55 @@ Top-level
    - If set to ``false``, the output is not colorized.
    - If set to ``null``, the output is colorized only when directed to a terminal.
 
+   This option is only utilized when the output format supports colorization.
+   Currently, only the ``console`` output format supports colorization.
+
+.. confval:: exclude
+   :default: ``[]``
+
+   A list of file paths, directory paths, or patterns to exclude from the check.
+
+   Files or directories matching these paths or patterns will be ignored.
+   If a file matches both the :confval:`include` and :confval:`exclude` patterns, it will be excluded.
+
+   For details on pattern matching, refer to the documentation for the :confval:`include` option.
+
+.. confval:: include
+   :default: ``["."]`` (all YAML files in the current directory)
+
+   A list of file paths, directory paths, or patterns to include in the check.
+
+   * **File paths:** Specific files will be included in the check.
+   * **Directory paths:** All YAML files in the specified directories will be included.
+   * **Patterns:** Used to match files. Refer to the pattern matching section for details.
+
+   .. important::
+
+      If a file matches both the :confval:`include` and :confval:`exclude` patterns, it will be excluded from the check.
+
+   Tugboat uses Python's `pattern language`_ to evaluate file paths.
+   Supported wildcards in patterns include:
+
+   ``**`` (entire segment)
+      Matches any number of file or directory segments, including zero.
+
+   ``*`` (entire segment)
+      Matches one file or directory segment.
+
+   ``*`` (part of a segment)
+      Matches any number of non-separator characters, including zero.
+
+   ``?``
+      Matches one non-separator character.
+
+   ``[seq]``
+      Matches one character in seq.
+
+   ``[!seq]``
+      Matches one character not in seq.
+
+   .. _pattern language: https://docs.python.org/3.13/library/pathlib.html#pathlib-pattern-language
+
 .. confval:: follow_symlinks
    :default: ``false``
 
@@ -94,7 +149,7 @@ Top-level
    The output serialization format can be specified using the following options:
 
    - ``console``: Outputs in a human-readable text format.
-   - ``junit``: Outputs in JUnit XML format, suitable for use with CI/CD systems. For more information, see :doc:`advanced/junit.rst`.
+   - ``junit``: Outputs in JUnit XML format, suitable for use with CI/CD systems. For more information, see :doc:`advanced/junit`.
 
 
 ``console_output`` section

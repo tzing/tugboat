@@ -3,14 +3,62 @@ from __future__ import annotations
 import itertools
 import typing
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
+import pydantic_core.core_schema
 import pydantic_settings
-from pydantic import Field
+from pydantic import DirectoryPath, Field, FilePath, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from tugboat.types import PathPattern
+
 if typing.TYPE_CHECKING:
+    from typing import Any
+
+    from pydantic import GetCoreSchemaHandler
+    from pydantic_core import CoreSchema
+    from pydantic_core.core_schema import ValidatorFunctionWrapHandler
     from pydantic_settings import PydanticBaseSettingsSource
+
+
+class _PathSpecAnnotation:
+    """
+    Control the type resolution of a path spec.
+
+    This annotation provides a solution to address a type resolution limitation
+    in Pydantic 2.10.
+
+    The intended implementation would utilize built-in annotated types for
+    ``PathSpec`` without the need for this class:
+
+    .. code-block:: python
+
+       type PathSpec = FilePath | DirectoryPath | PathPattern
+
+    However, Pydantic type resolution mechanism defaults string inputs to
+    :py:class:`PathPattern`. This class forces the resolution to the desired
+    type.
+    """
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return pydantic_core.core_schema.no_info_wrap_validator_function(
+            cls.validate, handler(source_type)
+        )
+
+    @classmethod
+    def validate(cls, value: Any, validator: ValidatorFunctionWrapHandler) -> Any:
+        if isinstance(value, str):
+            try:
+                return validator(Path(value))
+            except ValueError:
+                ...
+        return validator(value)
+
+
+type PathSpec = Annotated[FilePath | DirectoryPath | PathPattern, _PathSpecAnnotation]
 
 
 class ConsoleOutputSettings(BaseSettings):
@@ -59,11 +107,27 @@ class Settings(BaseSettings):
     console_output: ConsoleOutputSettings = Field(default_factory=ConsoleOutputSettings)
     """Settings for the console output."""
 
+    exclude: list[PathSpec] = Field(default_factory=list)
+    """List of paths or patterns to exclude from the check."""
+
+    include: list[PathSpec] = Field(default=[Path.cwd()])
+    """List of paths or patterns to include in the check."""
+
     follow_symlinks: bool = False
     """Follow symbolic links when checking directories."""
 
     output_format: Literal["console", "junit"] = "console"
     """Output serialization format."""
+
+    @field_validator("include", "exclude", mode="after")
+    @classmethod
+    def _reject_dash(cls, values: list[PathSpec]):
+        if "-" in values:
+            raise ValueError(
+                "The value '-' is reserved for stdin. "
+                "This option is only available when specified solely via the command line."
+            )
+        return values
 
 
 def _find_config(name: str) -> Path | None:
