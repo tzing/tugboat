@@ -51,6 +51,9 @@ commit = false
 "pyproject.toml" = ['version = "{version}"']
 "tugboat/version.py" = ['__version__ = "{version}"']
 
+[tool.coverage.run]
+omit = ["tugboat/_vendor/*"]
+
 [tool.coverage.report]
 exclude_lines = ["pragma: no cover", "if typing.TYPE_CHECKING"]
 
