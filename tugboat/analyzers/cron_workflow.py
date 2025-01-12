@@ -10,7 +10,7 @@ from tugboat.schemas import CronWorkflow
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from tugboat.core import Diagnosis
+    from tugboat.types import Diagnosis
 
 
 @hookimpl

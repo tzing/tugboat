@@ -15,7 +15,7 @@ from tugboat.utils import join_with_and, prepend_loc
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from tugboat.core import Diagnosis
+    from tugboat.types import Diagnosis
 
     type WorkflowCompatible = Workflow | WorkflowTemplate
 

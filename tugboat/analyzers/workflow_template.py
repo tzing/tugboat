@@ -12,7 +12,7 @@ from tugboat.utils import prepend_loc
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from tugboat.core import Diagnosis
+    from tugboat.types import Diagnosis
     from tugboat.schemas import WorkflowTemplate
 
 

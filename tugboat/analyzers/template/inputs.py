@@ -18,7 +18,7 @@ from tugboat.utils import prepend_loc
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from tugboat.core import Diagnosis
+    from tugboat.types import Diagnosis
     from tugboat.references import Context
     from tugboat.schemas import (
         Artifact,
