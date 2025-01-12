@@ -54,10 +54,10 @@ class TestMain:
             [
                 "--output-format",
                 "junit",
-                "--output-file",
-                str(tmp_path / "output.xml"),
                 "--follow-symlinks",
                 str(tmp_path),
+                "--output-file",
+                str(tmp_path / "output.xml"),
             ],
         )
 

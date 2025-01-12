@@ -61,6 +61,7 @@ def _collect_file_paths(
                 warnings.warn(
                     "Symlinks are not followed when using path patterns.",
                     UserWarning,
+                    stacklevel=1,
                 )
             yield from item.iglob(recursive=True, include_hidden=True)
 
