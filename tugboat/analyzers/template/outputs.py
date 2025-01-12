@@ -17,7 +17,6 @@ from tugboat.utils import prepend_loc
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from tugboat.types import Diagnosis
     from tugboat.references import Context
     from tugboat.schemas import (
         Artifact,
@@ -26,6 +25,7 @@ if typing.TYPE_CHECKING:
         Workflow,
         WorkflowTemplate,
     )
+    from tugboat.types import Diagnosis
 
     type DocumentMap = dict[tuple[str | int, ...], str]
 

@@ -25,8 +25,8 @@ from tugboat.parsers.ast import Document, Node, SimpleReferenceTag, Unexpected
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-    from tugboat.types import Diagnosis
     from tugboat.parsers.ast.core import Lexeme
+    from tugboat.types import Diagnosis
 
 _argo_template_lexer = None
 

@@ -15,8 +15,8 @@ from tugboat.hookspecs.core import hookspec
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from tugboat.types import Diagnosis
     from tugboat.schemas import Step, Template, Workflow, WorkflowTemplate
+    from tugboat.types import Diagnosis
 
 
 @hookspec

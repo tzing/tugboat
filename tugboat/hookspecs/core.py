@@ -16,8 +16,8 @@ import pluggy
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from tugboat.types import Diagnosis
     from tugboat.schemas import Manifest
+    from tugboat.types import Diagnosis
 
 hookspec = pluggy.HookspecMarker("tugboat")
 
