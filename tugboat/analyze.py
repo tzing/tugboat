@@ -4,7 +4,6 @@ import itertools
 import logging
 import textwrap
 import typing
-from typing import Any, Literal, TypedDict
 
 import ruamel.yaml
 from pydantic import ValidationError
@@ -18,58 +17,11 @@ from tugboat.schemas import Manifest
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
 
-    from tugboat.core import Diagnosis
+    from tugboat.types import AugmentedDiagnosis, Diagnosis
 
 logger = logging.getLogger(__name__)
 
 _yaml_parser = None
-
-
-class AugmentedDiagnosis(TypedDict):
-    """
-    The augmented diagnosis reported by the analyzer.
-
-    This type extends the :py:class:`Diagnosis` and adds additional fields
-    to provide more context about the diagnosis.
-    """
-
-    line: int
-    """
-    Line number of the issue occurrence in the source file.
-    Note that the line number is cumulative across all documents in the YAML file.
-    """
-
-    column: int
-    """
-    Column number of the issue occurrence in the source file.
-    """
-
-    type: Literal["error", "failure", "skipped"]
-    """The type that describes the severity."""
-
-    code: str
-    """Diagnosis code."""
-
-    manifest: str | None
-    """The manifest name where the issue occurred."""
-
-    loc: tuple[str | int, ...]
-    """
-    The location of the issue occurrence within the manifest, specified in a
-    path-like format.
-    """
-
-    summary: str
-    """The summary."""
-
-    msg: str
-    """The detailed message."""
-
-    input: Any | None
-    """The input that caused the issue."""
-
-    fix: str | None
-    """The possible fix for the issue."""
 
 
 def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
