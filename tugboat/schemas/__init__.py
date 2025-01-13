@@ -22,6 +22,7 @@ if there are any incompatible fields in the input data.
 __all__ = [
     "Arguments",
     "Artifact",
+    "ContainerNode",
     "ContainerTemplate",
     "CronWorkflow",
     "Manifest",
@@ -36,5 +37,11 @@ __all__ = [
 from tugboat.schemas.arguments import Arguments, Artifact, Parameter
 from tugboat.schemas.cron_workflow import CronWorkflow
 from tugboat.schemas.manifest import Manifest
-from tugboat.schemas.template import ContainerTemplate, ScriptTemplate, Step, Template
+from tugboat.schemas.template import (
+    ContainerNode,
+    ContainerTemplate,
+    ScriptTemplate,
+    Step,
+    Template,
+)
 from tugboat.schemas.workflow import Workflow, WorkflowTemplate

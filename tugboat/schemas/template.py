@@ -10,6 +10,7 @@ from tugboat.schemas.basic import Array, ConfigKeySelector, Dict
 
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
+        "ContainerSetTemplate",
         "TemplateRef",
         "EnvVar",
         "EnvVarSource",
@@ -35,6 +36,7 @@ class Template(_BaseModel):
     activeDeadlineSeconds: int | str | None = None
     automountServiceAccountToken: bool | None = None
     container: ContainerTemplate | None = None
+    containerSet: ContainerSetTemplate | None = None
     daemon: bool | None = None
     failFast: bool | None = None
     inputs: Arguments | None = None
@@ -53,7 +55,6 @@ class Template(_BaseModel):
 
     affinity: Any | None = None
     archiveLocation: Any | None = None
-    containerSet: Any | None = None
     dag: Any | None = None
     data: Any | None = None
     executor: Any | None = None
@@ -134,6 +135,42 @@ class ScriptTemplate(_ContainerEntry):
 
     def __hash__(self):
         return hash((self.image, self.source))
+
+
+# ----------------------------------------------------------------------------
+# containerSet
+# ----------------------------------------------------------------------------
+class ContainerSetTemplate(_BaseModel):
+    """
+    `ContainerSetTemplate`_ to specify multiple containers to run within a single pod.
+
+    .. _ContainerSetTemplate:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#containersettemplate
+    """
+
+    containers: Array[ContainerNode]
+    volumeMounts: Array[VolumeMount] | None = None
+
+    retryStrategy: Any | None = None
+
+
+class ContainerNode(_ContainerEntry):
+    """
+    Represents an individual `ContainerNode`_ within a `ContainerSetTemplate`_.
+
+    .. _ContainerNode:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#containernode
+    .. _ContainerSetTemplate:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#containersettemplate
+    """
+
+    args: Array[str] | None = None
+    dependencies: Array[str] | None = None
+
+    securityContext: Any | None = None
+
+    def __hash__(self):
+        return hash((self.image, self.command, self.args))
 
 
 # ----------------------------------------------------------------------------
