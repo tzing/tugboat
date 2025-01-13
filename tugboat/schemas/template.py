@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
@@ -7,6 +8,10 @@ from pydantic import BaseModel, ConfigDict
 from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Array, Dict
 
+if os.getenv("DOCUTILSCONFIG"):
+    __all__ = [
+        "TemplateRef",
+    ]
 
 class Template(BaseModel):
     """

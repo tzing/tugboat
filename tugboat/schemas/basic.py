@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typing
 
 import frozendict
@@ -12,6 +13,17 @@ if typing.TYPE_CHECKING:
     from pydantic import GetCoreSchemaHandler
     from pydantic_core import CoreSchema
 
+if os.getenv("DOCUTILSCONFIG"):
+    __all__ = [
+        "Array",
+        "Dict",
+        "ConfigMapKeySelector",
+        "Empty",
+        "KeyValuePair",
+        "NameValuePair",
+        "PodMetadata",
+        "SecretKeySelector",
+    ]
 
 type Array[T] = tuple[T, ...]
 """Type alias representing an immutable sequence.

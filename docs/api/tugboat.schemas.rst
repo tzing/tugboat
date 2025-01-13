@@ -10,21 +10,21 @@ tugboat.schemas.arguments.artifact module
 -----------------------------------------
 
 .. automodule:: tugboat.schemas.arguments.artifact
-   :members: ArchiveStrategy, TarStrategy, ArtifactGc, ArtifactoryArtifact, AzureArtifact, GcsArtifact, GitArtifact, HdfsArtifact, HttpArtifact, BasicAuth, ClientCertAuth, HttpAuth, OAuth2Auth, OssArtifact, OssLifecycleRule, RawArtifact, S3Artifact, CreateS3BucketOptions, S3EncryptionOptions
+   :members:
    :undoc-members:
 
 tugboat.schemas.arguments.parameter module
 ------------------------------------------
 
 .. automodule:: tugboat.schemas.arguments.parameter
-   :members: ValueFrom
+   :members:
    :undoc-members:
 
 tugboat.schemas.basic module
 ----------------------------
 
 .. automodule:: tugboat.schemas.basic
-   :members: ConfigMapKeySelector, Dict, Empty, KeyValuePair, NameValuePair, PodMetadata, SecretKeySelector
+   :members:
    :undoc-members:
 
    .. py:class:: Array
@@ -35,26 +35,26 @@ tugboat.schemas.cron\_workflow module
 -------------------------------------
 
 .. automodule:: tugboat.schemas.cron_workflow
-   :members: CronWorkflowSpec
+   :members:
    :undoc-members:
 
 tugboat.schemas.manifest module
 -------------------------------
 
 .. automodule:: tugboat.schemas.manifest
-   :members: Metadata
+   :members:
    :undoc-members:
 
 tugboat.schemas.template module
 -------------------------------
 
 .. automodule:: tugboat.schemas.template
-   :members: TemplateRef
+   :members:
    :undoc-members:
 
 tugboat.schemas.workflow module
 -------------------------------
 
 .. automodule:: tugboat.schemas.workflow
-   :members: WorkflowSpec, WorkflowTemplateRef
+   :members:
    :undoc-members:
