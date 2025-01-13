@@ -13,14 +13,17 @@ if os.getenv("DOCUTILSCONFIG"):
         "TemplateRef",
     ]
 
-class Template(BaseModel):
+
+class _BaseModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class Template(_BaseModel):
     """
     `Template`_ is a reusable and composable unit of execution in a workflow.
 
     .. _Template: https://argo-workflows.readthedocs.io/en/latest/fields/#template
     """
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
 
     activeDeadlineSeconds: int | str | None = None
     automountServiceAccountToken: bool | None = None
@@ -71,9 +74,7 @@ class Template(BaseModel):
 # ----------------------------------------------------------------------------
 # container / script
 # ----------------------------------------------------------------------------
-class _ContainerEntry(BaseModel):
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
+class _ContainerEntry(_BaseModel):
 
     image: str
 
@@ -131,14 +132,12 @@ class ScriptTemplate(_ContainerEntry):
 # ----------------------------------------------------------------------------
 # steps
 # ----------------------------------------------------------------------------
-class Step(BaseModel):
+class Step(_BaseModel):
     """
     `Step`_ is a reference to a template to execute in a series of step.
 
     .. _Step: https://argo-workflows.readthedocs.io/en/latest/fields/#workflowstep
     """
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
 
     name: str
 
@@ -158,14 +157,12 @@ class Step(BaseModel):
         return hash((self.name, self.template, self.templateRef))
 
 
-class TemplateRef(BaseModel):
+class TemplateRef(_BaseModel):
     """
     `TemplateRef`_ is a reference of template resource.
 
     .. _TemplateRef: https://argo-workflows.readthedocs.io/en/latest/fields/#templateref
     """
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
 
     clusterScope: bool | None = None
     name: str
