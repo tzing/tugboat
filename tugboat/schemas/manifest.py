@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import os
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from tugboat.schemas.basic import Dict
+
+if os.getenv("DOCUTILSCONFIG"):
+    __all__ = ["Metadata"]
 
 
 class Manifest[T_Spec: BaseModel](BaseModel):

@@ -1,16 +1,40 @@
 from __future__ import annotations
 
+import os
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from tugboat.schemas.basic import (
     Array,
-    ConfigMapKeySelector,
+    ConfigKeySelector,
     Empty,
     KeyValuePair,
     NameValuePair,
     PodMetadata,
-    SecretKeySelector,
 )
+
+if os.getenv("DOCUTILSCONFIG"):
+    __all__ = [
+        "ArchiveStrategy",
+        "TarStrategy",
+        "ArtifactGc",
+        "ArtifactoryArtifact",
+        "AzureArtifact",
+        "GcsArtifact",
+        "GitArtifact",
+        "HdfsArtifact",
+        "HttpArtifact",
+        "BasicAuth",
+        "ClientCertAuth",
+        "HttpAuth",
+        "OAuth2Auth",
+        "OssArtifact",
+        "OssLifecycleRule",
+        "RawArtifact",
+        "S3Artifact",
+        "CreateS3BucketOptions",
+        "S3EncryptionOptions",
+    ]
 
 
 class _BaseModel(BaseModel):
@@ -70,16 +94,16 @@ class ArtifactGc(_BaseModel):
 # artifactory
 # ----------------------------------------------------------------------------
 class ArtifactoryArtifact(_BaseModel):
-    passwordSecret: SecretKeySelector
+    passwordSecret: ConfigKeySelector
     url: str
-    usernameSecret: SecretKeySelector
+    usernameSecret: ConfigKeySelector
 
 
 # ----------------------------------------------------------------------------
 # azure
 # ----------------------------------------------------------------------------
 class AzureArtifact(_BaseModel):
-    accountKeySecret: SecretKeySelector
+    accountKeySecret: ConfigKeySelector
     blob: str
     container: str
     endpoint: str
@@ -92,7 +116,7 @@ class AzureArtifact(_BaseModel):
 class GcsArtifact(_BaseModel):
     bucket: str
     key: str
-    serviceAccountKeySecret: SecretKeySelector
+    serviceAccountKeySecret: ConfigKeySelector
 
 
 # ----------------------------------------------------------------------------
@@ -105,12 +129,12 @@ class GitArtifact(_BaseModel):
     fetch: Array[str] | None = None
     insecureIgnoreHostKey: bool | None = None
     insecureSkipTLS: bool | None = None
-    passwordSecret: SecretKeySelector | None = None
+    passwordSecret: ConfigKeySelector | None = None
     repo: str
     revision: str | None = None
     singleBranch: bool | None = None
-    sshPrivateKeySecret: SecretKeySelector | None = None
-    usernameSecret: SecretKeySelector | None = None
+    sshPrivateKeySecret: ConfigKeySelector | None = None
+    usernameSecret: ConfigKeySelector | None = None
 
 
 # ----------------------------------------------------------------------------
@@ -121,9 +145,9 @@ class HdfsArtifact(_BaseModel):
     dataTransferProtection: str | None = None
     force: bool | None = None
     hdfsUser: str
-    krbCCacheSecret: SecretKeySelector | None = None
-    krbConfigConfigMap: ConfigMapKeySelector | None = None
-    krbKeytabSecret: SecretKeySelector | None = None
+    krbCCacheSecret: ConfigKeySelector | None = None
+    krbConfigConfigMap: ConfigKeySelector | None = None
+    krbKeytabSecret: ConfigKeySelector | None = None
     krbRealm: str | None = None
     krbServicePrincipalName: str | None = None
     krbUsername: str | None = None
@@ -140,13 +164,13 @@ class HttpArtifact(_BaseModel):
 
 
 class BasicAuth(_BaseModel):
-    passwordSecret: SecretKeySelector
-    usernameSecret: SecretKeySelector
+    passwordSecret: ConfigKeySelector
+    usernameSecret: ConfigKeySelector
 
 
 class ClientCertAuth(_BaseModel):
-    clientCertSecret: SecretKeySelector | None = None
-    clientKeySecret: SecretKeySelector
+    clientCertSecret: ConfigKeySelector | None = None
+    clientKeySecret: ConfigKeySelector
 
 
 class HttpAuth(_BaseModel):
@@ -156,24 +180,24 @@ class HttpAuth(_BaseModel):
 
 
 class OAuth2Auth(_BaseModel):
-    clientIDSecret: SecretKeySelector
-    clientSecretSecret: SecretKeySelector
+    clientIDSecret: ConfigKeySelector
+    clientSecretSecret: ConfigKeySelector
     endpointParams: Array[KeyValuePair] | None = None
     scopes: Array[str] | None = None
-    tokenURLSecret: SecretKeySelector | None = None
+    tokenURLSecret: ConfigKeySelector | None = None
 
 
 # ----------------------------------------------------------------------------
 # oss
 # ----------------------------------------------------------------------------
 class OssArtifact(_BaseModel):
-    accessKeySecret: SecretKeySelector
+    accessKeySecret: ConfigKeySelector
     bucket: str
     createBucketIfNotPresent: bool | None = None
     endpoint: str
     key: str
     lifecycleRule: OssLifecycleRule | None = None
-    secretKeySecret: SecretKeySelector
+    secretKeySecret: ConfigKeySelector
     securityToken: str | None = None
     useSDKCreds: bool | None = None
 
@@ -194,9 +218,9 @@ class RawArtifact(_BaseModel):
 # s3
 # ----------------------------------------------------------------------------
 class S3Artifact(_BaseModel):
-    accessKeySecret: SecretKeySelector | None = None
+    accessKeySecret: ConfigKeySelector | None = None
     bucket: str | None = None
-    caSecret: SecretKeySelector | None = None
+    caSecret: ConfigKeySelector | None = None
     createBucketIfNotPresent: CreateS3BucketOptions | None = None
     encryptionOptions: S3EncryptionOptions | None = None
     endpoint: str | None = None
@@ -204,8 +228,8 @@ class S3Artifact(_BaseModel):
     key: str
     region: str | None = None
     roleARN: str | None = None
-    secretKeySecret: SecretKeySelector | None = None
-    sessionTokenSecret: SecretKeySelector | None = None
+    secretKeySecret: ConfigKeySelector | None = None
+    sessionTokenSecret: ConfigKeySelector | None = None
     useSDKCreds: bool | None = None
 
 
@@ -217,4 +241,4 @@ class S3EncryptionOptions(_BaseModel):
     enableEncryption: bool | None = None
     kmsEncryptionContext: str | None = None
     kmsKeyId: str | None = None
-    serverSideCustomerKeySecret: SecretKeySelector | None = None
+    serverSideCustomerKeySecret: ConfigKeySelector | None = None

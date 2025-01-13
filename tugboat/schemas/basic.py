@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typing
 
 import frozendict
@@ -12,6 +13,16 @@ if typing.TYPE_CHECKING:
     from pydantic import GetCoreSchemaHandler
     from pydantic_core import CoreSchema
 
+if os.getenv("DOCUTILSCONFIG"):
+    __all__ = [
+        "Array",
+        "Dict",
+        "ConfigKeySelector",
+        "Empty",
+        "KeyValuePair",
+        "NameValuePair",
+        "PodMetadata",
+    ]
 
 type Array[T] = tuple[T, ...]
 """Type alias representing an immutable sequence.
@@ -48,7 +59,17 @@ class _BaseModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
-class ConfigMapKeySelector(_BaseModel):
+class ConfigKeySelector(_BaseModel):
+    """
+    Represents a reference to a key within a ConfigMap or Secret.
+    This class is utilized by both the `ConfigMapKeySelector`_ and `SecretKeySelector`_ classes.
+
+    .. _ConfigMapKeySelector:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#configmapkeyselector
+    .. _SecretKeySelector:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#secretkeyselector
+    """
+
     key: str
     name: str
     optional: bool | None = None
@@ -70,9 +91,3 @@ class NameValuePair(_BaseModel):
 class PodMetadata(_BaseModel):
     annotations: Dict[str, str] | None = None
     labels: Dict[str, str] | None = None
-
-
-class SecretKeySelector(_BaseModel):
-    key: str
-    name: str
-    optional: bool | None = None

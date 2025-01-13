@@ -1,25 +1,47 @@
 from __future__ import annotations
 
+import os
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
 from tugboat.schemas.arguments import Arguments
-from tugboat.schemas.basic import Array, Dict
+from tugboat.schemas.basic import Array, ConfigKeySelector, Dict
+
+if os.getenv("DOCUTILSCONFIG"):
+    __all__ = [
+        "ContainerSetTemplate",
+        "TemplateRef",
+        "EnvVar",
+        "EnvVarSource",
+        "ObjectFieldSelector",
+        "ResourceFieldSelector",
+        "EnvFromSource",
+        "OptionalName",
+        "Probe",
+        "ExecAction",
+        "GrpcAction",
+        "HttpGetAction",
+        "TcpSocketAction",
+        "VolumeMount",
+    ]
 
 
-class Template(BaseModel):
+class _BaseModel(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class Template(_BaseModel):
     """
     `Template`_ is a reusable and composable unit of execution in a workflow.
 
     .. _Template: https://argo-workflows.readthedocs.io/en/latest/fields/#template
     """
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
     activeDeadlineSeconds: int | str | None = None
     automountServiceAccountToken: bool | None = None
     container: ContainerTemplate | None = None
+    containerSet: ContainerSetTemplate | None = None
     daemon: bool | None = None
     failFast: bool | None = None
     inputs: Arguments | None = None
@@ -38,7 +60,6 @@ class Template(BaseModel):
 
     affinity: Any | None = None
     archiveLocation: Any | None = None
-    containerSet: Any | None = None
     dag: Any | None = None
     data: Any | None = None
     executor: Any | None = None
@@ -66,35 +87,33 @@ class Template(BaseModel):
 # ----------------------------------------------------------------------------
 # container / script
 # ----------------------------------------------------------------------------
-class _ContainerEntry(BaseModel):
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
+class _ContainerEntry(_BaseModel):
 
     image: str
 
     command: Array[str] | None = None
+    env: Array[EnvVar] | None = None
+    envFrom: Array[EnvFromSource] | None = None
     imagePullPolicy: Literal["Always", "Never", "IfNotPresent"] | None = None
+    livenessProbe: Probe | None = None
     name: str | None = None
+    readinessProbe: Probe | None = None
     restartPolicy: Literal["Always"] | None = None
+    startupProbe: Probe | None = None
     stdin: bool | None = None
     stdinOnce: bool | None = None
     terminationMessagePath: str | None = None
     terminationMessagePolicy: Literal["File", "FallbackToLogsOnError"] | None = None
     tty: bool | None = None
+    volumeMounts: Array[VolumeMount] | None = None
     workingDir: str | None = None
 
-    env: Array[Any] | None = None
-    envFrom: Array[Any] | None = None
     lifecycle: Any | None = None
-    livenessProbe: Any | None = None
     ports: Array[Any] | None = None
-    readinessProbe: Any | None = None
     resizePolicy: Array[Any] | None = None
     resources: Any | None = None
     securityContext: Any | None = None
-    startupProbe: Any | None = None
     volumeDevices: Array[Any] | None = None
-    volumeMounts: Array[Any] | None = None
 
 
 class ContainerTemplate(_ContainerEntry):
@@ -124,16 +143,50 @@ class ScriptTemplate(_ContainerEntry):
 
 
 # ----------------------------------------------------------------------------
+# containerSet
+# ----------------------------------------------------------------------------
+class ContainerSetTemplate(_BaseModel):
+    """
+    `ContainerSetTemplate`_ to specify multiple containers to run within a single pod.
+
+    .. _ContainerSetTemplate:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#containersettemplate
+    """
+
+    containers: Array[ContainerNode]
+    volumeMounts: Array[VolumeMount] | None = None
+
+    retryStrategy: Any | None = None
+
+
+class ContainerNode(_ContainerEntry):
+    """
+    Represents an individual `ContainerNode`_ within a `ContainerSetTemplate`_.
+
+    .. _ContainerNode:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#containernode
+    .. _ContainerSetTemplate:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#containersettemplate
+    """
+
+    args: Array[str] | None = None
+    dependencies: Array[str] | None = None
+
+    securityContext: Any | None = None
+
+    def __hash__(self):
+        return hash((self.image, self.command, self.args))
+
+
+# ----------------------------------------------------------------------------
 # steps
 # ----------------------------------------------------------------------------
-class Step(BaseModel):
+class Step(_BaseModel):
     """
     `Step`_ is a reference to a template to execute in a series of step.
 
     .. _Step: https://argo-workflows.readthedocs.io/en/latest/fields/#workflowstep
     """
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
 
     name: str
 
@@ -153,15 +206,152 @@ class Step(BaseModel):
         return hash((self.name, self.template, self.templateRef))
 
 
-class TemplateRef(BaseModel):
+class TemplateRef(_BaseModel):
     """
     `TemplateRef`_ is a reference of template resource.
 
     .. _TemplateRef: https://argo-workflows.readthedocs.io/en/latest/fields/#templateref
     """
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
     clusterScope: bool | None = None
     name: str
     template: str
+
+
+# ----------------------------------------------------------------------------
+# field - env
+# ----------------------------------------------------------------------------
+class EnvVar(_BaseModel):
+    """
+    `EnvVar`_ represents an environment variable present in a Container.
+
+    .. _EnvVar: https://argo-workflows.readthedocs.io/en/latest/fields/#envvar
+    """
+
+    name: str
+    value: str | None = None
+    valueFrom: EnvVarSource | None = None
+
+
+class EnvVarSource(_BaseModel):
+    configMapKeyRef: ConfigKeySelector | None = None
+    fieldRef: ObjectFieldSelector | None = None
+    resourceFieldRef: ResourceFieldSelector | None = None
+    secretKeyRef: ConfigKeySelector | None = None
+
+
+class ObjectFieldSelector(_BaseModel):
+    apiVersion: str | None = None
+    fieldPath: str
+
+
+class ResourceFieldSelector(_BaseModel):
+    containerName: str | None = None
+    divisor: str | None = None
+    resource: str
+
+
+# ----------------------------------------------------------------------------
+# field - envFrom
+# ----------------------------------------------------------------------------
+class EnvFromSource(_BaseModel):
+    """
+    `EnvFromSource`_ represents the source of a set of ConfigMaps.
+
+    .. _EnvFromSource: https://argo-workflows.readthedocs.io/en/latest/fields/#envfromsource
+    """
+
+    configMapRef: OptionalName | None = None
+    prefix: str | None = None
+    secretRef: OptionalName | None = None
+
+
+class OptionalName(_BaseModel):
+    """
+    Represents a reference to a ConfigMap or Secret.
+    This class is utilized by both the `ConfigMapEnvSource`_ and `SecretEnvSource`_ classes.
+
+    .. _ConfigMapEnvSource:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#configmapenvsource
+    .. _SecretEnvSource:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#secretenvsource
+    """
+
+    name: str
+    optional: bool | None = None
+
+
+# ----------------------------------------------------------------------------
+# field - probe
+# ----------------------------------------------------------------------------
+class Probe(_BaseModel):
+    exec: ExecAction | None = None
+    failureThreshold: int | None = None
+    grpc: GrpcAction | None = None
+    httpGet: HttpGetAction | None = None
+    initialDelaySeconds: int | None = None
+    periodSeconds: int | None = None
+    successThreshold: int | None = None
+    tcpSocket: TcpSocketAction | None = None
+    terminationGracePeriodSeconds: int | None = None
+    timeoutSeconds: int | None = None
+
+
+class ExecAction(_BaseModel):
+    """
+    `ExecAction`_ describes a "run in container" action.
+
+    .. _ExecAction: https://argo-workflows.readthedocs.io/en/latest/fields/#execaction
+    """
+
+    command: Array[str]
+
+
+class GrpcAction(_BaseModel):
+    port: int
+    service: str | None = None
+
+
+class HttpGetAction(_BaseModel):
+    """
+    `HttpGetAction`_ describes an action based on HTTP Get requests.
+
+    .. _HttpGetAction: https://argo-workflows.readthedocs.io/en/latest/fields/#httpgetaction
+    """
+
+    host: str | None = None
+    httpHeaders: Array[Any] | None = None  # TODO
+    path: str
+    port: int | str
+    scheme: Literal["HTTP", "HTTPS"] | None = None
+
+
+class TcpSocketAction(_BaseModel):
+    """
+    `TcpSocketAction`_ describes an action based on opening a socket.
+
+    .. _TcpSocketAction: https://argo-workflows.readthedocs.io/en/latest/fields/#tcpsocketaction
+    """
+
+    host: str | None = None
+    port: int | str
+
+
+# ----------------------------------------------------------------------------
+# field - volumeMounts
+# ----------------------------------------------------------------------------
+class VolumeMount(_BaseModel):
+    """
+    `VolumeMount`_ describes a mounting of a `Volume`_ within a container.
+
+    .. _VolumeMount: https://argo-workflows.readthedocs.io/en/latest/fields/#volumemount
+    .. _Volume: https://kubernetes.io/docs/concepts/storage/volumes/
+    """
+
+    mountPath: str
+    mountPropagation: str | None = None
+    name: str
+    readOnly: bool | None = None
+    recursiveReadOnly: bool | None = None
+    subPath: str | None = None
+    subPathExpr: str | None = None

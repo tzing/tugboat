@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
@@ -8,6 +9,12 @@ from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Array, Dict
 from tugboat.schemas.manifest import Manifest
 from tugboat.schemas.template import Template
+
+if os.getenv("DOCUTILSCONFIG"):
+    __all__ = [
+        "WorkflowSpec",
+        "WorkflowTemplateRef",
+    ]
 
 
 class WorkflowSpec(BaseModel):

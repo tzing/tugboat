@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import os
+
 from pydantic import BaseModel, ConfigDict
 
-from tugboat.schemas.basic import Array, ConfigMapKeySelector, Empty
+from tugboat.schemas.basic import Array, ConfigKeySelector, Empty
+
+if os.getenv("DOCUTILSCONFIG"):
+    __all__ = ["ValueFrom"]
 
 
 class _BaseModel(BaseModel):
@@ -22,7 +27,7 @@ class Parameter(_BaseModel):
 
 
 class ValueFrom(_BaseModel):
-    configMapKeyRef: ConfigMapKeySelector | None = None
+    configMapKeyRef: ConfigKeySelector | None = None
     default: str | None = None
     event: str | None = None
     expression: str | None = None

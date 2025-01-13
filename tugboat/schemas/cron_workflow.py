@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
@@ -7,6 +8,9 @@ from pydantic import BaseModel, ConfigDict
 from tugboat.schemas.basic import Array
 from tugboat.schemas.manifest import Manifest
 from tugboat.schemas.workflow import WorkflowSpec
+
+if os.getenv("DOCUTILSCONFIG"):
+    __all__ = ["CronWorkflowSpec"]
 
 
 class CronWorkflowSpec(BaseModel):
