@@ -6,11 +6,18 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict
 
 from tugboat.schemas.arguments import Arguments
-from tugboat.schemas.basic import Array, Dict
+from tugboat.schemas.basic import Array, ConfigKeySelector, Dict
 
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
         "TemplateRef",
+        "EnvVar",
+        "EnvVarSource",
+        "ObjectFieldSelector",
+        "ResourceFieldSelector",
+        "EnvFromSource",
+        "OptionalName",
+        "VolumeMount",
     ]
 
 
@@ -79,6 +86,8 @@ class _ContainerEntry(_BaseModel):
     image: str
 
     command: Array[str] | None = None
+    env: Array[EnvVar] | None = None
+    envFrom: Array[EnvFromSource] | None = None
     imagePullPolicy: Literal["Always", "Never", "IfNotPresent"] | None = None
     name: str | None = None
     restartPolicy: Literal["Always"] | None = None
@@ -87,10 +96,9 @@ class _ContainerEntry(_BaseModel):
     terminationMessagePath: str | None = None
     terminationMessagePolicy: Literal["File", "FallbackToLogsOnError"] | None = None
     tty: bool | None = None
+    volumeMounts: Array[VolumeMount] | None = None
     workingDir: str | None = None
 
-    env: Array[Any] | None = None
-    envFrom: Array[Any] | None = None
     lifecycle: Any | None = None
     livenessProbe: Any | None = None
     ports: Array[Any] | None = None
@@ -100,7 +108,6 @@ class _ContainerEntry(_BaseModel):
     securityContext: Any | None = None
     startupProbe: Any | None = None
     volumeDevices: Array[Any] | None = None
-    volumeMounts: Array[Any] | None = None
 
 
 class ContainerTemplate(_ContainerEntry):
@@ -167,3 +174,86 @@ class TemplateRef(_BaseModel):
     clusterScope: bool | None = None
     name: str
     template: str
+
+
+# ----------------------------------------------------------------------------
+# field - env
+# ----------------------------------------------------------------------------
+class EnvVar(_BaseModel):
+    """
+    `EnvVar`_ represents an environment variable present in a Container.
+
+    .. _EnvVar: https://argo-workflows.readthedocs.io/en/latest/fields/#envvar
+    """
+
+    name: str
+    value: str | None = None
+    valueFrom: EnvVarSource | None = None
+
+
+class EnvVarSource(_BaseModel):
+    configMapKeyRef: ConfigKeySelector | None = None
+    fieldRef: ObjectFieldSelector | None = None
+    resourceFieldRef: ResourceFieldSelector | None = None
+    secretKeyRef: ConfigKeySelector | None = None
+
+
+class ObjectFieldSelector(_BaseModel):
+    apiVersion: str | None = None
+    fieldPath: str
+
+
+class ResourceFieldSelector(_BaseModel):
+    containerName: str | None = None
+    divisor: str | None = None
+    resource: str
+
+
+# ----------------------------------------------------------------------------
+# field - envFrom
+# ----------------------------------------------------------------------------
+class EnvFromSource(_BaseModel):
+    """
+    `EnvFromSource`_ represents the source of a set of ConfigMaps.
+
+    .. _EnvFromSource: https://argo-workflows.readthedocs.io/en/latest/fields/#envfromsource
+    """
+
+    configMapRef: OptionalName | None = None
+    prefix: str | None = None
+    secretRef: OptionalName | None = None
+
+
+class OptionalName(_BaseModel):
+    """
+    Represents a reference to a ConfigMap or Secret.
+    This class is utilized by both the `ConfigMapEnvSource`_ and `SecretEnvSource`_ classes.
+
+    .. _ConfigMapEnvSource:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#configmapenvsource
+    .. _SecretEnvSource:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#secretenvsource
+    """
+
+    name: str
+    optional: bool | None = None
+
+
+# ----------------------------------------------------------------------------
+# field - volumeMounts
+# ----------------------------------------------------------------------------
+class VolumeMount(_BaseModel):
+    """
+    `VolumeMount`_ describes a mounting of a `Volume`_ within a container.
+
+    .. _VolumeMount: https://argo-workflows.readthedocs.io/en/latest/fields/#volumemount
+    .. _Volume: https://kubernetes.io/docs/concepts/storage/volumes/
+    """
+
+    mountPath: str
+    mountPropagation: str | None = None
+    name: str
+    readOnly: bool | None = None
+    recursiveReadOnly: bool | None = None
+    subPath: str | None = None
+    subPathExpr: str | None = None
