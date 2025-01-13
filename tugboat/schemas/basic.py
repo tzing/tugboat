@@ -17,12 +17,11 @@ if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
         "Array",
         "Dict",
-        "ConfigMapKeySelector",
+        "ConfigKeySelector",
         "Empty",
         "KeyValuePair",
         "NameValuePair",
         "PodMetadata",
-        "SecretKeySelector",
     ]
 
 type Array[T] = tuple[T, ...]
@@ -60,7 +59,17 @@ class _BaseModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
-class ConfigMapKeySelector(_BaseModel):
+class ConfigKeySelector(_BaseModel):
+    """
+    Represents a reference to a key within a ConfigMap or Secret.
+    This class is utilized by both the `ConfigMapKeySelector`_ and `SecretKeySelector`_ classes.
+
+    .. _ConfigMapKeySelector:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#configmapkeyselector
+    .. _SecretKeySelector:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#secretkeyselector
+    """
+
     key: str
     name: str
     optional: bool | None = None
@@ -82,9 +91,3 @@ class NameValuePair(_BaseModel):
 class PodMetadata(_BaseModel):
     annotations: Dict[str, str] | None = None
     labels: Dict[str, str] | None = None
-
-
-class SecretKeySelector(_BaseModel):
-    key: str
-    name: str
-    optional: bool | None = None
