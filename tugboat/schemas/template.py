@@ -18,6 +18,11 @@ if os.getenv("DOCUTILSCONFIG"):
         "ResourceFieldSelector",
         "EnvFromSource",
         "OptionalName",
+        "Probe",
+        "ExecAction",
+        "GrpcAction",
+        "HttpGetAction",
+        "TcpSocketAction",
         "VolumeMount",
     ]
 
@@ -90,8 +95,11 @@ class _ContainerEntry(_BaseModel):
     env: Array[EnvVar] | None = None
     envFrom: Array[EnvFromSource] | None = None
     imagePullPolicy: Literal["Always", "Never", "IfNotPresent"] | None = None
+    livenessProbe: Probe | None = None
     name: str | None = None
+    readinessProbe: Probe | None = None
     restartPolicy: Literal["Always"] | None = None
+    startupProbe: Probe | None = None
     stdin: bool | None = None
     stdinOnce: bool | None = None
     terminationMessagePath: str | None = None
@@ -101,13 +109,10 @@ class _ContainerEntry(_BaseModel):
     workingDir: str | None = None
 
     lifecycle: Any | None = None
-    livenessProbe: Any | None = None
     ports: Array[Any] | None = None
-    readinessProbe: Any | None = None
     resizePolicy: Array[Any] | None = None
     resources: Any | None = None
     securityContext: Any | None = None
-    startupProbe: Any | None = None
     volumeDevices: Array[Any] | None = None
 
 
@@ -274,6 +279,62 @@ class OptionalName(_BaseModel):
 
     name: str
     optional: bool | None = None
+
+
+# ----------------------------------------------------------------------------
+# field - probe
+# ----------------------------------------------------------------------------
+class Probe(_BaseModel):
+    exec: ExecAction | None = None
+    failureThreshold: int | None = None
+    grpc: GrpcAction | None = None
+    httpGet: HttpGetAction | None = None
+    initialDelaySeconds: int | None = None
+    periodSeconds: int | None = None
+    successThreshold: int | None = None
+    tcpSocket: TcpSocketAction | None = None
+    terminationGracePeriodSeconds: int | None = None
+    timeoutSeconds: int | None = None
+
+
+class ExecAction(_BaseModel):
+    """
+    `ExecAction`_ describes a "run in container" action.
+
+    .. _ExecAction: https://argo-workflows.readthedocs.io/en/latest/fields/#execaction
+    """
+
+    command: Array[str]
+
+
+class GrpcAction(_BaseModel):
+    port: int
+    service: str | None = None
+
+
+class HttpGetAction(_BaseModel):
+    """
+    `HttpGetAction`_ describes an action based on HTTP Get requests.
+
+    .. _HttpGetAction: https://argo-workflows.readthedocs.io/en/latest/fields/#httpgetaction
+    """
+
+    host: str | None = None
+    httpHeaders: Array[Any] | None = None  # TODO
+    path: str
+    port: int | str
+    scheme: Literal["HTTP", "HTTPS"] | None = None
+
+
+class TcpSocketAction(_BaseModel):
+    """
+    `TcpSocketAction`_ describes an action based on opening a socket.
+
+    .. _TcpSocketAction: https://argo-workflows.readthedocs.io/en/latest/fields/#tcpsocketaction
+    """
+
+    host: str | None = None
+    port: int | str
 
 
 # ----------------------------------------------------------------------------
