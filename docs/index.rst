@@ -147,8 +147,8 @@ For more information on how to use Tugboat, runs its help command:
 .. toctree::
    :hidden:
 
-   configuration
-   advanced/junit
+   user/configuration
+   user/junit
 
 .. toctree::
    :hidden:

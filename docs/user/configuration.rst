@@ -149,7 +149,7 @@ Top-level
    The output serialization format can be specified using the following options:
 
    - ``console``: Outputs in a human-readable text format.
-   - ``junit``: Outputs in JUnit XML format, suitable for use with CI/CD systems. For more information, see :doc:`advanced/junit`.
+   - ``junit``: Outputs in JUnit XML format, suitable for use with CI/CD systems. For more information, see :doc:`junit`.
 
 
 ``console_output`` section
