@@ -142,6 +142,23 @@ class ScriptTemplate(_ContainerEntry):
         return hash((self.image, self.source))
 
 
+class ContainerNode(_ContainerEntry):
+    """
+    Represents an individual `ContainerNode`_ within a `ContainerSetTemplate`_.
+
+    .. _ContainerNode:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#containernode
+    .. _ContainerSetTemplate:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#containersettemplate
+    """
+
+    args: Array[str] | None = None
+    dependencies: Array[str] | None = None
+
+    def __hash__(self):
+        return hash((self.image, self.command, self.args))
+
+
 # ----------------------------------------------------------------------------
 # containerSet
 # ----------------------------------------------------------------------------
@@ -157,25 +174,6 @@ class ContainerSetTemplate(_BaseModel):
     volumeMounts: Array[VolumeMount] | None = None
 
     retryStrategy: Any | None = None
-
-
-class ContainerNode(_ContainerEntry):
-    """
-    Represents an individual `ContainerNode`_ within a `ContainerSetTemplate`_.
-
-    .. _ContainerNode:
-       https://argo-workflows.readthedocs.io/en/latest/fields/#containernode
-    .. _ContainerSetTemplate:
-       https://argo-workflows.readthedocs.io/en/latest/fields/#containersettemplate
-    """
-
-    args: Array[str] | None = None
-    dependencies: Array[str] | None = None
-
-    securityContext: Any | None = None
-
-    def __hash__(self):
-        return hash((self.image, self.command, self.args))
 
 
 # ----------------------------------------------------------------------------
