@@ -130,19 +130,32 @@ def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
             code = diag["code"]
             loc = diag.get("loc", ())
             line, column = _get_line_column(document, loc)
+            manifest_name = _get_manifest_name(document)
+            summary = diag.get("summary") or _get_summary(diag["msg"])
 
-            if _is_suppressed(code, _find_related_comments(document, loc)):
+            line += 1
+            column += 1
+
+            if _should_ignore_code(code, _find_related_comments(document, loc)):
+                logger.debug(
+                    "Suppressed diagnosis %s (%s) in manifest %s at line %d, column %d",
+                    code,
+                    summary,
+                    manifest_name,
+                    line,
+                    column,
+                )
                 continue
 
             diagnoses.append(
                 {
-                    "line": line + 1,
-                    "column": column + 1,
+                    "line": line,
+                    "column": column,
                     "type": diag.get("type", "failure"),
                     "code": code,
-                    "manifest": _get_manifest_name(document),
+                    "manifest": manifest_name,
                     "loc": loc,
-                    "summary": diag.get("summary") or _get_summary(diag["msg"]),
+                    "summary": summary,
                     "msg": diag["msg"],
                     "input": diag.get("input"),
                     "fix": diag.get("fix"),

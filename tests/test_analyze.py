@@ -59,6 +59,38 @@ class TestAnalyzeYaml:
             }
         ]
 
+    def test_suppressed(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ):
+        monkeypatch.setattr(
+            "tugboat.analyze.analyze_raw",
+            lambda _: [
+                {
+                    "code": "T01",
+                    "loc": ("spec", "foo"),
+                    "msg": "Test diagnosis. This is a long message.",
+                }
+            ],
+        )
+
+        with caplog.at_level(logging.DEBUG):
+            diagnoses = analyze_yaml(
+                """
+                apiVersion: v1
+                kind: Test
+                metadata:
+                  generateName: test-
+                spec:
+                  foo: bar  # noqa: T01
+                """
+            )
+
+        assert diagnoses == []
+        assert (
+            "Suppressed diagnosis T01 (Test diagnosis) in manifest test- at line 7, column 19"
+            in caplog.text
+        )
+
     def test_plain_text(self):
         diagnoses = analyze_yaml(
             """
