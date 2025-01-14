@@ -11,6 +11,7 @@ from tests.utils import ContainsSubStrings
 from tugboat.analyze import (
     _find_related_comments,
     _get_line_column,
+    _should_ignore_code,
     analyze_raw,
     analyze_yaml,
 )
@@ -196,6 +197,26 @@ class TestGetRelatedComments:
         comments = list(_find_related_comments(document, loc))
         logger.critical("related comments: %s", json.dumps(comments, indent=2))
         assert ContainsSubStrings(expected) in comments
+
+
+class TestShouldIgnoreCode:
+
+    def test_all(self):
+        assert _should_ignore_code("T001", ["#NoQA; This is a comment"]) is True
+        assert _should_ignore_code("T001", ["#noqa"]) is True
+
+        assert _should_ignore_code("T001", ["#noqa: ALL"]) is False
+
+    def test_specific(self):
+        assert (
+            _should_ignore_code("T001", ["#noqa: T001, T002; This is a comment"])
+            is True
+        )
+        assert _should_ignore_code("T002", ["#noqa: t001, t002"]) is True
+
+        assert (
+            _should_ignore_code("T003", ["#noqa: T001; T003 is not for here"]) is False
+        )
 
 
 class TestAnalyzeRaw:

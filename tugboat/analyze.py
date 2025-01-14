@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 import logging
+import re
 import textwrap
 import typing
 
@@ -24,6 +25,16 @@ if typing.TYPE_CHECKING:
     type CommentTokenSeq = Sequence[CommentToken]
 
 logger = logging.getLogger(__name__)
+
+pattern_noqa_all = re.compile(r"#[ ]*noqa(\Z|;)", re.IGNORECASE)
+pattern_noqa_line = re.compile(
+    r"#[ ]*noqa:[ ]*"  # prefix
+    r"("
+    r"[a-z]+\d+"  # first code
+    r"(?:,[ ]*[A-Z]+[0-9]+)*"  # additional codes, separated by commas
+    r")",
+    re.IGNORECASE,
+)
 
 _yaml_parser = None
 
@@ -116,15 +127,21 @@ def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
             ]
 
         for diag in analyze_raw(document):
-            line, column = _get_line_column(document, diag.get("loc", ()))
+            code = diag["code"]
+            loc = diag.get("loc", ())
+            line, column = _get_line_column(document, loc)
+
+            if _is_suppressed(code, _find_related_comments(document, loc)):
+                continue
+
             diagnoses.append(
                 {
                     "line": line + 1,
                     "column": column + 1,
                     "type": diag.get("type", "failure"),
-                    "code": diag["code"],
+                    "code": code,
                     "manifest": _get_manifest_name(document),
-                    "loc": diag.get("loc", ()),
+                    "loc": loc,
                     "summary": diag.get("summary") or _get_summary(diag["msg"]),
                     "msg": diag["msg"],
                     "input": diag.get("input"),
@@ -197,6 +214,28 @@ def _extract_comment_tokens(comment_items) -> Iterator[CommentTokenSeq]:
 
 def _extract_comment_text(seq: CommentTokenSeq) -> str:
     return "".join(token.value for token in seq)
+
+
+def _should_ignore_code(code: str, comments: Iterable[str]) -> bool:
+    """Returns True if the code should be suppressed."""
+    for ignore_code in _extract_noqa_codes(comments):
+        if ignore_code == "ALL":
+            return True
+        if ignore_code == code:
+            return True
+    return False
+
+
+def _extract_noqa_codes(comments: Iterable[str]) -> Iterable[str]:
+    """Extracts the noqa codes from the comments."""
+    for comment in comments:
+        if pattern_noqa_all.match(comment):
+            yield "ALL"
+            return  # pragma: no cover; the caller breaks the loop
+
+        if m := pattern_noqa_line.match(comment):
+            for code in m.group(1).split(","):
+                yield code.strip().upper()
 
 
 def _get_summary(msg: str) -> str:
