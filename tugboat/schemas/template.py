@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Array, ConfigKeySelector, Dict
@@ -11,6 +11,7 @@ from tugboat.schemas.basic import Array, ConfigKeySelector, Dict
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
         "ContainerSetTemplate",
+        "ContainerSetRetryStrategy",
         "TemplateRef",
         "EnvVar",
         "EnvVarSource",
@@ -142,23 +143,6 @@ class ScriptTemplate(_ContainerEntry):
         return hash((self.image, self.source))
 
 
-# ----------------------------------------------------------------------------
-# containerSet
-# ----------------------------------------------------------------------------
-class ContainerSetTemplate(_BaseModel):
-    """
-    `ContainerSetTemplate`_ to specify multiple containers to run within a single pod.
-
-    .. _ContainerSetTemplate:
-       https://argo-workflows.readthedocs.io/en/latest/fields/#containersettemplate
-    """
-
-    containers: Array[ContainerNode]
-    volumeMounts: Array[VolumeMount] | None = None
-
-    retryStrategy: Any | None = None
-
-
 class ContainerNode(_ContainerEntry):
     """
     Represents an individual `ContainerNode`_ within a `ContainerSetTemplate`_.
@@ -172,10 +156,29 @@ class ContainerNode(_ContainerEntry):
     args: Array[str] | None = None
     dependencies: Array[str] | None = None
 
-    securityContext: Any | None = None
-
     def __hash__(self):
         return hash((self.image, self.command, self.args))
+
+
+# ----------------------------------------------------------------------------
+# containerSet
+# ----------------------------------------------------------------------------
+class ContainerSetTemplate(_BaseModel):
+    """
+    `ContainerSetTemplate`_ to specify multiple containers to run within a single pod.
+
+    .. _ContainerSetTemplate:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#containersettemplate
+    """
+
+    containers: Array[ContainerNode]
+    retryStrategy: ContainerSetRetryStrategy | None = None
+    volumeMounts: Array[VolumeMount] | None = None
+
+
+class ContainerSetRetryStrategy(_BaseModel):
+    duration: str | None = Field(None, pattern=r"\d+(ns|us|µs|ms|s|m|h)")
+    retries: int | str
 
 
 # ----------------------------------------------------------------------------

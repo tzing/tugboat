@@ -17,7 +17,7 @@ Argo Workflows offers various types of templates. However, Tugboat currently sup
       - :octicon:`alert` Partial; Adapted :doc:`workflow-variable`
 
     * - `Container set template <https://argo-workflows.readthedocs.io/en/latest/container-set-template/>`_
-      - :octicon:`x`
+      - :octicon:`alert` Partial; Check against :py:class:`~tugboat.schemas.template.ContainerSetTemplate`
       - :octicon:`x`
 
     * - `DAG template <https://argo-workflows.readthedocs.io/en/latest/walk-through/dag/>`_
