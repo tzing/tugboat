@@ -210,6 +210,9 @@ class TestGetRelatedComments:
                     - # ut enim ad minim
                       name: qux
                       var: {} # ullamco laboris nisi
+
+                    - data: |- # ut aliquip ex ea
+                        bla bla bla
                 """
             )
         )
@@ -223,6 +226,7 @@ class TestGetRelatedComments:
             (("spec", "steps", 0, 0, "data"), "et dolore"),
             (("spec", "steps", 1), "tempor incididunt"),
             (("spec", "steps", 1, "var"), "ullamco laboris nisi"),
+            (("spec", "steps", 2, "data"), "ut aliquip ex ea"),
         ],
     )
     def test_commented(self, document, loc, expected):

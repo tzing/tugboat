@@ -10,6 +10,7 @@ import ruamel.yaml
 from pydantic import ValidationError
 from ruamel.yaml.comments import CommentedBase, CommentedMap
 from ruamel.yaml.error import MarkedYAMLError
+from ruamel.yaml.tokens import CommentToken
 
 from tugboat.analyzers import translate_pydantic_error
 from tugboat.core import get_plugin_manager
@@ -18,11 +19,9 @@ from tugboat.schemas import Manifest
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
 
-    from ruamel.yaml.tokens import CommentToken
-
     from tugboat.types import AugmentedDiagnosis, Diagnosis
 
-    type CommentTokenSeq = Sequence[CommentToken]
+    type CommentTokenSeq = Sequence[CommentToken | str]
 
 logger = logging.getLogger(__name__)
 
@@ -218,7 +217,7 @@ def _extract_comment_tokens(comment_items) -> Iterator[CommentTokenSeq]:
     else:
         raise RuntimeError(f"Unexpected comment item: {comment_items:!r}")
 
-    pre: list[CommentToken] | None
+    pre: list[CommentToken | str] | None
     post: CommentToken | None
 
     yield pre or ()
@@ -226,7 +225,12 @@ def _extract_comment_tokens(comment_items) -> Iterator[CommentTokenSeq]:
 
 
 def _extract_comment_text(seq: CommentTokenSeq) -> str:
-    return "".join(token.value for token in seq)
+    def _normalize(token: CommentToken | str) -> str:
+        if isinstance(token, CommentToken):
+            return token.value
+        return str(token)
+
+    return "".join(map(_normalize, seq)).strip()
 
 
 def _should_ignore_code(code: str, comments: Iterable[str]) -> bool:
