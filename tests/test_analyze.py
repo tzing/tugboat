@@ -8,7 +8,13 @@ import ruamel.yaml
 from pydantic import BaseModel
 
 from tests.utils import ContainsSubStrings
-from tugboat.analyze import _get_line_column, analyze_raw, analyze_yaml
+from tugboat.analyze import (
+    _find_related_comments,
+    _get_line_column,
+    _should_ignore_code,
+    analyze_raw,
+    analyze_yaml,
+)
 from tugboat.core import hookimpl
 from tugboat.schemas import Manifest
 
@@ -52,6 +58,38 @@ class TestAnalyzeYaml:
                 "fix": None,
             }
         ]
+
+    def test_suppressed(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ):
+        monkeypatch.setattr(
+            "tugboat.analyze.analyze_raw",
+            lambda _: [
+                {
+                    "code": "T01",
+                    "loc": ("spec", "foo"),
+                    "msg": "Test diagnosis. This is a long message.",
+                }
+            ],
+        )
+
+        with caplog.at_level(logging.DEBUG):
+            diagnoses = analyze_yaml(
+                """
+                apiVersion: v1
+                kind: Test
+                metadata:
+                  generateName: test-
+                spec:
+                  foo: bar  # noqa: T01
+                """
+            )
+
+        assert diagnoses == []
+        assert (
+            "Suppressed diagnosis T01 (Test diagnosis) in manifest test- at line 7, column 19"
+            in caplog.text
+        )
 
     def test_plain_text(self):
         diagnoses = analyze_yaml(
@@ -150,6 +188,71 @@ class TestGetLineColumn:
     )
     def test(self, document, loc, expected):
         assert _get_line_column(document, loc) == expected
+
+
+class TestGetRelatedComments:
+
+    @pytest.fixture
+    def document(self):
+        yaml = ruamel.yaml.YAML()
+        return yaml.load(
+            textwrap.dedent(
+                """
+                spec:
+                  # lorem ipsum dolor
+                  # sit amet
+                  name: sample # consectetur adipiscing
+
+                  steps:
+                    # tempor incididunt
+                    - - name: baz # sed do
+                        data: 123 # et dolore
+                    - # ut enim ad minim
+                      name: qux
+                      var: {} # ullamco laboris nisi
+
+                    - data: |- # ut aliquip ex ea
+                        bla bla bla
+                """
+            )
+        )
+
+    @pytest.mark.parametrize(
+        ("loc", "expected"),
+        [
+            (("spec", "name"), "consectetur adipiscing"),
+            (("spec", "steps", 0, 0, "name"), "tempor incididunt"),
+            (("spec", "steps", 0, 0, "name"), "sed do"),
+            (("spec", "steps", 0, 0, "data"), "et dolore"),
+            (("spec", "steps", 1), "tempor incididunt"),
+            (("spec", "steps", 1, "var"), "ullamco laboris nisi"),
+            (("spec", "steps", 2, "data"), "ut aliquip ex ea"),
+        ],
+    )
+    def test_commented(self, document, loc, expected):
+        comments = list(_find_related_comments(document, loc))
+        logger.critical("related comments: %s", json.dumps(comments, indent=2))
+        assert ContainsSubStrings(expected) in comments
+
+
+class TestShouldIgnoreCode:
+
+    def test_all(self):
+        assert _should_ignore_code("T001", ["#NoQA; This is a comment"]) is True
+        assert _should_ignore_code("T001", ["#noqa"]) is True
+
+        assert _should_ignore_code("T001", ["#noqa: ALL"]) is False
+
+    def test_specific(self):
+        assert (
+            _should_ignore_code("T001", ["#noqa: T001, T002; This is a comment"])
+            is True
+        )
+        assert _should_ignore_code("T002", ["#noqa: t001, t002"]) is True
+
+        assert (
+            _should_ignore_code("T003", ["#noqa: T001; T003 is not for here"]) is False
+        )
 
 
 class TestAnalyzeRaw:
