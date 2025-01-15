@@ -187,17 +187,12 @@ def _get_line_column(node: CommentedBase, loc: Sequence[int | str]) -> tuple[int
 def _find_related_comments(
     node: CommentedBase, loc: Sequence[int | str]
 ) -> Iterator[str]:
-    #  idx:   1     2     3
-    # node: foo > bar > baz
-    #             └── `node.ca.items.get` returns `baz`'s comment
-    for idx, part in enumerate(loc, 1):
+    for part in loc:
         if ca := node.ca.items.get(part):
             pre, post = _extract_comment_tokens(ca)
-            # for parent nodes, return the leading comments
             if pre:
                 yield _extract_comment_text(pre)
-            # for the last node, return the trailing comments
-            if idx >= len(loc) - 1 and post:
+            if post:
                 yield _extract_comment_text(post)
 
         try:
@@ -248,7 +243,7 @@ def _extract_noqa_codes(comments: Iterable[str]) -> Iterable[str]:
     for comment in comments:
         if pattern_noqa_all.match(comment):
             yield "ALL"
-            return  # pragma: no cover; the caller breaks the loop
+            return  # pragma: no cover; the caller may breaks the loop
 
         if m := pattern_noqa_line.match(comment):
             for code in m.group(1).split(","):
