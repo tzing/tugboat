@@ -26,6 +26,8 @@ Note that most parsers report syntax errors as soon as they encounter the first 
 This means the error message might not always indicate the exact location of the problem, but it provides a useful starting point for debugging.
 
 
+.. _code.var002:
+
 :bdg:`VAR002` Misused reference
 -------------------------------
 
