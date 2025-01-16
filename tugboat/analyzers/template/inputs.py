@@ -141,8 +141,6 @@ def check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagn
         fields=[
             "artifactory",
             "azure",
-            "from_",
-            "fromExpression",
             "gcs",
             "git",
             "hdfs",
@@ -156,6 +154,8 @@ def check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagn
         model=artifact,
         loc=(),
         fields=[
+            "from_",
+            "fromExpression",
             "archive",
             "archiveLogs",
             "artifactGC",
@@ -163,21 +163,6 @@ def check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagn
             "globalName",
         ],
     )
-
-    if artifact.from_:
-        for diag in prepend_loc(
-            ("from",), check_value_references(artifact.from_, context.artifacts)
-        ):
-            match diag["code"]:
-                case "VAR002":
-                    ctx = typing.cast(dict, diag.get("ctx"))
-                    ref = ".".join(ctx["ref"])
-                    diag["msg"] = (
-                        f"The artifact reference '{ref}' used in artifact '{artifact.name}' is invalid."
-                    )
-            yield diag
-
-    # TODO fromExpression
 
     if artifact.raw:
         for diag in prepend_loc(
