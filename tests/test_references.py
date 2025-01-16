@@ -1,9 +1,6 @@
-from unittest.mock import Mock
 
 import pytest
-from dirty_equals import IsInstance
 
-from tugboat.parsers import Node
 from tugboat.references import (
     get_global_context,
     get_step_context,
@@ -38,26 +35,6 @@ class TestReferenceCollection:
             collection.add("not-a-tuple")
         with pytest.raises(NotImplementedError):
             collection.discard(("a", "b"))
-
-    def test_filter_unknown(self):
-        collection = ReferenceCollection()
-        collection |= {
-            ("a", "b"),
-            ("c", AnyStr),
-        }
-
-        filtered = list(
-            collection.filter_unknown(
-                [
-                    (Mock(Node), ("a", "b")),
-                    (Mock(Node), ("c", "d")),
-                    (Mock(Node), ("a", "INVALID")),
-                ]
-            )
-        )
-        assert filtered == [
-            (IsInstance(Node), ("a", "INVALID"), ("a", "b")),
-        ]
 
     @pytest.mark.parametrize(
         ("target", "expected"),
