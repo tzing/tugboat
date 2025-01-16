@@ -31,6 +31,8 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from typing import Any
 
+    from pydantic import BaseModel
+
     from tugboat.types import Diagnosis
 
 
@@ -144,3 +146,8 @@ def require_exactly_one(
         }
 
     yield from mutually_exclusive(model=model, loc=loc, fields=fields)
+
+
+def get_alias(model: BaseModel, name: str) -> str:
+    field = model.model_fields[name]
+    return field.alias or name

@@ -1,10 +1,11 @@
 from unittest.mock import Mock
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from tests.utils import ContainsSubStrings
 from tugboat.constraints import (
     accept_none,
+    get_alias,
     mutually_exclusive,
     require_all,
     require_exactly_one,
@@ -170,3 +171,16 @@ class TestRequireExactlyOne:
                 "input": "bar",
             },
         ]
+
+
+class TestGetAlias:
+
+    def test(self):
+        class Model(BaseModel):
+            x: str
+            y: str = Field(alias="z")
+
+        m = Model(x="hello", z="world")
+
+        assert get_alias(m, "x") == "x"
+        assert get_alias(m, "y") == "z"
