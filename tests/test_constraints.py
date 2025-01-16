@@ -102,12 +102,12 @@ class TestMutuallyExclusive:
 class TestRequireAll:
 
     def test_pass(self):
-        model = Mock(BaseModel, foo="foo", bar="bar")
+        model = SampleModel(foo="foo", baz="baz")
         diagnoses = list(require_all(model=model, loc=["spec"], fields=["foo", "bar"]))
         assert diagnoses == []
 
     def test_missing(self):
-        model = Mock(BaseModel, foo=None, bar="")
+        model = SampleModel(foo=None, baz="")
         diagnoses = list(require_all(model=model, loc=["spec"], fields=["foo", "bar"]))
         assert diagnoses == [
             {
@@ -120,9 +120,9 @@ class TestRequireAll:
             {
                 "type": "failure",
                 "code": "M004",
-                "loc": ("spec", "bar"),
-                "summary": "Missing required field 'bar'",
-                "msg": "Field 'bar' is required in the 'spec' section but empty",
+                "loc": ("spec", "baz"),
+                "summary": "Missing required field 'baz'",
+                "msg": "Field 'baz' is required in the 'spec' section but empty",
             },
         ]
 

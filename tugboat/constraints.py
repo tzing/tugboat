@@ -102,24 +102,25 @@ def require_all(
     -----
     :ref:`code.m004` for any of the missing or empty fields.
     """
-    for field in fields:
-        value = getattr(model, field, None)
-        if value is None:
-            yield {
-                "type": "failure",
-                "code": "M004",
-                "loc": (*loc, field),
-                "summary": f"Missing required field '{field}'",
-                "msg": f"Field '{field}' is required in {get_context_name(loc)} but missing",
-            }
-        elif value == "":
-            yield {
-                "type": "failure",
-                "code": "M004",
-                "loc": (*loc, field),
-                "summary": f"Missing required field '{field}'",
-                "msg": f"Field '{field}' is required in {get_context_name(loc)} but empty",
-            }
+    for field_name in fields:
+        field_alias = get_alias(model, field_name)
+        match getattr(model, field_name, None):
+            case None:
+                yield {
+                    "type": "failure",
+                    "code": "M004",
+                    "loc": (*loc, field_alias),
+                    "summary": f"Missing required field '{field_alias}'",
+                    "msg": f"Field '{field_alias}' is required in {get_context_name(loc)} but missing",
+                }
+            case "":
+                yield {
+                    "type": "failure",
+                    "code": "M004",
+                    "loc": (*loc, field_alias),
+                    "summary": f"Missing required field '{field_alias}'",
+                    "msg": f"Field '{field_alias}' is required in {get_context_name(loc)} but empty",
+                }
 
 
 def require_exactly_one(
