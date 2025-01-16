@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import typing
 
 from tugboat.analyzers.generic import (
@@ -166,7 +167,24 @@ def check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagn
     )
 
     if artifact.from_:
-        # `from` can reference both parameters and artifacts
+        # `from` value can be either wrapped by the cruely brackets or not
+
+        # when it is unwrapped, it is a reference to an artifact
+        # EXAMPLE> artifact: inputs.artifacts.artifact-1
+        if re.fullmatch(r"\s*[a-zA-Z0-9.-]+\s*", artifact.from_):
+            ref = tuple(artifact.from_.strip().split("."))
+            closest = context.artifacts.find_closest(ref)
+            if ref not in context.artifacts:
+                yield {
+                    "code": "VAR002",
+                    "loc": ("from",),
+                    "summary": "Invalid reference",
+                    "msg": f"The reference '{artifact.from_}' used in artifact '{artifact.name}' is invalid.",
+                    "input": artifact.from_,
+                    "fix": ".".join(closest),
+                }
+
+        # when it is wrapped, it may be a reference to a parameter or an artifact
         mixed_references = context.parameters + context.artifacts
         for diag in prepend_loc(
             ("from",), check_value_references(artifact.from_, mixed_references)

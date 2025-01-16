@@ -78,6 +78,9 @@ def test_check_argument_artifacts():
         IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 1, "raw", "data")})
         in diagnoses
     )
+    assert (
+        IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 2, "from")}) in diagnoses
+    )
 
 
 MANIFEST_INVALID_INPUT_ARTIFACTS = """
@@ -99,4 +102,6 @@ spec:
                 - name: message # STP003
                   raw:
                     data: "{{ workflow.invalid }}" # VAR002
+                - name: another
+                  from: workflow.invalid # VAR002
 """
