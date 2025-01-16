@@ -37,7 +37,7 @@ if typing.TYPE_CHECKING:
 
 
 def accept_none(
-    *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
+    *, model: BaseModel, loc: Sequence[str | int], fields: Sequence[str]
 ) -> Iterator[Diagnosis]:
     """
     Check if all the specified fields are not set.
@@ -46,15 +46,16 @@ def accept_none(
     -----
     :ref:`code.m005` for each unexpected field.
     """
-    for field in fields:
-        if getattr(model, field, None) is not None:
+    for field_name in fields:
+        if getattr(model, field_name, None) is not None:
+            field_alias = get_alias(model, field_name)
             yield {
                 "type": "failure",
                 "code": "M005",
-                "loc": (*loc, field),
-                "summary": f"Found redundant field '{field}'",
-                "msg": f"Field '{field}' is not valid within {get_context_name(loc)}.",
-                "input": field,
+                "loc": (*loc, field_alias),
+                "summary": f"Found redundant field '{field_alias}'",
+                "msg": f"Field '{field_alias}' is not valid within {get_context_name(loc)}.",
+                "input": field_alias,
             }
 
 

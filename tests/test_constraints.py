@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 
-from pydantic import BaseModel, Field
+import pytest
+from pydantic import BaseModel, Field, ValidationError
 
 from tests.utils import ContainsSubStrings
 from tugboat.constraints import (
@@ -12,15 +13,20 @@ from tugboat.constraints import (
 )
 
 
+class SampleModel(BaseModel):
+    foo: str | None = None
+    bar: str | None = Field(None, alias="baz")
+
+
 class TestAcceptNone:
 
     def test_pass(self):
-        model = Mock(BaseModel, foo=None, bar="bar")
+        model = SampleModel(baz="baz")
         diagnoses = list(accept_none(model=model, loc=["spec"], fields=["foo"]))
         assert diagnoses == []
 
     def test_picked_1(self):
-        model = Mock(BaseModel, foo=None, bar="bar")
+        model = SampleModel(baz="baz")
         diagnoses = list(
             accept_none(model=model, loc=["spec", 0, 1, "baz"], fields=["foo", "bar"])
         )
@@ -28,15 +34,15 @@ class TestAcceptNone:
             {
                 "type": "failure",
                 "code": "M005",
-                "loc": ("spec", 0, 1, "baz", "bar"),
-                "summary": "Found redundant field 'bar'",
-                "msg": "Field 'bar' is not valid within the 'baz' section.",
-                "input": "bar",
+                "loc": ("spec", 0, 1, "baz", "baz"),
+                "summary": "Found redundant field 'baz'",
+                "msg": "Field 'baz' is not valid within the 'baz' section.",
+                "input": "baz",
             }
         ]
 
     def test_picked_2(self):
-        model = Mock(BaseModel, foo=None, bar="bar")
+        model = SampleModel(baz="baz")
         diagnoses = list(
             accept_none(model=model, loc=["spec", 0, 1], fields=["foo", "bar"])
         )
@@ -44,10 +50,10 @@ class TestAcceptNone:
             {
                 "type": "failure",
                 "code": "M005",
-                "loc": ("spec", 0, 1, "bar"),
-                "summary": "Found redundant field 'bar'",
-                "msg": "Field 'bar' is not valid within the 'spec' section.",
-                "input": "bar",
+                "loc": ("spec", 0, 1, "baz"),
+                "summary": "Found redundant field 'baz'",
+                "msg": "Field 'baz' is not valid within the 'spec' section.",
+                "input": "baz",
             }
         ]
 
