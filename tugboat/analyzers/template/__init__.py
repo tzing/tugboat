@@ -5,22 +5,17 @@ __all__ = ["check_input_artifact", "check_input_parameter"]
 import collections
 import typing
 
-from tugboat.analyzers.generic import check_model_fields_references
 from tugboat.analyzers.template.inputs import (
     check_input_artifact,
     check_input_parameter,
 )
 from tugboat.constraints import require_all, require_exactly_one
 from tugboat.core import hookimpl
-from tugboat.references import get_template_context
-from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from pydantic import BaseModel
-
-    from tugboat.schemas import Template, Workflow, WorkflowTemplate
+    from tugboat.schemas import Template
     from tugboat.types import Diagnosis
 
 
