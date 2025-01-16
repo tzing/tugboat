@@ -166,15 +166,17 @@ def check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagn
     )
 
     if artifact.from_:
+        # `from` can reference both parameters and artifacts
+        mixed_references = context.parameters + context.artifacts
         for diag in prepend_loc(
-            ("from",), check_value_references(artifact.from_, context.artifacts)
+            ("from",), check_value_references(artifact.from_, mixed_references)
         ):
             match diag["code"]:
                 case "VAR002":
                     ctx = typing.cast(dict, diag.get("ctx"))
                     ref = ".".join(ctx["ref"])
                     diag["msg"] = (
-                        f"The artifact reference '{ref}' used in artifact '{artifact.name}' is invalid."
+                        f"The reference '{ref}' used in artifact '{artifact.name}' is invalid."
                     )
             yield diag
 
