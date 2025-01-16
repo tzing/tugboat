@@ -8,63 +8,30 @@ import tugboat.analyze
 logger = logging.getLogger(__name__)
 
 
-class TestRules:
+def test_check_argument_parameters():
+    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_PARAMETERS)
+    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
-    def test_check_argument_parameters(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_PARAMETERS)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    loc_prefix = ("spec", "templates", 0, "steps", 0, 0, "arguments", "parameters")
 
-        loc_prefix = ("spec", "templates", 0, "steps", 0, 0, "arguments", "parameters")
+    # M005: Found redundant field
+    assert (
+        IsPartialDict({"code": "M005", "loc": (*loc_prefix, 0, "valueFrom", "path")})
+        in diagnoses
+    )
 
-        # M005: Found redundant field
-        assert (
-            IsPartialDict(
-                {"code": "M005", "loc": (*loc_prefix, 0, "valueFrom", "path")}
-            )
-            in diagnoses
-        )
+    # STP002: Duplicated input parameter name
+    assert (
+        IsPartialDict({"code": "STP002", "loc": (*loc_prefix, 0, "name")}) in diagnoses
+    )
+    assert (
+        IsPartialDict({"code": "STP002", "loc": (*loc_prefix, 1, "name")}) in diagnoses
+    )
 
-        # STP002: Duplicated input parameter name
-        assert (
-            IsPartialDict({"code": "STP002", "loc": (*loc_prefix, 0, "name")})
-            in diagnoses
-        )
-        assert (
-            IsPartialDict({"code": "STP002", "loc": (*loc_prefix, 1, "name")})
-            in diagnoses
-        )
-
-        # VAR002: Invalid reference
-        assert (
-            IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 1, "value")})
-            in diagnoses
-        )
-
-    def test_check_argument_artifacts(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_ARTIFACTS)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-
-        loc_prefix = ("spec", "templates", 0, "steps", 0, 0, "arguments", "artifacts")
-
-        # STP003: Duplicated input artifact name
-        assert (
-            IsPartialDict({"code": "STP003", "loc": (*loc_prefix, 0, "name")})
-            in diagnoses
-        )
-        assert (
-            IsPartialDict({"code": "STP003", "loc": (*loc_prefix, 1, "name")})
-            in diagnoses
-        )
-
-        # VAR002: Invalid reference
-        assert (
-            IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 0, "from")})
-            in diagnoses
-        )
-        assert (
-            IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 1, "raw", "data")})
-            in diagnoses
-        )
+    # VAR002: Invalid reference
+    assert (
+        IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 1, "value")}) in diagnoses
+    )
 
 
 MANIFEST_INVALID_INPUT_PARAMETERS = """
@@ -87,6 +54,31 @@ spec:
                 - name: message # STP002
                   value: "{{ workflow.invalid}}" # VAR002
 """
+
+
+def test_check_argument_artifacts():
+    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_ARTIFACTS)
+    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+
+    loc_prefix = ("spec", "templates", 0, "steps", 0, 0, "arguments", "artifacts")
+
+    # STP003: Duplicated input artifact name
+    assert (
+        IsPartialDict({"code": "STP003", "loc": (*loc_prefix, 0, "name")}) in diagnoses
+    )
+    assert (
+        IsPartialDict({"code": "STP003", "loc": (*loc_prefix, 1, "name")}) in diagnoses
+    )
+
+    # VAR002: Invalid reference
+    assert (
+        IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 0, "from")}) in diagnoses
+    )
+    assert (
+        IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 1, "raw", "data")})
+        in diagnoses
+    )
+
 
 MANIFEST_INVALID_INPUT_ARTIFACTS = """
 apiVersion: argoproj.io/v1alpha1
