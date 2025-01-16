@@ -73,17 +73,23 @@ def mutually_exclusive(
     fields_with_values = [
         field for field in fields if getattr(model, field, None) is not None
     ]
-    if len(fields_with_values) > 1:
-        fields_str = join_with_and(fields)
-        for field in fields_with_values:
-            yield {
-                "type": "failure",
-                "code": "M006",
-                "loc": (*loc, field),
-                "summary": "Mutually exclusive field set",
-                "msg": f"Field {fields_str} are mutually exclusive.",
-                "input": field,
-            }
+    if len(fields_with_values) <= 1:
+        return
+
+    def _get_alias(field):
+        return get_alias(model, field)
+
+    exclusive_fields = join_with_and(sorted(map(_get_alias, fields)))
+    fields_with_values = sorted(map(_get_alias, fields_with_values))
+    for field_alias in fields_with_values:
+        yield {
+            "type": "failure",
+            "code": "M006",
+            "loc": (*loc, field_alias),
+            "summary": "Mutually exclusive field set",
+            "msg": f"Field {exclusive_fields} are mutually exclusive.",
+            "input": field_alias,
+        }
 
 
 def require_all(

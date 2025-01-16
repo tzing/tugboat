@@ -61,21 +61,21 @@ class TestAcceptNone:
 class TestMutuallyExclusive:
 
     def test_pass(self):
-        model = Mock(BaseModel, foo=None, bar="bar")
+        model = SampleModel(baz="baz")
         diagnoses = list(
             mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
         )
         assert diagnoses == []
 
     def test_none(self):
-        model = Mock(BaseModel, foo=None, bar=None)
+        model = SampleModel()
         diagnoses = list(
             mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
         )
         assert diagnoses == []
 
     def test_too_many(self):
-        model = Mock(BaseModel, foo="foo", bar="bar")
+        model = SampleModel(foo="foo", baz="baz")
         diagnoses = list(
             mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
         )
@@ -83,18 +83,18 @@ class TestMutuallyExclusive:
             {
                 "type": "failure",
                 "code": "M006",
-                "loc": ("spec", "foo"),
+                "loc": ("spec", "baz"),
                 "summary": "Mutually exclusive field set",
-                "msg": "Field 'foo' and 'bar' are mutually exclusive.",
-                "input": "foo",
+                "msg": "Field 'baz' and 'foo' are mutually exclusive.",
+                "input": "baz",
             },
             {
                 "type": "failure",
                 "code": "M006",
-                "loc": ("spec", "bar"),
+                "loc": ("spec", "foo"),
                 "summary": "Mutually exclusive field set",
-                "msg": "Field 'foo' and 'bar' are mutually exclusive.",
-                "input": "bar",
+                "msg": "Field 'baz' and 'foo' are mutually exclusive.",
+                "input": "foo",
             },
         ]
 
