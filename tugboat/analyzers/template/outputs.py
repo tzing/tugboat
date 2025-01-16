@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import typing
 
-from tugboat.analyzers.generic import report_duplicate_names
+from tugboat.analyzers.generic import (
+    check_model_fields_references,
+    check_value_references,
+    report_duplicate_names,
+)
 from tugboat.constraints import (
     accept_none,
     mutually_exclusive,
@@ -10,7 +14,6 @@ from tugboat.constraints import (
     require_exactly_one,
 )
 from tugboat.core import hookimpl
-from tugboat.parsers import parse_template, report_syntax_errors
 from tugboat.references import get_template_context
 from tugboat.utils import prepend_loc
 
@@ -26,8 +29,6 @@ if typing.TYPE_CHECKING:
         WorkflowTemplate,
     )
     from tugboat.types import Diagnosis
-
-    type DocumentMap = dict[tuple[str | int, ...], str]
 
 
 @hookimpl(specname="analyze_template")
@@ -57,9 +58,6 @@ def check_output_parameters(
 
 
 def _check_output_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
-    sources: DocumentMap = {}
-
-    # check fields
     yield from require_all(
         model=param,
         loc=(),
@@ -89,27 +87,15 @@ def _check_output_parameter(param: Parameter, context: Context) -> Iterable[Diag
 
         # TODO check expression
 
-        if param.valueFrom.parameter:
-            sources["valueFrom", "parameter"] = param.valueFrom.parameter
-
-    # check references
-    for loc, text in sources.items():
-        doc = parse_template(text)
-        yield from prepend_loc(loc, report_syntax_errors(doc))
-
-        for node, ref, closest in context.parameters.filter_unknown(
-            doc.iter_references()
-        ):
-            yield {
-                "code": "VAR002",
-                "loc": loc,
-                "summary": "Invalid reference",
-                "msg": (
-                    f"""The parameter reference '{".".join(ref)}' used in parameter '{param.name}' is invalid."""
-                ),
-                "input": str(node),
-                "fix": node.format(closest),
-            }
+    for diag in check_model_fields_references(param, context.parameters):
+        match diag["code"]:
+            case "VAR002":
+                ctx = typing.cast(dict, diag.get("ctx"))
+                ref = ".".join(ctx["ref"])
+                diag["msg"] = (
+                    f"The parameter reference '{ref}' used in parameter '{param.name}' is invalid."
+                )
+        yield diag
 
 
 @hookimpl(specname="analyze_template")
@@ -139,9 +125,6 @@ def check_output_artifacts(
 
 
 def _check_output_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
-    artifact_sources: DocumentMap = {}
-
-    # check fields
     yield from require_all(
         model=artifact,
         loc=(),
@@ -190,25 +173,16 @@ def _check_output_artifact(artifact: Artifact, context: Context) -> Iterable[Dia
         )
 
     if artifact.from_:
-        artifact_sources["from",] = artifact.from_
+        for diag in prepend_loc(
+            ("from",), check_value_references(artifact.from_, context.artifacts)
+        ):
+            match diag["code"]:
+                case "VAR002":
+                    ctx = typing.cast(dict, diag.get("ctx"))
+                    ref = ".".join(ctx["ref"])
+                    diag["msg"] = (
+                        f"The artifact reference '{ref}' used in artifact '{artifact.name}' is invalid."
+                    )
+            yield diag
 
     # TODO artifact.fromExpression
-
-    # check references
-    for loc, text in artifact_sources.items():
-        doc = parse_template(text)
-        yield from prepend_loc(loc, report_syntax_errors(doc))
-
-        for node, ref, closest in context.artifacts.filter_unknown(
-            doc.iter_references()
-        ):
-            yield {
-                "code": "VAR002",
-                "loc": loc,
-                "summary": "Invalid reference",
-                "msg": (
-                    f"""The artifact reference '{".".join(ref)}' used in artifact '{artifact.name}' is invalid."""
-                ),
-                "input": str(node),
-                "fix": node.format(closest),
-            }
