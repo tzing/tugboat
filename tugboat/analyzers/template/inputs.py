@@ -7,12 +7,7 @@ from tugboat.analyzers.generic import (
     check_value_references,
     report_duplicate_names,
 )
-from tugboat.constraints import (
-    accept_none,
-    mutually_exclusive,
-    require_all,
-    require_exactly_one,
-)
+from tugboat.constraints import accept_none, mutually_exclusive, require_all
 from tugboat.core import hookimpl
 from tugboat.references import get_workflow_context
 from tugboat.utils import prepend_loc
@@ -70,13 +65,11 @@ def check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagno
     )
 
     if param.valueFrom:
-        yield from require_exactly_one(
+        yield from require_all(
             model=param.valueFrom,
             loc=("valueFrom",),
             fields=[
                 "configMapKeyRef",
-                "expression",
-                "parameter",
             ],
         )
         yield from accept_none(
@@ -84,9 +77,11 @@ def check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagno
             loc=("valueFrom",),
             fields=[
                 "event",
+                "expression",
                 "globalName",
                 "jqFilter",
                 "jsonPath",
+                "parameter",
                 "path",
                 "supplied",
             ],
@@ -154,12 +149,12 @@ def check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagn
         model=artifact,
         loc=(),
         fields=[
-            "from_",
-            "fromExpression",
             "archive",
             "archiveLogs",
             "artifactGC",
             "deleted",
+            "from_",
+            "fromExpression",
             "globalName",
         ],
     )
