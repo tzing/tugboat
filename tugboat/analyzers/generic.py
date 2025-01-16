@@ -10,7 +10,7 @@ from tugboat.parsers import parse_template, report_syntax_errors
 from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Iterator
 
     from tugboat.references.context import ReferenceCollection
     from tugboat.schemas import Artifact, Parameter, Template
@@ -102,7 +102,7 @@ def check_model_fields_references(
                 yield from prepend_loc((field,), _check(value))
 
         elif isinstance(item, Sequence):
-            for idx, item in enumerate(item):
-                yield from prepend_loc((idx,), _check(item))
+            for idx, child in enumerate(item):
+                yield from prepend_loc((idx,), _check(child))
 
     yield from _check(model)

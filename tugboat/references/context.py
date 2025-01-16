@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import typing
 from collections.abc import MutableSet
 
 from pydantic import BaseModel, Field, InstanceOf
@@ -10,9 +9,6 @@ from rapidfuzz.distance.DamerauLevenshtein import (
 from rapidfuzz.distance.DamerauLevenshtein import (
     normalized_distance as dameau_levenshtein_normalized_distance,
 )
-
-if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
 
 type _TR = tuple[str, ...]
 """Type alias for reference, which is a tuple of strings."""

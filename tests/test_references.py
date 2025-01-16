@@ -1,9 +1,6 @@
-from unittest.mock import Mock
 
 import pytest
-from dirty_equals import IsInstance
 
-from tugboat.parsers import Node
 from tugboat.references import (
     get_global_context,
     get_step_context,
