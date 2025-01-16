@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from tugboat.analyzers.generic import check_argo_variable_errors, report_duplicate_names
+from tugboat.analyzers.generic import (
+    check_model_fields_references,
+    report_duplicate_names,
+)
 from tugboat.references.context import ReferenceCollection
 from tugboat.schemas import Parameter
 
@@ -22,32 +25,52 @@ class TestReportDuplicateNames:
         assert list(report_duplicate_names(items)) == [(0, "name-1"), (2, "name-1")]
 
 
-class TestCheckArgoVariableErrors:
-
-    def test_pass(self):
-        class Model(BaseModel):
-            field1: str = "value"
-            field2: int = 1234
-
-        assert list(check_argo_variable_errors(Model(), ReferenceCollection())) == []
+class TestCheckModelFieldsReferences:
 
     def test_picked(self):
         class Nested(BaseModel):
-            field1: int = 1234
-            field2: str = "{{ invalid }}"
+            foo: str
 
         class Model(BaseModel):
-            array: list[Nested]
+            bar: list[Nested]
+            baz: str
+            qax: int
+            qux: Nested
 
-        model = Model(array=[Nested()])
+        model = Model.model_validate(
+            {
+                "baz": "leorm",
+                "qax": 42,
+                "qux": {"foo": "{{ error"},
+                "bar": [
+                    {"foo": "bar"},
+                    {"foo": "{{ valid }}"},
+                    {"foo": "{{ invalid }}"},
+                ],
+            }
+        )
 
-        assert list(check_argo_variable_errors(model, ReferenceCollection())) == [
+        refs = ReferenceCollection()
+        refs.add(("valid",))
+
+        assert list(check_model_fields_references(model, refs)) == [
             {
                 "code": "VAR002",
-                "loc": ("array", 0, "field2"),
-                "summary": "Invalid reference",
-                "msg": "The used reference 'invalid' is invalid.",
+                "fix": "{{ valid }}",
                 "input": "{{ invalid }}",
-                "fix": None,
-            }
+                "loc": ("bar", 2, "foo"),
+                "msg": "The used reference 'invalid' is invalid.",
+                "summary": "Invalid reference",
+                "ctx": {
+                    "closest": ("valid",),
+                    "ref": ("invalid",),
+                },
+            },
+            {
+                "code": "VAR001",
+                "input": "{{ error",
+                "loc": ("qux", "foo"),
+                "msg": "Invalid syntax near '{{ error': expect closing tag '}}'",
+                "summary": "Syntax error",
+            },
         ]
