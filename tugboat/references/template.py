@@ -43,7 +43,7 @@ def get_template_context(
         }
 
     # container/script template
-    if template.container or template.script:
+    if template.container or template.script or template.containerSet:
         ctx.parameters |= {("pod", "name")}
 
         if template.retryStrategy:

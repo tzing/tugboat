@@ -10,15 +10,15 @@ Argo Workflows offers various types of templates. However, Tugboat currently sup
 
     * - Template Type
       - Schema check [#schm-chk]_
-      - Static analysis [#sttc-chk]_
+      - Static analysis [#sttc-chk]_ [#stttc-chk-disclaimer]_
 
     * - Container template
       - :octicon:`alert` Partial; Check against :py:class:`~tugboat.schemas.ContainerTemplate`
-      - :octicon:`alert` Partial; Adapted :doc:`workflow-variable`
+      - :octicon:`check`
 
     * - `Container set template <https://argo-workflows.readthedocs.io/en/latest/container-set-template/>`_
       - :octicon:`alert` Partial; Check against :py:class:`~tugboat.schemas.template.ContainerSetTemplate`
-      - :octicon:`x`
+      - :octicon:`check`
 
     * - `DAG template <https://argo-workflows.readthedocs.io/en/latest/walk-through/dag/>`_
       - :octicon:`x`
@@ -38,7 +38,7 @@ Argo Workflows offers various types of templates. However, Tugboat currently sup
 
     * - `Script template <https://argo-workflows.readthedocs.io/en/latest/walk-through/scripts-and-results/>`_
       - :octicon:`alert` Partial; Check against :py:class:`~tugboat.schemas.ScriptTemplate`
-      - :octicon:`alert` Partial; Adapted :doc:`workflow-variable`
+      - :octicon:`check`
 
     * - `Steps template <https://argo-workflows.readthedocs.io/en/latest/walk-through/steps/>`_
       - :octicon:`alert` Partial; Check against :py:class:`~tugboat.schemas.Step`
@@ -50,6 +50,7 @@ Argo Workflows offers various types of templates. However, Tugboat currently sup
 
 .. [#schm-chk] The schema check validates the manifest against the schema defined in the official `field reference`_ document. It identifies missing or extra fields, incorrect data types, and other basic errors. These errors will be reported as :doc:`manifest-errors`.
 .. [#sttc-chk] The static analysis examines the manifest's fields and values according to a set of rules. It detects unusual values, misused parameters, and potential runtime issues like duplicate names.
+.. [#stttc-chk-disclaimer] Even thought a category is marked as *checked*, it does not mean that all possible issues are covered. Feel free to `create an feature request <https://github.com/tzing/tugboat/issues>`_ or contribute to the project to improve the coverage.
 .. _Field Reference: https://argo-workflows.readthedocs.io/en/latest/fields/
 
 
