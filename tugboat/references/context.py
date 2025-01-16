@@ -62,6 +62,12 @@ class ReferenceCollection(MutableSet[_TR]):
         new._dynamic = self._dynamic.copy()
         return new
 
+    def __add__(self, other):
+        new = type(self)()
+        new._static = self._static | other._static
+        new._dynamic = self._dynamic + other._dynamic
+        return new
+
     def add(self, value):
         if not isinstance(value, tuple | list):
             raise TypeError("value must be a tuple or a list")

@@ -1,14 +1,8 @@
 from __future__ import annotations
 
-__all__ = ["check_input_artifact", "check_input_parameter"]
-
 import collections
 import typing
 
-from tugboat.analyzers.template.inputs import (
-    check_input_artifact,
-    check_input_parameter,
-)
 from tugboat.constraints import require_all, require_exactly_one
 from tugboat.core import hookimpl
 
