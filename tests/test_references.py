@@ -39,26 +39,6 @@ class TestReferenceCollection:
         with pytest.raises(NotImplementedError):
             collection.discard(("a", "b"))
 
-    def test_filter_unknown(self):
-        collection = ReferenceCollection()
-        collection |= {
-            ("a", "b"),
-            ("c", AnyStr),
-        }
-
-        filtered = list(
-            collection.filter_unknown(
-                [
-                    (Mock(Node), ("a", "b")),
-                    (Mock(Node), ("c", "d")),
-                    (Mock(Node), ("a", "INVALID")),
-                ]
-            )
-        )
-        assert filtered == [
-            (IsInstance(Node), ("a", "INVALID"), ("a", "b")),
-        ]
-
     @pytest.mark.parametrize(
         ("target", "expected"),
         [

@@ -77,27 +77,6 @@ class ReferenceCollection(MutableSet[_TR]):
     def discard(self, value):
         raise NotImplementedError
 
-    def filter_unknown[
-        _TN
-    ](self, references: Iterable[tuple[_TN, _TR]]) -> Iterator[tuple[_TN, _TR, _TR]]:
-        """
-        Filter out unknown references from the given references.
-
-        Parameters
-        ----------
-        references : Iterable[tuple[_TN, _TR]]
-            An iterable of tuples of nodes and references
-
-        Yields
-        ------
-        tuple[_TN, _TR, _TR]
-            A tuple of the node, the reference, and the closest valid reference.
-        """
-        for node, reference in references:
-            if reference not in self:
-                closest = self.find_closest(reference)
-                yield node, reference, closest
-
     def find_closest(self, target: _TR) -> _TR:
         """
         Find the closest match for a given reference in a list of reference.
