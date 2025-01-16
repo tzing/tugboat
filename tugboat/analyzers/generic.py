@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 import typing
+from collections.abc import Sequence
 
 from pydantic import BaseModel
 
@@ -92,17 +93,16 @@ def check_model_fields_references(
         A diagnosis for each error found.
     """
 
-    def _check(model: BaseModel):
-        for field, value in model:
-            if isinstance(value, str):
-                yield from prepend_loc(
-                    (field,), check_value_references(value, references)
-                )
-            if isinstance(value, BaseModel):
+    def _check(item):
+        if isinstance(item, str):
+            yield from check_value_references(item, references)
+
+        elif isinstance(item, BaseModel):
+            for field, value in item:
                 yield from prepend_loc((field,), _check(value))
-            if isinstance(value, list):
-                for idx, item in enumerate(value):
-                    if isinstance(item, BaseModel):
-                        yield from prepend_loc((field, idx), _check(item))
+
+        elif isinstance(item, Sequence):
+            for idx, item in enumerate(item):
+                yield from prepend_loc((idx,), _check(item))
 
     yield from _check(model)

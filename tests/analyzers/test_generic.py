@@ -56,15 +56,15 @@ class TestCheckModelFieldsReferences:
         assert list(check_model_fields_references(model, refs)) == [
             {
                 "code": "VAR002",
-                "ctx": {
-                    "closest": ("valid",),
-                    "ref": ("invalid",),
-                },
                 "fix": "{{ valid }}",
                 "input": "{{ invalid }}",
                 "loc": ("bar", 2, "foo"),
                 "msg": "The used reference 'invalid' is invalid.",
                 "summary": "Invalid reference",
+                "ctx": {
+                    "closest": ("valid",),
+                    "ref": ("invalid",),
+                },
             },
             {
                 "code": "VAR001",
