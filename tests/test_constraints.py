@@ -1,12 +1,8 @@
-from unittest.mock import Mock
-
-import pytest
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
 from tests.utils import ContainsSubStrings
 from tugboat.constraints import (
     accept_none,
-    get_alias,
     mutually_exclusive,
     require_all,
     require_exactly_one,
@@ -130,14 +126,14 @@ class TestRequireAll:
 class TestRequireExactlyOne:
 
     def test_pass(self):
-        model = Mock(BaseModel, foo=None, bar="bar")
+        model = SampleModel(foo=None, baz="bar")
         diagnoses = list(
             require_exactly_one(model=model, loc=["spec"], fields=["foo", "bar"])
         )
         assert diagnoses == []
 
     def test_missing(self):
-        model = Mock(BaseModel, foo=None, bar=None)
+        model = SampleModel(foo=None, baz="")
         diagnoses = list(
             require_exactly_one(model=model, loc=["spec"], fields=["foo", "bar"])
         )
@@ -149,13 +145,13 @@ class TestRequireExactlyOne:
                 "summary": "Missing required field",
                 "msg": ContainsSubStrings(
                     "Missing required field for the 'spec' section.",
-                    "One of the following fields is required: 'foo' or 'bar'.",
+                    "One of the following fields is required: 'baz' or 'foo'.",
                 ),
             }
         ]
 
     def test_too_many(self):
-        model = Mock(BaseModel, foo="foo", bar="bar")
+        model = SampleModel(foo="foo", baz="bar")
         diagnoses = list(
             require_exactly_one(model=model, loc=["spec"], fields=["foo", "bar"])
         )
@@ -163,30 +159,17 @@ class TestRequireExactlyOne:
             {
                 "type": "failure",
                 "code": "M006",
-                "loc": ("spec", "foo"),
+                "loc": ("spec", "baz"),
                 "summary": "Mutually exclusive field set",
-                "msg": "Field 'foo' and 'bar' are mutually exclusive.",
-                "input": "foo",
+                "msg": "Field 'baz' and 'foo' are mutually exclusive.",
+                "input": "baz",
             },
             {
                 "type": "failure",
                 "code": "M006",
-                "loc": ("spec", "bar"),
+                "loc": ("spec", "foo"),
                 "summary": "Mutually exclusive field set",
-                "msg": "Field 'foo' and 'bar' are mutually exclusive.",
-                "input": "bar",
+                "msg": "Field 'baz' and 'foo' are mutually exclusive.",
+                "input": "foo",
             },
         ]
-
-
-class TestGetAlias:
-
-    def test(self):
-        class Model(BaseModel):
-            x: str
-            y: str = Field(alias="z")
-
-        m = Model(x="hello", z="world")
-
-        assert get_alias(m, "x") == "x"
-        assert get_alias(m, "y") == "z"

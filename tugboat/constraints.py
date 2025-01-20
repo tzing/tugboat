@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import typing
 
-from tugboat.utils import get_context_name, join_with_and, join_with_or
+from tugboat.utils import get_alias, get_context_name, join_with_and, join_with_or
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -136,12 +136,14 @@ def require_exactly_one(
     """
     # check if any of the fields are set
     any_field_set = False
-    for field in fields:
-        if getattr(model, field, None) is not None:
+    for field_name in fields:
+        value = getattr(model, field_name, None)
+        if value or value is False:
             any_field_set = True
             break
 
     if not any_field_set:
+        required_fields = sorted(get_alias(model, field_name) for field_name in fields)
         yield {
             "type": "failure",
             "code": "M004",
@@ -149,13 +151,8 @@ def require_exactly_one(
             "summary": "Missing required field",
             "msg": f"""
                     Missing required field for {get_context_name(loc)}.
-                    One of the following fields is required: {join_with_or(fields)}.
+                    One of the following fields is required: {join_with_or(required_fields)}.
                     """,
         }
 
     yield from mutually_exclusive(model=model, loc=loc, fields=fields)
-
-
-def get_alias(model: BaseModel, name: str) -> str:
-    field = model.model_fields[name]
-    return field.alias or name
