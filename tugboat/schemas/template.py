@@ -13,6 +13,7 @@ if os.getenv("DOCUTILSCONFIG"):
         "ContainerSetTemplate",
         "ContainerSetRetryStrategy",
         "TemplateRef",
+        "SuspendTemplate",
         "EnvVar",
         "EnvVarSource",
         "ObjectFieldSelector",
@@ -57,6 +58,7 @@ class Template(_BaseModel):
     script: ScriptTemplate | None = None
     serviceAccountName: str | None = None
     steps: Array[Array[Step]] | None = None
+    suspend: SuspendTemplate | None = None
     timeout: str | None = None
 
     affinity: Any | None = None
@@ -75,7 +77,6 @@ class Template(_BaseModel):
     retryStrategy: Any | None = None
     securityContext: Any | None = None
     sidecars: Array[Any] | None = None
-    suspend: Any | None = None
     synchronization: Any | None = None
     tolerations: Array[Any] | None = None
     volumes: Array[Any] | None = None
@@ -219,6 +220,19 @@ class TemplateRef(_BaseModel):
     clusterScope: bool | None = None
     name: str
     template: str
+
+
+# ----------------------------------------------------------------------------
+# suspend
+# ----------------------------------------------------------------------------
+class SuspendTemplate(_BaseModel):
+    """
+    `SuspendTemplate`_ is a template subtype to suspend a workflow at a predetermined point in time.
+
+    .. _SuspendTemplate: https://argo-workflows.readthedocs.io/en/latest/fields/#suspendtemplate
+    """
+
+    duration: str | None = None
 
 
 # ----------------------------------------------------------------------------
