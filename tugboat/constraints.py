@@ -23,6 +23,7 @@ A typical usage of these functions is as follows:
 
 from __future__ import annotations
 
+import functools
 import typing
 
 from tugboat.utils import get_alias, get_context_name, join_with_and, join_with_or
@@ -76,11 +77,10 @@ def mutually_exclusive(
     if len(fields_with_values) <= 1:
         return
 
-    def _get_alias(field):
-        return get_alias(model, field)
+    get_alias_ = functools.partial(get_alias, model)
+    exclusive_fields = join_with_and(sorted(map(get_alias_, fields)))
+    fields_with_values = sorted(map(get_alias_, fields_with_values))
 
-    exclusive_fields = join_with_and(sorted(map(_get_alias, fields)))
-    fields_with_values = sorted(map(_get_alias, fields_with_values))
     for field_alias in fields_with_values:
         yield {
             "type": "failure",
