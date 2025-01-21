@@ -47,7 +47,7 @@ class Artifact(_BaseModel):
 
     archive: ArchiveStrategy | None = None
     archiveLogs: bool | None = None
-    artifactGC: ArtifactGc | None = None
+    artifactGc: ArtifactGc | None = Field(None, alias="artifactGC")
     artifactory: ArtifactoryArtifact | None = None
     azure: AzureArtifact | None = None
     deleted: bool | None = None
@@ -107,7 +107,7 @@ class AzureArtifact(_BaseModel):
     blob: str
     container: str
     endpoint: str
-    useSDKCreds: bool | None = None
+    useSdkCreds: bool | None = Field(None, alias="useSDKCreds")
 
 
 # ----------------------------------------------------------------------------
@@ -128,7 +128,7 @@ class GitArtifact(_BaseModel):
     disableSubmodules: bool | None = None
     fetch: Array[str] | None = None
     insecureIgnoreHostKey: bool | None = None
-    insecureSkipTLS: bool | None = None
+    insecureSkipTls: bool | None = Field(None, alias="insecureSkipTLS")
     passwordSecret: ConfigKeySelector | None = None
     repo: str
     revision: str | None = None
@@ -180,11 +180,11 @@ class HttpAuth(_BaseModel):
 
 
 class OAuth2Auth(_BaseModel):
-    clientIDSecret: ConfigKeySelector
+    clientIdSecret: ConfigKeySelector = Field(alias="clientIDSecret")
     clientSecretSecret: ConfigKeySelector
     endpointParams: Array[KeyValuePair] | None = None
     scopes: Array[str] | None = None
-    tokenURLSecret: ConfigKeySelector | None = None
+    tokenUrlSecret: ConfigKeySelector | None = Field(None, alias="tokenURLSecret")
 
 
 # ----------------------------------------------------------------------------
@@ -199,7 +199,7 @@ class OssArtifact(_BaseModel):
     lifecycleRule: OssLifecycleRule | None = None
     secretKeySecret: ConfigKeySelector
     securityToken: str | None = None
-    useSDKCreds: bool | None = None
+    useSdkCreds: bool | None = Field(None, alias="useSDKCreds")
 
 
 class OssLifecycleRule(_BaseModel):
@@ -227,10 +227,10 @@ class S3Artifact(_BaseModel):
     insecure: bool | None = None
     key: str
     region: str | None = None
-    roleARN: str | None = None
+    roleArn: str | None = Field(None, alias="roleARN")
     secretKeySecret: ConfigKeySelector | None = None
     sessionTokenSecret: ConfigKeySelector | None = None
-    useSDKCreds: bool | None = None
+    useSdkCreds: bool | None = Field(None, alias="useSDKCreds")
 
 
 class CreateS3BucketOptions(_BaseModel):

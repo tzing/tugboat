@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Array, Dict
@@ -48,7 +48,7 @@ class WorkflowSpec(BaseModel):
     workflowTemplateRef: WorkflowTemplateRef | None = None
 
     affinity: Any | None = None
-    artifactGC: Any | None = None
+    artifactGc: Any | None = Field(None, alias="artifactGC")
     artifactRepositoryRef: Any | None = None
     dnsConfig: Any | None = None
     executor: Any | None = None
@@ -57,14 +57,14 @@ class WorkflowSpec(BaseModel):
     imagePullSecrets: Array[Any] | None = None
     metrics: Any | None = None
     podDisruptionBudget: Any | None = None
-    podGC: Any | None = None
+    podGc: Any | None = Field(None, alias="podGC")
     podMetadata: Any | None = None
     retryStrategy: Any | None = None
     securityContext: Any | None = None
     synchronization: Any | None = None
     tolerations: Array[Any] | None = None
     ttlStrategy: Any | None = None
-    volumeClaimGC: Any | None = None
+    volumeClaimGc: Any | None = Field(None, alias="volumeClaimGC")
     volumeClaimTemplates: Array[Any] | None = None
     volumes: Array[Any] | None = None
     workflowMetadata: Any | None = None
