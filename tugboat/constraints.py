@@ -23,19 +23,22 @@ A typical usage of these functions is as follows:
 
 from __future__ import annotations
 
+import functools
 import typing
 
-from tugboat.utils import get_context_name, join_with_and, join_with_or
+from tugboat.utils import get_alias, get_context_name, join_with_and, join_with_or
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from typing import Any
 
+    from pydantic import BaseModel
+
     from tugboat.types import Diagnosis
 
 
 def accept_none(
-    *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
+    *, model: BaseModel, loc: Sequence[str | int], fields: Sequence[str]
 ) -> Iterator[Diagnosis]:
     """
     Check if all the specified fields are not set.
@@ -44,15 +47,16 @@ def accept_none(
     -----
     :ref:`code.m005` for each unexpected field.
     """
-    for field in fields:
-        if getattr(model, field, None) is not None:
+    for field_name in fields:
+        if getattr(model, field_name, None) is not None:
+            field_alias = get_alias(model, field_name)
             yield {
                 "type": "failure",
                 "code": "M005",
-                "loc": (*loc, field),
-                "summary": f"Found redundant field '{field}'",
-                "msg": f"Field '{field}' is not valid within {get_context_name(loc)}.",
-                "input": field,
+                "loc": (*loc, field_alias),
+                "summary": f"Found redundant field '{field_alias}'",
+                "msg": f"Field '{field_alias}' is not valid within {get_context_name(loc)}.",
+                "input": field_alias,
             }
 
 
@@ -70,17 +74,22 @@ def mutually_exclusive(
     fields_with_values = [
         field for field in fields if getattr(model, field, None) is not None
     ]
-    if len(fields_with_values) > 1:
-        fields_str = join_with_and(fields)
-        for field in fields_with_values:
-            yield {
-                "type": "failure",
-                "code": "M006",
-                "loc": (*loc, field),
-                "summary": "Mutually exclusive field set",
-                "msg": f"Field {fields_str} are mutually exclusive.",
-                "input": field,
-            }
+    if len(fields_with_values) <= 1:
+        return
+
+    get_alias_ = functools.partial(get_alias, model)
+    exclusive_fields = join_with_and(sorted(map(get_alias_, fields)))
+    fields_with_values = sorted(map(get_alias_, fields_with_values))
+
+    for field_alias in fields_with_values:
+        yield {
+            "type": "failure",
+            "code": "M006",
+            "loc": (*loc, field_alias),
+            "summary": "Mutually exclusive field set",
+            "msg": f"Field {exclusive_fields} are mutually exclusive.",
+            "input": field_alias,
+        }
 
 
 def require_all(
@@ -93,24 +102,25 @@ def require_all(
     -----
     :ref:`code.m004` for any of the missing or empty fields.
     """
-    for field in fields:
-        value = getattr(model, field, None)
-        if value is None:
-            yield {
-                "type": "failure",
-                "code": "M004",
-                "loc": (*loc, field),
-                "summary": f"Missing required field '{field}'",
-                "msg": f"Field '{field}' is required in {get_context_name(loc)} but missing",
-            }
-        elif value == "":
-            yield {
-                "type": "failure",
-                "code": "M004",
-                "loc": (*loc, field),
-                "summary": f"Missing required field '{field}'",
-                "msg": f"Field '{field}' is required in {get_context_name(loc)} but empty",
-            }
+    for field_name in fields:
+        field_alias = get_alias(model, field_name)
+        match getattr(model, field_name, None):
+            case None:
+                yield {
+                    "type": "failure",
+                    "code": "M004",
+                    "loc": (*loc, field_alias),
+                    "summary": f"Missing required field '{field_alias}'",
+                    "msg": f"Field '{field_alias}' is required in {get_context_name(loc)} but missing",
+                }
+            case "":
+                yield {
+                    "type": "failure",
+                    "code": "M004",
+                    "loc": (*loc, field_alias),
+                    "summary": f"Missing required field '{field_alias}'",
+                    "msg": f"Field '{field_alias}' is required in {get_context_name(loc)} but empty",
+                }
 
 
 def require_exactly_one(
@@ -126,12 +136,14 @@ def require_exactly_one(
     """
     # check if any of the fields are set
     any_field_set = False
-    for field in fields:
-        if getattr(model, field, None) is not None:
+    for field_name in fields:
+        value = getattr(model, field_name, None)
+        if value or value is False:
             any_field_set = True
             break
 
     if not any_field_set:
+        required_fields = sorted(get_alias(model, field_name) for field_name in fields)
         yield {
             "type": "failure",
             "code": "M004",
@@ -139,7 +151,7 @@ def require_exactly_one(
             "summary": "Missing required field",
             "msg": f"""
                     Missing required field for {get_context_name(loc)}.
-                    One of the following fields is required: {join_with_or(fields)}.
+                    One of the following fields is required: {join_with_or(required_fields)}.
                     """,
         }
 
