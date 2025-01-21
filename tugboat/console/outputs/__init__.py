@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-__all__ = ["get_output_builder", "OutputBuilder"]
+__all__ = [
+    "OutputBuilder",
+    "get_output_builder",
+]
 
 import tugboat.settings
 from tugboat.console.outputs.base import OutputBuilder

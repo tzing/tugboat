@@ -10,21 +10,21 @@ from tugboat.schemas.basic import Array, ConfigKeySelector, Dict
 
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
-        "ContainerSetTemplate",
         "ContainerSetRetryStrategy",
-        "TemplateRef",
-        "SuspendTemplate",
+        "ContainerSetTemplate",
+        "EnvFromSource",
         "EnvVar",
         "EnvVarSource",
-        "ObjectFieldSelector",
-        "ResourceFieldSelector",
-        "EnvFromSource",
-        "OptionalName",
-        "Probe",
         "ExecAction",
         "GrpcAction",
         "HttpGetAction",
+        "ObjectFieldSelector",
+        "OptionalName",
+        "Probe",
+        "ResourceFieldSelector",
+        "SuspendTemplate",
         "TcpSocketAction",
+        "TemplateRef",
         "VolumeMount",
     ]
 
