@@ -263,7 +263,7 @@ class TestInputRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "VAR002",
+                    "code": "M005",
                     "loc": (
                         "spec",
                         "templates",
@@ -273,7 +273,6 @@ class TestInputRules:
                         1,
                         "from",
                     ),
-                    "msg": "The artifact reference 'invalid' used in artifact 'data' is invalid.",
                 }
             )
             in diagnoses
