@@ -16,24 +16,24 @@ from tugboat.schemas.basic import (
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
         "ArchiveStrategy",
-        "TarStrategy",
         "ArtifactGc",
         "ArtifactoryArtifact",
         "AzureArtifact",
+        "BasicAuth",
+        "ClientCertAuth",
+        "CreateS3BucketOptions",
         "GcsArtifact",
         "GitArtifact",
         "HdfsArtifact",
         "HttpArtifact",
-        "BasicAuth",
-        "ClientCertAuth",
         "HttpAuth",
         "OAuth2Auth",
         "OssArtifact",
         "OssLifecycleRule",
         "RawArtifact",
         "S3Artifact",
-        "CreateS3BucketOptions",
         "S3EncryptionOptions",
+        "TarStrategy",
     ]
 
 

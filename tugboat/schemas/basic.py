@@ -16,8 +16,8 @@ if typing.TYPE_CHECKING:
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
         "Array",
-        "Dict",
         "ConfigKeySelector",
+        "Dict",
         "Empty",
         "KeyValuePair",
         "NameValuePair",

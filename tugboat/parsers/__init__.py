@@ -10,10 +10,10 @@ from __future__ import annotations
 __all__ = [
     "Document",
     "Node",
-    "parse_template",
-    "report_syntax_errors",
     "SimpleReferenceTag",
     "Unexpected",
+    "parse_template",
+    "report_syntax_errors",
 ]
 
 import typing

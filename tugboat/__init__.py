@@ -16,8 +16,8 @@ the user.
 """
 
 __all__ = [
-    "__version__",
     "Diagnosis",
+    "__version__",
     "hookimpl",
 ]
 
