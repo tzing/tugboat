@@ -47,7 +47,7 @@ class Artifact(_BaseModel):
 
     archive: ArchiveStrategy | None = None
     archiveLogs: bool | None = None
-    artifactGC: ArtifactGc | None = None
+    artifactGc: ArtifactGc | None = Field(None, alias="artifactGC")
     artifactory: ArtifactoryArtifact | None = None
     azure: AzureArtifact | None = None
     deleted: bool | None = None
