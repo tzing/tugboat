@@ -145,7 +145,7 @@ class HdfsArtifact(_BaseModel):
     dataTransferProtection: str | None = None
     force: bool | None = None
     hdfsUser: str
-    krbCCacheSecret: ConfigKeySelector | None
+    krbCCacheSecret: ConfigKeySelector | None = None
     krbConfigConfigMap: ConfigKeySelector | None = None
     krbKeytabSecret: ConfigKeySelector | None = None
     krbRealm: str | None = None
