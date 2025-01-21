@@ -184,7 +184,7 @@ class OAuth2Auth(_BaseModel):
     clientSecretSecret: ConfigKeySelector
     endpointParams: Array[KeyValuePair] | None = None
     scopes: Array[str] | None = None
-    tokenURLSecret: ConfigKeySelector | None = None
+    tokenUrlSecret: ConfigKeySelector | None = Field(None, alias="tokenURLSecret")
 
 
 # ----------------------------------------------------------------------------
