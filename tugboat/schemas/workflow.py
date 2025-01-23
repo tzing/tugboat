@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import os
 from typing import Any, Literal
 
@@ -92,6 +93,26 @@ class Workflow(Manifest[WorkflowSpec]):
     apiVersion: Literal["argoproj.io/v1alpha1"]  # type: ignore[reportIncompatibleVariableOverride]
     kind: Literal["Workflow"]  # type: ignore[reportIncompatibleVariableOverride]
     spec: WorkflowSpec
+
+    @functools.cached_property
+    def template_dict(self) -> dict[str, Template]:
+        """
+        Return a dictionary of the Workflow's templates, keyed by name.
+
+        Returns
+        -------
+        dict[str, Template]
+            Dictionary of the Workflow's templates, keyed by name.
+
+        Note
+        ----
+        Duplicate names will be overwritten and the empty name will be ignored.
+        """
+        return {
+            template.name: template
+            for template in self.spec.templates or ()
+            if template.name
+        }
 
 
 class WorkflowTemplate(Workflow):
