@@ -82,7 +82,6 @@ class Template(_BaseModel):
     volumes: Array[Any] | None = None
 
     def __hash__(self):
-        # Override the default __hash__ method to skip unhashable fields.
         return hash((self.name, self.container, self.script, self.steps))
 
 
