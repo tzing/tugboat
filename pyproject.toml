@@ -60,7 +60,10 @@ commit = false
 omit = ["tugboat/_vendor/*"]
 
 [tool.coverage.report]
-exclude_lines = ["pragma: no cover", "if typing.TYPE_CHECKING"]
+exclude_also = [
+    "if\\ typing\\.TYPE_CHECKING",
+    "if\\ os\\.getenv\\(\"DOCUTILSCONFIG\"\\)",
+]
 
 [tool.isort]
 profile = "black"
