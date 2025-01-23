@@ -89,12 +89,11 @@ class Template(_BaseModel):
     @functools.cached_property
     def step_dict(self) -> dict[str, Step]:
         """
-        Returns a dictionary of steps in the template, with the step name as the key.
+        Step name to step data model mapping.
 
-        Returns
-        -------
-        dict[str, Step]
-            A dictionary of steps in the template.
+        .. note::
+
+           Duplicate names will be overwritten and the empty name will be ignored.
         """
         return {
             step.name: step

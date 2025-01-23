@@ -97,16 +97,11 @@ class Workflow(Manifest[WorkflowSpec]):
     @functools.cached_property
     def template_dict(self) -> dict[str, Template]:
         """
-        Return a dictionary of the Workflow's templates, keyed by name.
+        Template name to template data model mapping.
 
-        Returns
-        -------
-        dict[str, Template]
-            Dictionary of the Workflow's templates, keyed by name.
+        .. note::
 
-        Note
-        ----
-        Duplicate names will be overwritten and the empty name will be ignored.
+           Duplicate names will be overwritten and the empty name will be ignored.
         """
         return {
             template.name: template
