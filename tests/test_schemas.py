@@ -8,7 +8,7 @@ import ruamel.yaml
 from dirty_equals import IsInstance
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
-from tugboat.schemas import CronWorkflow, Template, Workflow, WorkflowTemplate
+from tugboat.schemas import CronWorkflow, Step, Template, Workflow, WorkflowTemplate
 from tugboat.schemas.basic import Dict
 
 logger = logging.getLogger(__name__)
@@ -33,6 +33,25 @@ class TestDict:
         ta = TypeAdapter(Dict[str, str])
         with pytest.raises(ValidationError):
             ta.validate_python({"a": 1})
+
+
+class TestTemplate:
+
+    def test_step_dict(self):
+        template = Template.model_validate(
+            {
+                "name": "test",
+                "steps": [
+                    [{"name": "foo"}],
+                    [{"name": "foo"}, {"name": "bar"}],
+                    [{"name": ""}],
+                ],
+            }
+        )
+        assert template.step_dict == {
+            "foo": IsInstance(Step),
+            "bar": IsInstance(Step),
+        }
 
 
 class TestWorkflow:
