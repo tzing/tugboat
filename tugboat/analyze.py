@@ -294,7 +294,9 @@ def analyze_raw(manifest: dict) -> list[Diagnosis]:
     try:
         manifest_obj = pm.hook.parse_manifest(manifest=manifest)
     except ValidationError as e:
-        return list(map(translate_pydantic_error, e.errors()))
+        diagnoses = map(translate_pydantic_error, e.errors())
+        diagnoses = map(_sanitize_diagnosis, diagnoses)
+        return list(diagnoses)
     except Exception as e:
         logger.exception("Error during execution of parse_manifest hook")
         return [
@@ -327,9 +329,10 @@ def analyze_raw(manifest: dict) -> list[Diagnosis]:
         ]
 
     # examine the manifest
-    try:
-        analyzers_diagnoses: Iterable[Iterator[Diagnosis]]
-        analyzers_diagnoses = pm.hook.analyze(manifest=manifest_obj)
+    analyzers_diagnoses: Iterable[Iterator[Diagnosis]]
+    analyzers_diagnoses = pm.hook.analyze(manifest=manifest_obj)
+
+    try:  # force evaluation
         diagnoses = list(itertools.chain.from_iterable(analyzers_diagnoses))
     except Exception as e:
         logger.exception("Error during execution of analyze hook")
@@ -345,11 +348,6 @@ def analyze_raw(manifest: dict) -> list[Diagnosis]:
 
     logger.debug("Got %d diagnoses for manifest '%s'", len(diagnoses), name)
 
-    # normalize the diagnoses
-    for diagnosis in diagnoses:
-        diagnosis.setdefault("code", "UNKNOWN")
-        diagnosis["msg"] = textwrap.dedent(diagnosis["msg"]).strip()
-
     # sort the diagnoses
     def _sort_key(diagnosis: Diagnosis) -> tuple:
         return (
@@ -359,6 +357,7 @@ def analyze_raw(manifest: dict) -> list[Diagnosis]:
             diagnosis.get("code") or "",
         )
 
+    diagnoses = map(_sanitize_diagnosis, diagnoses)
     diagnoses = sorted(diagnoses, key=_sort_key)
 
     return diagnoses
@@ -370,6 +369,12 @@ def _get_manifest_name(manifest: dict) -> str | None:
         return name
     if name := metadata.get("generateName"):
         return name
+
+
+def _sanitize_diagnosis(diagnosis: Diagnosis) -> Diagnosis:
+    diagnosis.setdefault("code", "UNKNOWN")
+    diagnosis["msg"] = textwrap.dedent(diagnosis["msg"]).strip()
+    return diagnosis
 
 
 def is_kubernetes_manifest(d: dict) -> bool:
