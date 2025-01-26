@@ -6,6 +6,13 @@ tugboat.schemas package
    :undoc-members:
    :inherited-members: BaseModel
 
+tugboat.schemas.arguments module
+--------------------------------
+
+.. automodule:: tugboat.schemas.arguments
+   :members:
+   :undoc-members:
+
 tugboat.schemas.arguments.artifact module
 -----------------------------------------
 
