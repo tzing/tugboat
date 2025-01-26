@@ -8,10 +8,56 @@ import ruamel.yaml
 from dirty_equals import IsInstance
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
-from tugboat.schemas import CronWorkflow, Step, Template, Workflow, WorkflowTemplate
+from tugboat.schemas import (
+    Artifact,
+    CronWorkflow,
+    Parameter,
+    Step,
+    Template,
+    Workflow,
+    WorkflowTemplate,
+)
+from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Dict
 
 logger = logging.getLogger(__name__)
+
+
+class TestArguments:
+
+    def test_parameter_dict(self):
+        args = Arguments.model_validate(
+            {
+                "parameters": [
+                    {"name": "foo"},
+                    {"name": "foo"},
+                    {"name": "bar"},
+                    {"name": ""},
+                ]
+            }
+        )
+
+        assert args.parameter_dict == {
+            "foo": IsInstance(Parameter),
+            "bar": IsInstance(Parameter),
+        }
+
+    def test_artifact_dict(self):
+        args = Arguments.model_validate(
+            {
+                "artifacts": [
+                    {"name": "foo"},
+                    {"name": "foo"},
+                    {"name": "bar"},
+                    {"name": ""},
+                ]
+            }
+        )
+
+        assert args.artifact_dict == {
+            "foo": IsInstance(Artifact),
+            "bar": IsInstance(Artifact),
+        }
 
 
 class TestDict:
