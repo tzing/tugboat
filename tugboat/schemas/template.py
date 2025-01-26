@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import functools
+import itertools
 import os
 from typing import Any, Literal
 
@@ -83,6 +85,21 @@ class Template(_BaseModel):
 
     def __hash__(self):
         return hash((self.name, self.container, self.script, self.steps))
+
+    @functools.cached_property
+    def step_dict(self) -> dict[str, Step]:
+        """
+        Step name to step data model mapping.
+
+        .. note::
+
+           Duplicate names will be overwritten and the empty name will be ignored.
+        """
+        return {
+            step.name: step
+            for step in itertools.chain.from_iterable(self.steps or ())
+            if step.name
+        }
 
 
 # ----------------------------------------------------------------------------
