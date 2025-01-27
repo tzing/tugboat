@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Array, ConfigKeySelector, Dict
+from tugboat.schemas.template.probe import Probe
 from tugboat.schemas.template.volume import VolumeMount
 
 if os.getenv("DOCUTILSCONFIG"):
@@ -18,15 +19,10 @@ if os.getenv("DOCUTILSCONFIG"):
         "EnvFromSource",
         "EnvVar",
         "EnvVarSource",
-        "ExecAction",
-        "GrpcAction",
-        "HttpGetAction",
         "ObjectFieldSelector",
         "OptionalName",
-        "Probe",
         "ResourceFieldSelector",
         "SuspendTemplate",
-        "TcpSocketAction",
         "TemplateRef",
     ]
 
@@ -313,59 +309,3 @@ class OptionalName(_BaseModel):
 
     name: str
     optional: bool | None = None
-
-
-# ----------------------------------------------------------------------------
-# field - probe
-# ----------------------------------------------------------------------------
-class Probe(_BaseModel):
-    exec: ExecAction | None = None
-    failureThreshold: int | None = None
-    grpc: GrpcAction | None = None
-    httpGet: HttpGetAction | None = None
-    initialDelaySeconds: int | None = None
-    periodSeconds: int | None = None
-    successThreshold: int | None = None
-    tcpSocket: TcpSocketAction | None = None
-    terminationGracePeriodSeconds: int | None = None
-    timeoutSeconds: int | None = None
-
-
-class ExecAction(_BaseModel):
-    """
-    `ExecAction`_ describes a "run in container" action.
-
-    .. _ExecAction: https://argo-workflows.readthedocs.io/en/latest/fields/#execaction
-    """
-
-    command: Array[str]
-
-
-class GrpcAction(_BaseModel):
-    port: int
-    service: str | None = None
-
-
-class HttpGetAction(_BaseModel):
-    """
-    `HttpGetAction`_ describes an action based on HTTP Get requests.
-
-    .. _HttpGetAction: https://argo-workflows.readthedocs.io/en/latest/fields/#httpgetaction
-    """
-
-    host: str | None = None
-    httpHeaders: Array[Any] | None = None  # TODO
-    path: str
-    port: int | str
-    scheme: Literal["HTTP", "HTTPS"] | None = None
-
-
-class TcpSocketAction(_BaseModel):
-    """
-    `TcpSocketAction`_ describes an action based on opening a socket.
-
-    .. _TcpSocketAction: https://argo-workflows.readthedocs.io/en/latest/fields/#tcpsocketaction
-    """
-
-    host: str | None = None
-    port: int | str
