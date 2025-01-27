@@ -134,13 +134,6 @@ class TestArgoExamples:
         manifests = load_manifests(
             dir_path=argo_example_dir,
             expected_kinds=["Workflow"],
-            exclude_files=[
-                # These manifests use deprecated `onExit` field
-                "exit-handler-step-level.yaml",
-                "template-on-exit.yaml",
-                # webhdfs-input-output-artifacts.yaml: found `overwrite` field on artifact which is not documented
-                "webhdfs-input-output-artifacts.yaml",
-            ],
         )
 
         for file, data in manifests:

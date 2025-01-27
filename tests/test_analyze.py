@@ -438,10 +438,9 @@ class TestArgoExamples:
         for file_path in argo_example_dir.glob("**/*.yaml"):
             # skip known false positives
             if file_path.name in (
-                # invalid schema
+                # contains deprecated field
                 "exit-handler-step-level.yaml",
                 "template-on-exit.yaml",
-                "webhdfs-input-output-artifacts.yaml",
                 # invalid reference
                 "event-consumer-workflowtemplate.yaml",
                 # name too long
