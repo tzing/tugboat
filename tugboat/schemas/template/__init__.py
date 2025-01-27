@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Array, ConfigKeySelector, Dict
-from tugboat.schemas.template.volume_mount import VolumeMount
+from tugboat.schemas.template.volume import VolumeMount
 
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
