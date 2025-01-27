@@ -105,17 +105,11 @@ class Template(_BaseModel):
 # ----------------------------------------------------------------------------
 # steps
 # ----------------------------------------------------------------------------
-class Step(_BaseModel):
-    """
-    `Step`_ is a reference to a template to execute in a series of step.
-
-    .. _Step: https://argo-workflows.readthedocs.io/en/latest/fields/#workflowstep
-    """
-
-    name: str
+class _StepBase(_BaseModel):
 
     arguments: Arguments | None = None
     inline: Template | None = None
+    name: str
     onExit: str | None = None
     template: str | None = None
     templateRef: TemplateRef | None = None
@@ -129,6 +123,14 @@ class Step(_BaseModel):
 
     def __hash__(self):
         return hash((self.name, self.template, self.templateRef))
+
+
+class Step(_StepBase):
+    """
+    `Step`_ is a reference to a template to execute in a series of step.
+
+    .. _Step: https://argo-workflows.readthedocs.io/en/latest/fields/#workflowstep
+    """
 
 
 class TemplateRef(_BaseModel):
