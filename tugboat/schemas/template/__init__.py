@@ -8,7 +8,8 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from tugboat.schemas.arguments import Arguments
-from tugboat.schemas.basic import Array, ConfigKeySelector, Dict
+from tugboat.schemas.basic import Array, Dict
+from tugboat.schemas.template.env import EnvFromSource, EnvVar
 from tugboat.schemas.template.probe import Probe
 from tugboat.schemas.template.volume import VolumeMount
 
@@ -16,12 +17,6 @@ if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
         "ContainerSetRetryStrategy",
         "ContainerSetTemplate",
-        "EnvFromSource",
-        "EnvVar",
-        "EnvVarSource",
-        "ObjectFieldSelector",
-        "OptionalName",
-        "ResourceFieldSelector",
         "SuspendTemplate",
         "TemplateRef",
     ]
@@ -246,66 +241,3 @@ class SuspendTemplate(_BaseModel):
     """
 
     duration: str | None = None
-
-
-# ----------------------------------------------------------------------------
-# field - env
-# ----------------------------------------------------------------------------
-class EnvVar(_BaseModel):
-    """
-    `EnvVar`_ represents an environment variable present in a Container.
-
-    .. _EnvVar: https://argo-workflows.readthedocs.io/en/latest/fields/#envvar
-    """
-
-    name: str
-    value: str | None = None
-    valueFrom: EnvVarSource | None = None
-
-
-class EnvVarSource(_BaseModel):
-    configMapKeyRef: ConfigKeySelector | None = None
-    fieldRef: ObjectFieldSelector | None = None
-    resourceFieldRef: ResourceFieldSelector | None = None
-    secretKeyRef: ConfigKeySelector | None = None
-
-
-class ObjectFieldSelector(_BaseModel):
-    apiVersion: str | None = None
-    fieldPath: str
-
-
-class ResourceFieldSelector(_BaseModel):
-    containerName: str | None = None
-    divisor: str | None = None
-    resource: str
-
-
-# ----------------------------------------------------------------------------
-# field - envFrom
-# ----------------------------------------------------------------------------
-class EnvFromSource(_BaseModel):
-    """
-    `EnvFromSource`_ represents the source of a set of ConfigMaps.
-
-    .. _EnvFromSource: https://argo-workflows.readthedocs.io/en/latest/fields/#envfromsource
-    """
-
-    configMapRef: OptionalName | None = None
-    prefix: str | None = None
-    secretRef: OptionalName | None = None
-
-
-class OptionalName(_BaseModel):
-    """
-    Represents a reference to a ConfigMap or Secret.
-    This class is utilized by both the `ConfigMapEnvSource`_ and `SecretEnvSource`_ classes.
-
-    .. _ConfigMapEnvSource:
-       https://argo-workflows.readthedocs.io/en/latest/fields/#configmapenvsource
-    .. _SecretEnvSource:
-       https://argo-workflows.readthedocs.io/en/latest/fields/#secretenvsource
-    """
-
-    name: str
-    optional: bool | None = None
