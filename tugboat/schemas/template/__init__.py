@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Array, ConfigKeySelector, Dict
+from tugboat.schemas.template.volume_mount import VolumeMount
 
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
@@ -27,7 +28,6 @@ if os.getenv("DOCUTILSCONFIG"):
         "SuspendTemplate",
         "TcpSocketAction",
         "TemplateRef",
-        "VolumeMount",
     ]
 
 
@@ -369,23 +369,3 @@ class TcpSocketAction(_BaseModel):
 
     host: str | None = None
     port: int | str
-
-
-# ----------------------------------------------------------------------------
-# field - volumeMounts
-# ----------------------------------------------------------------------------
-class VolumeMount(_BaseModel):
-    """
-    `VolumeMount`_ describes a mounting of a `Volume`_ within a container.
-
-    .. _VolumeMount: https://argo-workflows.readthedocs.io/en/latest/fields/#volumemount
-    .. _Volume: https://kubernetes.io/docs/concepts/storage/volumes/
-    """
-
-    mountPath: str
-    mountPropagation: str | None = None
-    name: str
-    readOnly: bool | None = None
-    recursiveReadOnly: bool | None = None
-    subPath: str | None = None
-    subPathExpr: str | None = None
