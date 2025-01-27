@@ -44,6 +44,7 @@ class Template(_BaseModel):
     """
 
     activeDeadlineSeconds: int | str | None = None
+    annotations: Dict[str, str] | None = None
     automountServiceAccountToken: bool | None = None
     container: ContainerTemplate | None = None
     containerSet: ContainerSetTemplate | None = None
