@@ -59,6 +59,34 @@ tugboat.schemas.template module
    :members:
    :undoc-members:
 
+tugboat.schemas.template.env module
+-----------------------------------
+
+.. automodule:: tugboat.schemas.template.env
+   :members:
+   :undoc-members:
+
+tugboat.schemas.template.container module
+-----------------------------------------
+
+.. automodule:: tugboat.schemas.template.container
+   :members:
+   :undoc-members:
+
+tugboat.schemas.template.volume module
+--------------------------------------
+
+.. automodule:: tugboat.schemas.template.volume
+   :members:
+   :undoc-members:
+
+tugboat.schemas.template.probe module
+-------------------------------------
+
+.. automodule:: tugboat.schemas.template.probe
+   :members:
+   :undoc-members:
+
 tugboat.schemas.workflow module
 -------------------------------
 

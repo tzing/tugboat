@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
@@ -8,6 +9,9 @@ from tugboat.schemas.basic import Array
 from tugboat.schemas.template.env import EnvFromSource, EnvVar
 from tugboat.schemas.template.probe import Probe
 from tugboat.schemas.template.volume import VolumeMount
+
+if os.getenv("DOCUTILSCONFIG"):
+    __all__ = []
 
 
 class _ContainerEntry(BaseModel):
