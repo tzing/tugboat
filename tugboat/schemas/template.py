@@ -212,6 +212,7 @@ class Step(_BaseModel):
 
     arguments: Arguments | None = None
     inline: Template | None = None
+    onExit: str | None = None
     template: str | None = None
     templateRef: TemplateRef | None = None
     when: str | None = None
