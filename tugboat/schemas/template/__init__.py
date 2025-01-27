@@ -26,6 +26,7 @@ from tugboat.schemas.template.container import (
 
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
+        "DagTemplate",
         "SuspendTemplate",
         "TemplateRef",
     ]
@@ -47,6 +48,7 @@ class Template(_BaseModel):
     container: ContainerTemplate | None = None
     containerSet: ContainerSetTemplate | None = None
     daemon: bool | None = None
+    dag: DagTemplate | None = None
     failFast: bool | None = None
     inputs: Arguments | None = None
     name: str | None = None
@@ -65,7 +67,6 @@ class Template(_BaseModel):
 
     affinity: Any | None = None
     archiveLocation: Any | None = None
-    dag: Any | None = None
     data: Any | None = None
     executor: Any | None = None
     hostAliases: Array[Any] | None = None
@@ -103,7 +104,7 @@ class Template(_BaseModel):
 
 
 # ----------------------------------------------------------------------------
-# steps
+# dags
 # ----------------------------------------------------------------------------
 class _StepBase(_BaseModel):
 
@@ -125,6 +126,32 @@ class _StepBase(_BaseModel):
         return hash((self.name, self.template, self.templateRef))
 
 
+class DagTask(_StepBase):
+    """
+    `DAGTask` represents a node in the graph during DAG execution.
+
+    .. _DAGTask: https://argo-workflows.readthedocs.io/en/latest/fields/#dagtask
+    """
+
+    dependencies: Array[str] | None = None
+    depends: str | None = None
+
+
+class DagTemplate(_BaseModel):
+    """
+    `DAGTemplate`_ is a template subtype for directed acyclic graph templates.
+
+    .. _DAGTemplate: https://argo-workflows.readthedocs.io/en/latest/fields/#dagtemplate
+    """
+
+    failFast: bool | None = None
+    target: str | None = None
+    tasks: Array[DagTask]
+
+
+# ----------------------------------------------------------------------------
+# steps
+# ----------------------------------------------------------------------------
 class Step(_StepBase):
     """
     `Step`_ is a reference to a template to execute in a series of step.
