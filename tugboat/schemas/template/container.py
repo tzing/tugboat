@@ -1,0 +1,84 @@
+from __future__ import annotations
+
+from typing import Any, Literal
+
+from pydantic import BaseModel, ConfigDict
+
+from tugboat.schemas.basic import Array
+from tugboat.schemas.template.env import EnvFromSource, EnvVar
+from tugboat.schemas.template.probe import Probe
+from tugboat.schemas.template.volume import VolumeMount
+
+
+class _ContainerEntry(BaseModel):
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    image: str
+
+    command: Array[str] | None = None
+    env: Array[EnvVar] | None = None
+    envFrom: Array[EnvFromSource] | None = None
+    imagePullPolicy: Literal["Always", "Never", "IfNotPresent"] | None = None
+    livenessProbe: Probe | None = None
+    name: str | None = None
+    readinessProbe: Probe | None = None
+    restartPolicy: Literal["Always"] | None = None
+    startupProbe: Probe | None = None
+    stdin: bool | None = None
+    stdinOnce: bool | None = None
+    terminationMessagePath: str | None = None
+    terminationMessagePolicy: Literal["File", "FallbackToLogsOnError"] | None = None
+    tty: bool | None = None
+    volumeMounts: Array[VolumeMount] | None = None
+    workingDir: str | None = None
+
+    lifecycle: Any | None = None
+    ports: Array[Any] | None = None
+    resizePolicy: Array[Any] | None = None
+    resources: Any | None = None
+    securityContext: Any | None = None
+    volumeDevices: Array[Any] | None = None
+
+
+class ContainerTemplate(_ContainerEntry):
+    """
+    A single application `container`_ that you want to run within a pod.
+
+    .. _container: https://argo-workflows.readthedocs.io/en/latest/fields/#container
+    """
+
+    args: Array[str] | None = None
+
+    def __hash__(self):
+        return hash((self.image, self.command, self.args))
+
+
+class ScriptTemplate(_ContainerEntry):
+    """
+    `ScriptTemplate`_ is a template subtype to enable scripting through code steps.
+
+    .. _ScriptTemplate: https://argo-workflows.readthedocs.io/en/latest/fields/#scripttemplate
+    """
+
+    source: str
+
+    def __hash__(self):
+        return hash((self.image, self.source))
+
+
+class ContainerNode(_ContainerEntry):
+    """
+    Represents an individual `ContainerNode`_ within a `ContainerSetTemplate`_.
+
+    .. _ContainerNode:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#containernode
+    .. _ContainerSetTemplate:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#containersettemplate
+    """
+
+    args: Array[str] | None = None
+    dependencies: Array[str] | None = None
+
+    def __hash__(self):
+        return hash((self.image, self.command, self.args))
