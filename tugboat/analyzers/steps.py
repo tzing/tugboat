@@ -216,3 +216,15 @@ def check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagn
                         """
                     )
             yield diag
+
+
+@hookimpl(specname="analyze_step")
+def check_deprecated(step: Step) -> Iterable[Diagnosis]:
+    if step.onExit:
+        yield {
+            "code": "STP004",
+            "loc": ("onExit",),
+            "summary": "Deprecated field",
+            "msg": "Field 'onExit' is deprecated. Please use 'hooks[exit].template' instead.",
+            "input": "onExit",
+        }
