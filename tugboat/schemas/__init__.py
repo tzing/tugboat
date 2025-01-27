@@ -24,6 +24,7 @@ __all__ = [
     "ContainerNode",
     "ContainerTemplate",
     "CronWorkflow",
+    "DagTask",
     "Manifest",
     "Parameter",
     "ScriptTemplate",
@@ -39,6 +40,7 @@ from tugboat.schemas.manifest import Manifest
 from tugboat.schemas.template import (
     ContainerNode,
     ContainerTemplate,
+    DagTask,
     ScriptTemplate,
     Step,
     Template,
