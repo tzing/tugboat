@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from tugboat.schemas.basic import Array
 from tugboat.schemas.template.env import EnvFromSource, EnvVar
@@ -11,18 +11,22 @@ from tugboat.schemas.template.probe import Probe
 from tugboat.schemas.template.volume import VolumeMount
 
 if os.getenv("DOCUTILSCONFIG"):
-    __all__ = []
+    __all__ = [
+        "ContainerSetRetryStrategy",
+        "ContainerSetTemplate",
+    ]
 
 
-class _ContainerEntry(BaseModel):
-
+class _BaseModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    image: str
+
+class _ContainerEntry(_BaseModel):
 
     command: Array[str] | None = None
     env: Array[EnvVar] | None = None
     envFrom: Array[EnvFromSource] | None = None
+    image: str
     imagePullPolicy: Literal["Always", "Never", "IfNotPresent"] | None = None
     livenessProbe: Probe | None = None
     name: str | None = None
@@ -86,3 +90,21 @@ class ContainerNode(_ContainerEntry):
 
     def __hash__(self):
         return hash((self.image, self.command, self.args))
+
+
+class ContainerSetTemplate(_BaseModel):
+    """
+    `ContainerSetTemplate`_ to specify multiple containers to run within a single pod.
+
+    .. _ContainerSetTemplate:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#containersettemplate
+    """
+
+    containers: Array[ContainerNode]
+    retryStrategy: ContainerSetRetryStrategy | None = None
+    volumeMounts: Array[VolumeMount] | None = None
+
+
+class ContainerSetRetryStrategy(_BaseModel):
+    duration: str | None = Field(None, pattern=r"\d+(ns|us|µs|ms|s|m|h)")
+    retries: int | str

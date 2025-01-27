@@ -1,25 +1,31 @@
 from __future__ import annotations
 
+__all__ = [
+    "ContainerNode",
+    "ContainerTemplate",
+    "ScriptTemplate",
+    "Step",
+    "Template",
+]
+
 import functools
 import itertools
 import os
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Array, Dict
 from tugboat.schemas.template.container import (
     ContainerNode,
+    ContainerSetTemplate,
     ContainerTemplate,
     ScriptTemplate,
 )
-from tugboat.schemas.template.volume import VolumeMount
 
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
-        "ContainerSetRetryStrategy",
-        "ContainerSetTemplate",
         "SuspendTemplate",
         "TemplateRef",
     ]
@@ -94,27 +100,6 @@ class Template(_BaseModel):
             for step in itertools.chain.from_iterable(self.steps or ())
             if step.name
         }
-
-
-# ----------------------------------------------------------------------------
-# containerSet
-# ----------------------------------------------------------------------------
-class ContainerSetTemplate(_BaseModel):
-    """
-    `ContainerSetTemplate`_ to specify multiple containers to run within a single pod.
-
-    .. _ContainerSetTemplate:
-       https://argo-workflows.readthedocs.io/en/latest/fields/#containersettemplate
-    """
-
-    containers: Array[ContainerNode]
-    retryStrategy: ContainerSetRetryStrategy | None = None
-    volumeMounts: Array[VolumeMount] | None = None
-
-
-class ContainerSetRetryStrategy(_BaseModel):
-    duration: str | None = Field(None, pattern=r"\d+(ns|us|µs|ms|s|m|h)")
-    retries: int | str
 
 
 # ----------------------------------------------------------------------------
