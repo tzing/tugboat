@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from tugboat.schemas.basic import Array
+from tugboat.schemas.basic import Array, ConfigKeySelector
 
 
 class _BaseModel(BaseModel):
@@ -47,11 +47,20 @@ class HttpGetAction(_BaseModel):
     """
 
     host: str | None = None
+    httpHeaders: Array[HttpHeader] | None = None
     path: str
     port: int | str
     scheme: Literal["HTTP", "HTTPS"] | None = None
 
-    httpHeaders: Array[Any] | None = None
+
+class HttpHeader(_BaseModel):
+    name: str
+    value: str | None = None
+    valueFrom: HttpHeaderSource | None = None
+
+
+class HttpHeaderSource(_BaseModel):
+    secretKeyRef: ConfigKeySelector
 
 
 class TcpSocketAction(_BaseModel):
