@@ -93,3 +93,51 @@ The artifact was set multiple times.
                    - name: message
                      raw:
                        data: hello-2
+
+:bdg:`STP004` Deprecated Field: ``onExit``
+-------------------------------------------
+
+The ``onExit`` field in the step definition is deprecated.
+
+As of Argo Workflow version 3.1, the ``onExit`` field is deprecated.
+It is recommended to use the ``hooks[exit].template`` field instead.
+
+.. code-block:: yaml
+   :caption: ❌ Example of incorrect code for this rule
+   :emphasize-lines: 11
+
+   apiVersion: argoproj.io/v1alpha1
+   kind: Workflow
+   metadata:
+     generateName: exit-handler-step-level-
+   spec:
+     entrypoint: main
+     templates:
+       - name: main
+         steps:
+           - - name: hello1
+               onExit: exit
+               template: print-message
+               arguments:
+                 parameters: [{name: message, value: "hello1"}]
+
+.. code-block:: yaml
+   :caption: ✅ Example of correct code for this rule
+   :emphasize-lines: 14-16
+
+   apiVersion: argoproj.io/v1alpha1
+   kind: Workflow
+   metadata:
+     generateName: exit-handler-step-level-
+   spec:
+     entrypoint: main
+     templates:
+       - name: main
+         steps:
+           - - name: hello1
+               template: print-message
+               arguments:
+                 parameters: [{ name: message, value: "hello1" }]
+               hooks:
+                 exit:
+                   template: exit
