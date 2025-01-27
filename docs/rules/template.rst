@@ -17,11 +17,11 @@ Argo Workflows offers various types of templates. However, Tugboat currently sup
       - :octicon:`check`
 
     * - `Container set template <https://argo-workflows.readthedocs.io/en/latest/container-set-template/>`_
-      - :octicon:`alert` Partial; Check against :py:class:`~tugboat.schemas.template.ContainerSetTemplate`
+      - :octicon:`alert` Partial; Check against :py:class:`~tugboat.schemas.template.container.ContainerSetTemplate`
       - :octicon:`check`
 
     * - `DAG template <https://argo-workflows.readthedocs.io/en/latest/walk-through/dag/>`_
-      - :octicon:`x`
+      - :octicon:`alert` Partial; Check against :py:class:`~tugboat.schemas.DagTask`
       - :octicon:`x`
 
     * - `Data template <https://argo-workflows.readthedocs.io/en/latest/data-sourcing-and-transformation/>`_
@@ -45,7 +45,7 @@ Argo Workflows offers various types of templates. However, Tugboat currently sup
       - :octicon:`check` Covered by :doc:`step`
 
     * - `Suspend template <https://argo-workflows.readthedocs.io/en/latest/walk-through/suspending/>`_
-      - :octicon:`x`
+      - :octicon:`check` (:py:class:`~tugboat.schemas.template.SuspendTemplate`)
       - :octicon:`x`
 
 .. [#schm-chk] The schema check validates the manifest against the schema defined in the official `field reference`_ document. It identifies missing or extra fields, incorrect data types, and other basic errors. These errors will be reported as :doc:`manifest-errors`.
