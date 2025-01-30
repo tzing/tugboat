@@ -1,6 +1,8 @@
 import pytest
+from pydantic import BaseModel
 
-from tugboat.utils.operator import prepend_loc
+from tugboat.references.context import ReferenceCollection
+from tugboat.utils.operator import check_model_fields_references, prepend_loc
 
 
 class TestPrependLoc:
@@ -24,4 +26,55 @@ class TestPrependLoc:
             {"loc": (), "code": "T01"},
             {"loc": ("foo",), "code": "T02"},
             {"loc": ("foo", "bar"), "code": "T03"},
+        ]
+
+
+class TestCheckModelFieldsReferences:
+
+    def test_picked(self):
+        class Nested(BaseModel):
+            foo: str
+
+        class Model(BaseModel):
+            bar: list[Nested]
+            baz: str
+            qax: int
+            qux: Nested
+
+        model = Model.model_validate(
+            {
+                "baz": "leorm",
+                "qax": 42,
+                "qux": {"foo": "{{ error"},
+                "bar": [
+                    {"foo": "bar"},
+                    {"foo": "{{ valid }}"},
+                    {"foo": "{{ invalid }}"},
+                ],
+            }
+        )
+
+        refs = ReferenceCollection()
+        refs.add(("valid",))
+
+        assert list(check_model_fields_references(model, refs)) == [
+            {
+                "code": "VAR002",
+                "fix": "{{ valid }}",
+                "input": "{{ invalid }}",
+                "loc": ("bar", 2, "foo"),
+                "msg": "The used reference 'invalid' is invalid.",
+                "summary": "Invalid reference",
+                "ctx": {
+                    "closest": ("valid",),
+                    "ref": ("invalid",),
+                },
+            },
+            {
+                "code": "VAR001",
+                "input": "{{ error",
+                "loc": ("qux", "foo"),
+                "msg": "Invalid syntax near '{{ error': expect closing tag '}}'",
+                "summary": "Syntax error",
+            },
         ]
