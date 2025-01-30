@@ -29,6 +29,7 @@ def get_plugin_manager() -> pluggy.PluginManager:
     import tugboat.analyzers.template.outputs
     import tugboat.analyzers.workflow
     import tugboat.analyzers.workflow_template
+    import tugboat.schemas
 
     pm.register(tugboat.analyzers.cron_workflow)
     pm.register(tugboat.analyzers.steps)
@@ -38,5 +39,6 @@ def get_plugin_manager() -> pluggy.PluginManager:
     pm.register(tugboat.analyzers.template.outputs)
     pm.register(tugboat.analyzers.workflow)
     pm.register(tugboat.analyzers.workflow_template)
+    pm.register(tugboat.schemas)
 
     return pm

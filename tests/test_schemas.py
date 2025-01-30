@@ -125,6 +125,83 @@ class TestWorkflow:
         }
 
 
+class TestParseManifest:
+
+    def test_cron_workflow(self, stable_hooks):
+        manifest = stable_hooks.parse_manifest(
+            manifest={
+                "apiVersion": "argoproj.io/v1alpha1",
+                "kind": "CronWorkflow",
+                "metadata": {"name": "test-cron-wf"},
+                "spec": {
+                    "schedule": "* * * * *",
+                    "concurrencyPolicy": "Replace",
+                    "startingDeadlineSeconds": 0,
+                    "workflowSpec": {
+                        "entrypoint": "date",
+                        "templates": [
+                            {
+                                "name": "date",
+                                "container": {
+                                    "image": "alpine:3.6",
+                                    "command": ["sh", "-c"],
+                                    "args": ["date; sleep 90"],
+                                },
+                            }
+                        ],
+                    },
+                },
+            }
+        )
+        assert isinstance(manifest, CronWorkflow)
+
+    def test_workflow(self, stable_hooks):
+        manifest = stable_hooks.parse_manifest(
+            manifest={
+                "apiVersion": "argoproj.io/v1alpha1",
+                "kind": "Workflow",
+                "metadata": {"generateName": "hello-world-"},
+                "spec": {
+                    "entrypoint": "hello-world",
+                    "templates": [
+                        {
+                            "name": "hello-world",
+                            "container": {
+                                "image": "busybox",
+                                "command": ["echo"],
+                                "args": ["hello world"],
+                            },
+                        }
+                    ],
+                },
+            }
+        )
+        assert isinstance(manifest, Workflow)
+
+    def test_workflow_template(self, stable_hooks):
+        manifest = stable_hooks.parse_manifest(
+            manifest={
+                "apiVersion": "argoproj.io/v1alpha1",
+                "kind": "WorkflowTemplate",
+                "metadata": {"generateName": "hello-world-"},
+                "spec": {
+                    "entrypoint": "hello-world",
+                    "templates": [
+                        {
+                            "name": "hello-world",
+                            "container": {
+                                "image": "busybox",
+                                "command": ["echo"],
+                                "args": ["hello world"],
+                            },
+                        }
+                    ],
+                },
+            }
+        )
+        assert isinstance(manifest, WorkflowTemplate)
+
+
 class TestArgoExamples:
     """
     Make sure our schemas are valid for (almost) all examples from Argo.
