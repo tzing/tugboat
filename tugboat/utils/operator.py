@@ -1,5 +1,10 @@
+"""
+Operators that could be used to check or report errors in the data model.
+"""
+
 from __future__ import annotations
 
+import collections
 import typing
 from collections.abc import Sequence
 
@@ -11,7 +16,10 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
     from tugboat.references.context import ReferenceCollection
+    from tugboat.schemas import Artifact, Parameter, Template
     from tugboat.types import Diagnosis
+
+    type NamedModel = Artifact | Parameter | Template
 
 
 def prepend_loc(
@@ -24,6 +32,21 @@ def prepend_loc(
         return diagnoses
 
     return map(_prepend, iterable)
+
+
+def find_duplicate_names(items: Sequence[NamedModel]) -> Iterator[tuple[int, str]]:
+    """Find and yield the indices and names of duplicate items in a sequence."""
+    # count the number of times each name appears
+    names = collections.defaultdict(list)
+    for idx, item in enumerate(items):
+        if item.name:  # skip if name is empty
+            names[item.name].append(idx)
+
+    # report any names that appear more than once
+    for name, indices in names.items():
+        if len(indices) > 1:
+            for idx in indices:
+                yield idx, name
 
 
 def check_value_references(

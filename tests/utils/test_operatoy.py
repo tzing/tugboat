@@ -2,7 +2,12 @@ import pytest
 from pydantic import BaseModel
 
 from tugboat.references.context import ReferenceCollection
-from tugboat.utils.operator import check_model_fields_references, prepend_loc
+from tugboat.schemas import Parameter
+from tugboat.utils.operator import (
+    check_model_fields_references,
+    find_duplicate_names,
+    prepend_loc,
+)
 
 
 class TestPrependLoc:
@@ -27,6 +32,21 @@ class TestPrependLoc:
             {"loc": ("foo",), "code": "T02"},
             {"loc": ("foo", "bar"), "code": "T03"},
         ]
+
+
+class TestFindDuplicateNames:
+
+    def test_pass(self):
+        items = [Parameter(name="name-1"), Parameter(name="name-2")]
+        assert list(find_duplicate_names(items)) == []
+
+    def test_picked(self):
+        items = [
+            Parameter(name="name-1"),
+            Parameter(name="name-2"),
+            Parameter(name="name-1"),
+        ]
+        assert list(find_duplicate_names(items)) == [(0, "name-1"), (2, "name-1")]
 
 
 class TestCheckModelFieldsReferences:
