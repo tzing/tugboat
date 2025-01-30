@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 __all__ = [
+    "get_alias",
+    "get_context_name",
     "join_with_and",
     "join_with_or",
 ]
@@ -9,7 +11,12 @@ import contextlib
 import functools
 import typing
 
-from tugboat.utils.humanize import join_with_and, join_with_or
+from tugboat.utils.humanize import (
+    join_with_and,
+    join_with_or,
+    get_context_name,
+    get_alias,
+)
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -30,25 +37,3 @@ def prepend_loc(
         return diagnoses
 
     return map(_prepend, iterable)
-
-
-def get_context_name(loc: Sequence[str | int]) -> str:
-    """Get the parent context name for a location."""
-    if not isinstance(loc, tuple):
-        loc = tuple(loc)
-    return _get_context_name(loc)
-
-
-@functools.lru_cache(16)
-def _get_context_name(loc: tuple[str | int, ...]) -> str:
-    with contextlib.suppress(StopIteration):
-        # find the first string in the parents
-        parent = next(filter(lambda x: isinstance(x, str), reversed(loc)))
-        return f"the '{parent}' section"
-    return "current context"
-
-
-def get_alias(model: BaseModel, name: str) -> str:
-    """Get the alias of a field in a model."""
-    field = model.model_fields[name]
-    return field.alias or name
