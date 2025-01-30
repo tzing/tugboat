@@ -4,6 +4,7 @@ __all__ = [
     "join_with_and",
     "join_with_or",
     "prepend_loc",
+    "translate_pydantic_error",
 ]
 
 from tugboat.utils.humanize import (
@@ -13,3 +14,4 @@ from tugboat.utils.humanize import (
     join_with_or,
 )
 from tugboat.utils.operator import prepend_loc
+from tugboat.utils.pydantic import translate_pydantic_error

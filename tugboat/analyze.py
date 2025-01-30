@@ -12,9 +12,9 @@ from ruamel.yaml.comments import CommentedBase, CommentedMap
 from ruamel.yaml.error import MarkedYAMLError
 from ruamel.yaml.tokens import CommentToken
 
-from tugboat.analyzers import translate_pydantic_error
 from tugboat.core import get_plugin_manager
 from tugboat.schemas import Manifest
+from tugboat.utils import translate_pydantic_error
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence

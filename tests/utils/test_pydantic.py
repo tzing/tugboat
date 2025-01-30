@@ -13,7 +13,7 @@ from pydantic import (
 from pydantic_core import ErrorDetails
 
 from tests.utils import ContainsSubStrings
-from tugboat.analyzers.pydantic import (
+from tugboat.utils.pydantic import (
     _compose_string_error_message,
     _extract_expects,
     _to_sexagesimal,
@@ -215,8 +215,8 @@ class TestGetTypeName:
             ("foo", "string"),
             (True, "boolean"),
             ({"x": 1}, "mapping"),
-            ([1, 2, 3], "sequence"),
-            ((1, 2, 3), "sequence"),
+            ([1, 2, 3], "array"),
+            ((1, 2, 3), "array"),
             (None, "null"),
             (IsPartialDict({}), "IsPartialDict"),
         ],

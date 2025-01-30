@@ -5,7 +5,7 @@ from collections.abc import Mapping, Sequence
 
 from rapidfuzz.process import extractOne
 
-from tugboat.utils import get_context_name
+from tugboat.utils.humanize import get_context_name
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
@@ -171,7 +171,7 @@ def get_type_name(value: Any) -> str:
     if isinstance(value, Mapping):
         return "mapping"
     if isinstance(value, Sequence):
-        return "sequence"
+        return "array"
     return type(value).__name__
 
 
