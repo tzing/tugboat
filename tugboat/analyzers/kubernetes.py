@@ -19,18 +19,17 @@ def check_resource_name(
     is_generate_name: bool = False,
 ) -> Iterator[Diagnosis]:
     """
-    Check if the name is valid to be used as a Kubernetes resource name. This
-    function reports the following issues:
+    Check if the name is valid to be used as a Kubernetes resource name.
 
-    M009
-       Resource name length error
-    M010
-       Invalid resource name
+    Yield
+    -----
+    :ref:`code.m009` for too short or too long name.
+    :ref:`code.m010` for invalid characters in the name.
 
     See also
     --------
-    Object Names and IDs
-       https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+    `Object Names and IDs
+    <https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names>`_
     """
     if is_generate_name:
         # although kubernetes automatically truncates the name when it exceeds

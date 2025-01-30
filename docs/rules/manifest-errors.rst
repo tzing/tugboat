@@ -20,6 +20,8 @@ Tugboat is not designed to parse every possible Kubernetes resource.
 This error code is triggered when the parser encounters a manifest kind that is not supported by Tugboat.
 
 
+.. _code.m003:
+
 :bdg:`M003` Malformed manifest
 ------------------------------
 
@@ -101,6 +103,8 @@ For instance, the following manifest contains both ``script`` and ``container`` 
            image: alpine:latest
 
 
+.. _code.m007:
+
 :bdg:`M007` Type mismatch
 -------------------------
 
@@ -118,6 +122,8 @@ The following manifest contains a number in ``entrypoint`` field, which is expec
    spec:
      entrypoint: 1234
 
+
+.. _code.m008:
 
 :bdg:`M008` Invalid field value
 -------------------------------
@@ -164,6 +170,8 @@ This given name (59 characters) may cause the last character of the given name t
    spec:
      ...
 
+
+.. _code.m010:
 
 :bdg:`M010` Invalid resource name
 ---------------------------------

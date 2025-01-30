@@ -20,16 +20,43 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
     """
     Translate a Pydantic error to a diagnosis object.
 
+    This function returns a diagnosis object based on the error type found in the input:
+
+    .. list-table::
+
+        * - Pydantic Error Type
+          - Tugboat Code
+        * - `bool_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#bool_parsing>`_
+          - :ref:`code.m007`
+        * - `bool_type <https://docs.pydantic.dev/latest/errors/validation_errors/#bool_type>`_
+          - :ref:`code.m007`
+        * - `enum <https://docs.pydantic.dev/latest/errors/validation_errors/#enum>`_
+          - :ref:`code.m008`
+        * - `extra_forbidden <https://docs.pydantic.dev/latest/errors/validation_errors/#extra_forbidden>`_
+          - :ref:`code.m005`
+        * - `int_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#int_parsing>`_
+          - :ref:`code.m007`
+        * - `int_type <https://docs.pydantic.dev/latest/errors/validation_errors/#int_type>`_
+          - :ref:`code.m007`
+        * - `literal_error <https://docs.pydantic.dev/latest/errors/validation_errors/#literal_error>`_
+          - :ref:`code.m008`
+        * - `missing <https://docs.pydantic.dev/latest/errors/validation_errors/#missing>`_
+          - :ref:`code.m004`
+        * - `string_type <https://docs.pydantic.dev/latest/errors/validation_errors/#string_type>`_
+          - :ref:`code.m007`
+        * - Any other error
+          - :ref:`code.m003`
+
     Parameters
     ----------
-    error : ErrorDetails
-        The Pydantic error object. This object could be obtained from
-        :py:meth:`pydantic.ValidationError.errors` object.
+    error : ~pydantic_core.ErrorDetails
+        A Pydantic error object. This object could be obtained from
+        :py:meth:`ValidationError.errors <pydantic_core.ValidationError.errors>` method.
 
     Returns
     -------
-    Diagnosis
-        The diagnosis object.
+    ~tugboat.types.Diagnosis
+       A diagnosis object that contains the error message and other relevant information.
     """
     # get the last string in the location tuple as the field name
     field_name = None
