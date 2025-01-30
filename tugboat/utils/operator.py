@@ -1,3 +1,7 @@
+"""
+Operators that could be used to check or report errors in the data model.
+"""
+
 from __future__ import annotations
 
 import collections
@@ -7,10 +11,9 @@ from collections.abc import Sequence
 from pydantic import BaseModel
 
 from tugboat.parsers import parse_template, report_syntax_errors
-from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
 
     from tugboat.references.context import ReferenceCollection
     from tugboat.schemas import Artifact, Parameter, Template
@@ -19,7 +22,20 @@ if typing.TYPE_CHECKING:
     type NamedModel = Artifact | Parameter | Template
 
 
-def report_duplicate_names(items: Sequence[NamedModel]) -> Iterator[tuple[int, str]]:
+def prepend_loc(
+    prefix: Sequence[str | int], iterable: Iterable[Diagnosis]
+) -> Iterator[Diagnosis]:
+    """Prepend the path to the location of each diagnosis in the iterable."""
+
+    def _prepend(diagnoses: Diagnosis) -> Diagnosis:
+        diagnoses["loc"] = (*prefix, *diagnoses.get("loc", []))
+        return diagnoses
+
+    return map(_prepend, iterable)
+
+
+def find_duplicate_names(items: Sequence[NamedModel]) -> Iterator[tuple[int, str]]:
+    """Find and yield the indices and names of duplicate items in a sequence."""
     # count the number of times each name appears
     names = collections.defaultdict(list)
     for idx, item in enumerate(items):

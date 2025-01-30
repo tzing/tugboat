@@ -1,20 +1,44 @@
-from __future__ import annotations
-
+import pytest
 from pydantic import BaseModel
 
-from tugboat.analyzers.generic import (
-    check_model_fields_references,
-    report_duplicate_names,
-)
 from tugboat.references.context import ReferenceCollection
 from tugboat.schemas import Parameter
+from tugboat.utils.operator import (
+    check_model_fields_references,
+    find_duplicate_names,
+    prepend_loc,
+)
 
 
-class TestReportDuplicateNames:
+class TestPrependLoc:
+    @pytest.fixture
+    def diagnoses(self):
+        return [
+            {"loc": (), "code": "T01"},
+            {"loc": ("foo",), "code": "T02"},
+            {"loc": ("foo", "bar"), "code": "T03"},
+        ]
+
+    def test_standard(self, diagnoses):
+        assert list(prepend_loc(["baz"], diagnoses)) == [
+            {"loc": ("baz",), "code": "T01"},
+            {"loc": ("baz", "foo"), "code": "T02"},
+            {"loc": ("baz", "foo", "bar"), "code": "T03"},
+        ]
+
+    def test_empty(self, diagnoses):
+        assert list(prepend_loc([], diagnoses)) == [
+            {"loc": (), "code": "T01"},
+            {"loc": ("foo",), "code": "T02"},
+            {"loc": ("foo", "bar"), "code": "T03"},
+        ]
+
+
+class TestFindDuplicateNames:
 
     def test_pass(self):
         items = [Parameter(name="name-1"), Parameter(name="name-2")]
-        assert list(report_duplicate_names(items)) == []
+        assert list(find_duplicate_names(items)) == []
 
     def test_picked(self):
         items = [
@@ -22,7 +46,7 @@ class TestReportDuplicateNames:
             Parameter(name="name-2"),
             Parameter(name="name-1"),
         ]
-        assert list(report_duplicate_names(items)) == [(0, "name-1"), (2, "name-1")]
+        assert list(find_duplicate_names(items)) == [(0, "name-1"), (2, "name-1")]
 
 
 class TestCheckModelFieldsReferences:

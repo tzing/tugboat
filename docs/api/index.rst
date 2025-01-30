@@ -9,6 +9,7 @@ If you're looking for information on a specific function, class or method, this 
    tugboat.constraints
    tugboat.hookspecs
    tugboat.schemas
+   tugboat.utils
 
 .. note::
 

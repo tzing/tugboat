@@ -3,11 +3,6 @@ from __future__ import annotations
 import re
 import typing
 
-from tugboat.analyzers.generic import (
-    check_model_fields_references,
-    check_value_references,
-    report_duplicate_names,
-)
 from tugboat.constraints import (
     accept_none,
     mutually_exclusive,
@@ -16,7 +11,12 @@ from tugboat.constraints import (
 )
 from tugboat.core import hookimpl
 from tugboat.references import get_step_context
-from tugboat.utils import prepend_loc
+from tugboat.utils import (
+    check_model_fields_references,
+    check_value_references,
+    find_duplicate_names,
+    prepend_loc,
+)
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
@@ -41,7 +41,7 @@ def check_argument_parameters(
         return
 
     # report duplicate names
-    for idx, name in report_duplicate_names(step.arguments.parameters or ()):
+    for idx, name in find_duplicate_names(step.arguments.parameters or ()):
         yield {
             "code": "STP002",
             "loc": ("arguments", "parameters", idx, "name"),
@@ -113,7 +113,7 @@ def check_argument_artifacts(
         return
 
     # report duplicate names
-    for idx, name in report_duplicate_names(step.arguments.artifacts or ()):
+    for idx, name in find_duplicate_names(step.arguments.artifacts or ()):
         yield {
             "code": "STP003",
             "loc": ("arguments", "artifacts", idx, "name"),

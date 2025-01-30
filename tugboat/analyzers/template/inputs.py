@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import typing
 
-from tugboat.analyzers.generic import (
-    check_model_fields_references,
-    check_value_references,
-    report_duplicate_names,
-)
 from tugboat.constraints import accept_none, mutually_exclusive, require_all
 from tugboat.core import hookimpl
 from tugboat.references import get_workflow_context
-from tugboat.utils import prepend_loc
+from tugboat.utils import (
+    check_model_fields_references,
+    check_value_references,
+    find_duplicate_names,
+    prepend_loc,
+)
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
@@ -34,7 +34,7 @@ def check_input_parameters(
         return
 
     # report duplicate names
-    for idx, name in report_duplicate_names(template.inputs.parameters or ()):
+    for idx, name in find_duplicate_names(template.inputs.parameters or ()):
         yield {
             "code": "TPL002",
             "loc": ("inputs", "parameters", idx, "name"),
@@ -106,7 +106,7 @@ def check_input_artifacts(
         return
 
     # report duplicate names
-    for idx, name in report_duplicate_names(template.inputs.artifacts or ()):
+    for idx, name in find_duplicate_names(template.inputs.artifacts or ()):
         yield {
             "code": "TPL003",
             "loc": ("inputs", "artifacts", idx, "name"),

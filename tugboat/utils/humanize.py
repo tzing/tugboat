@@ -1,3 +1,7 @@
+"""
+Helper functions for generating human readable text.
+"""
+
 from __future__ import annotations
 
 import contextlib
@@ -5,24 +9,10 @@ import functools
 import typing
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Sequence
     from typing import Any
 
     from pydantic import BaseModel
-
-    from tugboat.types import Diagnosis
-
-
-def prepend_loc(
-    prefix: Sequence[str | int], iterable: Iterable[Diagnosis]
-) -> Iterable[Diagnosis]:
-    """Prepend the path to the location of each diagnosis in the iterable."""
-
-    def _prepend(diagnoses: Diagnosis) -> Diagnosis:
-        diagnoses["loc"] = (*prefix, *diagnoses.get("loc", []))
-        return diagnoses
-
-    return map(_prepend, iterable)
 
 
 def join_items(
@@ -32,7 +22,12 @@ def join_items(
     separator: str = ", ",
     conjunction: str = "and",
 ) -> str:
-    """Join items with a separator."""
+    """
+    Join items with a separator. The last item is preceded by a conjunction.
+
+    This function serves as the foundation for the :py:func:`join_with_and` and
+    :py:func:`join_with_or` functions.
+    """
     if quote:
         items = [f"'{item}'" for item in items]
     match len(items):
@@ -44,8 +39,18 @@ def join_items(
     return separator.join(items) + f" {conjunction} {last}"
 
 
-join_with_and = functools.partial(join_items, conjunction="and")
-join_with_or = functools.partial(join_items, conjunction="or")
+def join_with_and(items: Sequence[Any], *, quote: bool = True) -> str:
+    """
+    Join items with a comma and the word "and" before the last item.
+    """
+    return join_items(items, quote=quote, conjunction="and")
+
+
+def join_with_or(items: Sequence[Any], *, quote: bool = True) -> str:
+    """
+    Join items with a comma and the word "or" before the last item.
+    """
+    return join_items(items, quote=quote, conjunction="or")
 
 
 def get_context_name(loc: Sequence[str | int]) -> str:

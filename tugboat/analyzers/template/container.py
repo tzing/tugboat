@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import typing
 
-from tugboat.analyzers.generic import check_model_fields_references
 from tugboat.constraints import require_all, require_exactly_one
 from tugboat.core import hookimpl
 from tugboat.references import get_template_context
-from tugboat.utils import prepend_loc
+from tugboat.utils import check_model_fields_references, prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
