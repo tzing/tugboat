@@ -5,12 +5,11 @@ import typing
 
 from rapidfuzz.process import extractOne
 
-from tugboat.analyzers.generic import report_duplicate_names
 from tugboat.analyzers.kubernetes import check_resource_name
 from tugboat.constraints import accept_none, require_all, require_exactly_one
 from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.schemas import Workflow, WorkflowTemplate
-from tugboat.utils import join_with_and, prepend_loc
+from tugboat.utils import find_duplicate_names, join_with_and, prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
@@ -113,7 +112,7 @@ def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
         return
 
     # report duplicate names
-    for idx, name in report_duplicate_names(workflow.spec.templates):
+    for idx, name in find_duplicate_names(workflow.spec.templates):
         yield {
             "code": "TPL001",
             "loc": ("spec", "templates", idx, "name"),
@@ -151,7 +150,7 @@ def check_argument_parameters(workflow: WorkflowCompatible) -> Iterator[Diagnosi
         return
 
     # report duplicate names
-    for idx, name in report_duplicate_names(workflow.spec.arguments.parameters or ()):
+    for idx, name in find_duplicate_names(workflow.spec.arguments.parameters or ()):
         yield {
             "code": "WF002",
             "loc": ("spec", "arguments", "parameters", idx, "name"),
@@ -210,7 +209,7 @@ def check_argument_artifacts(workflow: WorkflowCompatible) -> Iterator[Diagnosis
         return
 
     # report duplicate names
-    for idx, name in report_duplicate_names(workflow.spec.arguments.artifacts or ()):
+    for idx, name in find_duplicate_names(workflow.spec.arguments.artifacts or ()):
         yield {
             "code": "WF003",
             "loc": ("spec", "arguments", "artifacts", idx, "name"),
