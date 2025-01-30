@@ -34,6 +34,7 @@ __all__ = [
     "WorkflowTemplate",
 ]
 
+from tugboat.core import hookimpl
 from tugboat.schemas.arguments import Artifact, Parameter
 from tugboat.schemas.cron_workflow import CronWorkflow
 from tugboat.schemas.manifest import Manifest
@@ -46,3 +47,19 @@ from tugboat.schemas.template import (
     Template,
 )
 from tugboat.schemas.workflow import Workflow, WorkflowTemplate
+
+
+@hookimpl
+def parse_manifest(manifest: dict):
+    """
+    Parse the manifest and return the corresponding data model.
+
+    :meta private:
+    """
+    match manifest.get("kind"):
+        case "CronWorkflow":
+            return CronWorkflow.model_validate(manifest)
+        case "Workflow":
+            return Workflow.model_validate(manifest)
+        case "WorkflowTemplate":
+            return WorkflowTemplate.model_validate(manifest)

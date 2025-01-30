@@ -8,24 +8,15 @@ from rapidfuzz.process import extractOne
 from tugboat.analyzers.kubernetes import check_resource_name
 from tugboat.constraints import accept_none, require_all, require_exactly_one
 from tugboat.core import get_plugin_manager, hookimpl
-from tugboat.schemas import Workflow, WorkflowTemplate
 from tugboat.utils import find_duplicate_names, join_with_and, prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
 
+    from tugboat.schemas import Workflow, WorkflowTemplate
     from tugboat.types import Diagnosis
 
     type WorkflowCompatible = Workflow | WorkflowTemplate
-
-
-@hookimpl
-def parse_manifest(manifest: dict) -> Workflow | WorkflowTemplate | None:
-    match manifest.get("kind"):
-        case "Workflow":
-            return Workflow.model_validate(manifest)
-        case "WorkflowTemplate":
-            return WorkflowTemplate.model_validate(manifest)
 
 
 @hookimpl

@@ -5,39 +5,8 @@ from dirty_equals import IsPartialDict
 
 import tugboat.analyze
 from tests.dirty_equals import ContainsSubStrings
-from tugboat.schemas import CronWorkflow
 
 logger = logging.getLogger(__name__)
-
-
-class TestParseManifest:
-    def test(self, stable_hooks):
-        manifest = stable_hooks.parse_manifest(
-            manifest={
-                "apiVersion": "argoproj.io/v1alpha1",
-                "kind": "CronWorkflow",
-                "metadata": {"name": "test-cron-wf"},
-                "spec": {
-                    "schedule": "* * * * *",
-                    "concurrencyPolicy": "Replace",
-                    "startingDeadlineSeconds": 0,
-                    "workflowSpec": {
-                        "entrypoint": "date",
-                        "templates": [
-                            {
-                                "name": "date",
-                                "container": {
-                                    "image": "alpine:3.6",
-                                    "command": ["sh", "-c"],
-                                    "args": ["date; sleep 90"],
-                                },
-                            }
-                        ],
-                    },
-                },
-            }
-        )
-        assert isinstance(manifest, CronWorkflow)
 
 
 class TestRules:

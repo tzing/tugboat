@@ -23,3 +23,9 @@ def plugin_manager():
     get_plugin_manager.cache_clear()
     yield get_plugin_manager()
     get_plugin_manager.cache_clear()
+
+
+@pytest.fixture(scope="class")
+def stable_hooks():
+    pm = get_plugin_manager()
+    return pm.hook

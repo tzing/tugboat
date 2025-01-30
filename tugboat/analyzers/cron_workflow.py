@@ -5,18 +5,12 @@ import typing
 from tugboat.analyzers.kubernetes import GENERATED_SUFFIX_LENGTH, check_resource_name
 from tugboat.constraints import require_exactly_one
 from tugboat.core import hookimpl
-from tugboat.schemas import CronWorkflow
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
 
+    from tugboat.schemas import CronWorkflow
     from tugboat.types import Diagnosis
-
-
-@hookimpl
-def parse_manifest(manifest: dict) -> CronWorkflow | None:
-    if manifest.get("kind") == "CronWorkflow":
-        return CronWorkflow.model_validate(manifest)
 
 
 @hookimpl
