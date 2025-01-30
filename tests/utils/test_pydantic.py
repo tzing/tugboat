@@ -12,7 +12,7 @@ from pydantic import (
 )
 from pydantic_core import ErrorDetails
 
-from tests.utils import ContainsSubStrings
+from tests.dirty_equals import ContainsSubStrings
 from tugboat.utils.pydantic import (
     _compose_string_error_message,
     _extract_expects,

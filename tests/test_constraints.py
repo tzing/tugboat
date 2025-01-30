@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from tests.utils import ContainsSubStrings
+from tests.dirty_equals import ContainsSubStrings
 from tugboat.constraints import (
     accept_none,
     mutually_exclusive,

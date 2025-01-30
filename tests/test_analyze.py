@@ -7,7 +7,7 @@ import pytest
 import ruamel.yaml
 from pydantic import BaseModel
 
-from tests.utils import ContainsSubStrings
+from tests.dirty_equals import ContainsSubStrings
 from tugboat.analyze import (
     _find_related_comments,
     _get_line_column,

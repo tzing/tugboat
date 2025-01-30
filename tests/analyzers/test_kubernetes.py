@@ -1,6 +1,6 @@
 from dirty_equals import IsPartialDict
 
-from tests.utils import ContainsSubStrings
+from tests.dirty_equals import ContainsSubStrings
 from tugboat.analyzers.kubernetes import check_resource_name
 
 
