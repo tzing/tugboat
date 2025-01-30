@@ -14,12 +14,6 @@ if typing.TYPE_CHECKING:
 
 
 @hookimpl
-def parse_manifest(manifest: dict) -> CronWorkflow | None:
-    if manifest.get("kind") == "CronWorkflow":
-        return CronWorkflow.model_validate(manifest)
-
-
-@hookimpl
 def analyze(manifest: CronWorkflow) -> Iterator[Diagnosis]:
     # early escape if the manifest is not recognized
     if manifest.kind not in ("CronWorkflow"):

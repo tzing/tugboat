@@ -20,15 +20,6 @@ if typing.TYPE_CHECKING:
 
 
 @hookimpl
-def parse_manifest(manifest: dict) -> Workflow | WorkflowTemplate | None:
-    match manifest.get("kind"):
-        case "Workflow":
-            return Workflow.model_validate(manifest)
-        case "WorkflowTemplate":
-            return WorkflowTemplate.model_validate(manifest)
-
-
-@hookimpl
 def analyze(manifest: WorkflowCompatible) -> Iterator[Diagnosis]:
     # early escape if the manifest is not recognized
     if manifest.kind not in ("Workflow", "WorkflowTemplate"):

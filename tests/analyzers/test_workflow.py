@@ -11,54 +11,6 @@ from tugboat.schemas import Workflow, WorkflowTemplate
 logger = logging.getLogger(__name__)
 
 
-class TestParseManifest:
-    def test_workflow(self, stable_hooks):
-        manifest = stable_hooks.parse_manifest(
-            manifest={
-                "apiVersion": "argoproj.io/v1alpha1",
-                "kind": "Workflow",
-                "metadata": {"generateName": "hello-world-"},
-                "spec": {
-                    "entrypoint": "hello-world",
-                    "templates": [
-                        {
-                            "name": "hello-world",
-                            "container": {
-                                "image": "busybox",
-                                "command": ["echo"],
-                                "args": ["hello world"],
-                            },
-                        }
-                    ],
-                },
-            }
-        )
-        assert isinstance(manifest, Workflow)
-
-    def test_workflow_template(self, stable_hooks):
-        manifest = stable_hooks.parse_manifest(
-            manifest={
-                "apiVersion": "argoproj.io/v1alpha1",
-                "kind": "WorkflowTemplate",
-                "metadata": {"generateName": "hello-world-"},
-                "spec": {
-                    "entrypoint": "hello-world",
-                    "templates": [
-                        {
-                            "name": "hello-world",
-                            "container": {
-                                "image": "busybox",
-                                "command": ["echo"],
-                                "args": ["hello world"],
-                            },
-                        }
-                    ],
-                },
-            }
-        )
-        assert isinstance(manifest, WorkflowTemplate)
-
-
 class TestAnalyze:
     @hookimpl
     def analyze_workflow(self):
