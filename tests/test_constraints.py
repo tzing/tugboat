@@ -6,6 +6,7 @@ from tugboat.constraints import (
     mutually_exclusive,
     require_all,
     require_exactly_one,
+    require_non_empty,
 )
 
 
@@ -95,6 +96,38 @@ class TestMutuallyExclusive:
         ]
 
 
+class TestRequireNonEmpty:
+
+    def test_pass(self):
+        model = SampleModel(foo="foo", baz="baz")
+        diagnoses = list(
+            require_non_empty(model=model, loc=["spec"], fields=["foo", "bar"])
+        )
+        assert diagnoses == []
+
+    def test_missing(self):
+        model = SampleModel(foo=None, baz="")
+        diagnoses = list(
+            require_non_empty(model=model, loc=["spec"], fields=["foo", "bar"])
+        )
+        assert diagnoses == [
+            {
+                "type": "failure",
+                "code": "M004",
+                "loc": ("spec", "foo"),
+                "summary": "Missing required field 'foo'",
+                "msg": "Field 'foo' is required in the 'spec' section but missing.",
+            },
+            {
+                "type": "failure",
+                "code": "M011",
+                "loc": ("spec", "baz"),
+                "summary": "Missing input in field 'baz'",
+                "msg": "Field 'baz' is required in the 'spec' section but is currently empty.",
+            },
+        ]
+
+
 class TestRequireAll:
 
     def test_pass(self):
@@ -111,14 +144,7 @@ class TestRequireAll:
                 "code": "M004",
                 "loc": ("spec", "foo"),
                 "summary": "Missing required field 'foo'",
-                "msg": "Field 'foo' is required in the 'spec' section but missing",
-            },
-            {
-                "type": "failure",
-                "code": "M004",
-                "loc": ("spec", "baz"),
-                "summary": "Missing required field 'baz'",
-                "msg": "Field 'baz' is required in the 'spec' section but empty",
+                "msg": "Field 'foo' is required in the 'spec' section but missing.",
             },
         ]
 

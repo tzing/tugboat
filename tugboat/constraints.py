@@ -100,26 +100,56 @@ def require_all(
 
     Yield
     -----
-    :ref:`code.m004` for any of the missing or empty fields.
+    :ref:`code.m004` when any of the fields are absent.
     """
     for field_name in fields:
+        field_value = getattr(model, field_name, None)
+        if field_value is not None:
+            continue
+
         field_alias = get_alias(model, field_name)
+        context_name = get_context_name(loc)
+        yield {
+            "type": "failure",
+            "code": "M004",
+            "loc": (*loc, field_alias),
+            "summary": f"Missing required field '{field_alias}'",
+            "msg": f"Field '{field_alias}' is required in {context_name} but missing.",
+        }
+
+
+def require_non_empty(
+    *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
+) -> Iterator[Diagnosis]:
+    """
+    Requires that all of the specified fields are set and not empty.
+
+    Yield
+    -----
+    :ref:`code.m004` when any of the fields are absent.
+    :ref:`code.m011` when any of the fields are empty.
+    """
+    for field_name in fields:
         match getattr(model, field_name, None):
             case None:
+                field_alias = get_alias(model, field_name)
+                context_name = get_context_name(loc)
                 yield {
                     "type": "failure",
                     "code": "M004",
                     "loc": (*loc, field_alias),
                     "summary": f"Missing required field '{field_alias}'",
-                    "msg": f"Field '{field_alias}' is required in {get_context_name(loc)} but missing",
+                    "msg": f"Field '{field_alias}' is required in {context_name} but missing.",
                 }
             case "":
+                field_alias = get_alias(model, field_name)
+                context_name = get_context_name(loc)
                 yield {
                     "type": "failure",
-                    "code": "M004",
+                    "code": "M011",
                     "loc": (*loc, field_alias),
-                    "summary": f"Missing required field '{field_alias}'",
-                    "msg": f"Field '{field_alias}' is required in {get_context_name(loc)} but empty",
+                    "summary": f"Missing input in field '{field_alias}'",
+                    "msg": f"Field '{field_alias}' is required in {context_name} but is currently empty.",
                 }
 
 
