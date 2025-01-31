@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from tugboat.parsers import parse_template, report_syntax_errors
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Container, Iterable, Iterator
 
     from tugboat.references.context import ReferenceCollection
     from tugboat.schemas import Artifact, Parameter, Template
@@ -89,7 +89,7 @@ def check_value_references(
 
 
 def check_model_fields_references(
-    model: BaseModel, references: ReferenceCollection
+    model: BaseModel, references: ReferenceCollection, *, exclude: Container[str] = ()
 ) -> Iterator[Diagnosis]:
     """
     Check the fields of the given model for errors that are specific to Argo
@@ -102,6 +102,8 @@ def check_model_fields_references(
         that are of type str.
     references : ReferenceCollection
         The current active references.
+    exclude : Container[str]
+        The fields to exclude from the check.
 
     Yields
     ------
@@ -121,4 +123,6 @@ def check_model_fields_references(
             for idx, child in enumerate(item):
                 yield from prepend_loc((idx,), _check(child))
 
-    yield from _check(model)
+    for field, value in model:
+        if field not in exclude:
+            yield from prepend_loc((field,), _check(value))
