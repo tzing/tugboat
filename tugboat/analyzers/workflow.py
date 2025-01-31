@@ -6,7 +6,7 @@ import typing
 from rapidfuzz.process import extractOne
 
 from tugboat.analyzers.kubernetes import check_resource_name
-from tugboat.constraints import accept_none, require_all, require_exactly_one
+from tugboat.constraints import accept_none, require_exactly_one, require_non_empty
 from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.utils import find_duplicate_names, join_with_and, prepend_loc
 
@@ -90,7 +90,7 @@ def check_spec(workflow: Workflow) -> Iterator[Diagnosis]:
     )
 
     if not workflow.spec.workflowTemplateRef:
-        yield from require_all(
+        yield from require_non_empty(
             model=workflow.spec,
             loc=("spec",),
             fields=["entrypoint"],
@@ -154,7 +154,7 @@ def check_argument_parameters(workflow: WorkflowCompatible) -> Iterator[Diagnosi
     for idx, param in enumerate(workflow.spec.arguments.parameters or []):
         loc = ("spec", "arguments", "parameters", idx)
 
-        yield from require_all(
+        yield from require_non_empty(
             model=param,
             loc=loc,
             fields=["name"],

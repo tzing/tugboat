@@ -198,3 +198,27 @@ In this example, the resource name ``invalid_name`` contains an underscore, whic
 
 .. _RFC 1123: https://tools.ietf.org/html/rfc1123
 .. [#kube-names] Read `Object Names and IDs <https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names>`_ for more details.
+
+
+.. _code.m011:
+
+:bdg:`M011` Empty input
+-----------------------
+
+The field is empty when it is expected to have a value.
+
+For instance, the following manifest is missing the value in ``entrypoint`` field:
+
+.. code-block:: yaml
+   :emphasize-lines: 6
+
+   apiVersion: argoproj.io/v1alpha1
+   kind: Workflow
+   metadata:
+     generateName: hello-
+   spec:
+     entrypoint: ""
+     templates:
+       - name: hello
+         script:
+           image: alpine:latest

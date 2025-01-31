@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import typing
 
-from tugboat.constraints import accept_none, mutually_exclusive, require_all
+from tugboat.constraints import (
+    accept_none,
+    mutually_exclusive,
+    require_all,
+    require_non_empty,
+)
 from tugboat.core import hookimpl
 from tugboat.references import get_workflow_context
 from tugboat.utils import (
@@ -53,7 +58,7 @@ def check_input_parameters(
 
 
 def check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
-    yield from require_all(
+    yield from require_non_empty(
         model=param,
         loc=(),
         fields=["name"],
@@ -125,7 +130,7 @@ def check_input_artifacts(
 
 
 def check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
-    yield from require_all(
+    yield from require_non_empty(
         model=artifact,
         loc=(),
         fields=["name"],

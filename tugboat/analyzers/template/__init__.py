@@ -3,7 +3,7 @@ from __future__ import annotations
 import collections
 import typing
 
-from tugboat.constraints import require_all, require_exactly_one
+from tugboat.constraints import require_exactly_one, require_non_empty
 from tugboat.core import hookimpl
 
 if typing.TYPE_CHECKING:
@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
 
 @hookimpl
 def analyze_template(template: Template) -> Iterable[Diagnosis]:
-    yield from require_all(
+    yield from require_non_empty(
         model=template,
         loc=(),
         fields=["name"],
