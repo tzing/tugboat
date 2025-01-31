@@ -103,19 +103,16 @@ def require_all(
     :ref:`code.m004` when any of the fields are absent.
     """
     for field_name in fields:
-        field_value = getattr(model, field_name, None)
-        if field_value is not None:
-            continue
-
-        field_alias = get_alias(model, field_name)
-        context_name = get_context_name(loc)
-        yield {
-            "type": "failure",
-            "code": "M004",
-            "loc": (*loc, field_alias),
-            "summary": f"Missing required field '{field_alias}'",
-            "msg": f"Field '{field_alias}' is required in {context_name} but missing.",
-        }
+        if getattr(model, field_name, None) is None:
+            field_alias = get_alias(model, field_name)
+            context_name = get_context_name(loc)
+            yield {
+                "type": "failure",
+                "code": "M004",
+                "loc": (*loc, field_alias),
+                "summary": f"Missing required field '{field_alias}'",
+                "msg": f"Field '{field_alias}' is required in {context_name} but missing.",
+            }
 
 
 def require_non_empty(
@@ -129,28 +126,25 @@ def require_non_empty(
     :ref:`code.m004` when any of the fields are absent.
     :ref:`code.m011` when any of the fields are empty.
     """
+    # check absent
+    yield from require_all(model=model, loc=loc, fields=fields)
+
+    # check empty
     for field_name in fields:
-        match getattr(model, field_name, None):
-            case None:
-                field_alias = get_alias(model, field_name)
-                context_name = get_context_name(loc)
-                yield {
-                    "type": "failure",
-                    "code": "M004",
-                    "loc": (*loc, field_alias),
-                    "summary": f"Missing required field '{field_alias}'",
-                    "msg": f"Field '{field_alias}' is required in {context_name} but missing.",
-                }
-            case "":
-                field_alias = get_alias(model, field_name)
-                context_name = get_context_name(loc)
-                yield {
-                    "type": "failure",
-                    "code": "M011",
-                    "loc": (*loc, field_alias),
-                    "summary": f"Missing input in field '{field_alias}'",
-                    "msg": f"Field '{field_alias}' is required in {context_name} but is currently empty.",
-                }
+        field_value = getattr(model, field_name, None)
+        if not field_value:
+            if field_value is None or field_value is False:
+                continue  # false positive
+
+            field_alias = get_alias(model, field_name)
+            context_name = get_context_name(loc)
+            yield {
+                "type": "failure",
+                "code": "M011",
+                "loc": (*loc, field_alias),
+                "summary": f"Missing input in field '{field_alias}'",
+                "msg": f"Field '{field_alias}' is required in {context_name} but is currently empty.",
+            }
 
 
 def require_exactly_one(
