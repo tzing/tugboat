@@ -81,10 +81,6 @@ def _add_step_references(
     if not template.steps:
         return
 
-    workflow_templates = {
-        tmpl.name: tmpl for tmpl in workflow.spec.templates or [] if tmpl.name
-    }
-
     ctx.parameters |= {("steps", "name")}
 
     for step in itertools.chain.from_iterable(template.steps):
@@ -111,9 +107,9 @@ def _add_step_references(
         # otherwise, we can only assume the outputs are available
         reference_template = None
         if step.template:
-            reference_template = workflow_templates.get(step.template)
+            reference_template = workflow.template_dict.get(step.template)
         elif step.templateRef and step.templateRef.name == workflow.name:
-            reference_template = workflow_templates.get(step.templateRef.template)
+            reference_template = workflow.template_dict.get(step.templateRef.template)
         elif step.inline:
             reference_template = step.inline
 
