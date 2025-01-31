@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing
 
-from tugboat.constraints import require_all, require_exactly_one
+from tugboat.constraints import require_all, require_exactly_one, require_non_empty
 from tugboat.core import hookimpl
 from tugboat.references import get_template_context
 from tugboat.utils import check_model_fields_references, prepend_loc
@@ -66,7 +66,7 @@ def check_input_artifacts(template: Template) -> Iterable[Diagnosis]:
         return
 
     for idx, artifact in enumerate(template.inputs.artifacts or ()):
-        yield from require_all(
+        yield from require_non_empty(
             model=artifact,
             loc=("inputs", "artifacts", idx),
             fields=["path"],
@@ -86,7 +86,7 @@ def check_output_parameters(template: Template) -> Iterable[Diagnosis]:
         )
 
         if parameter.valueFrom:
-            yield from require_all(
+            yield from require_non_empty(
                 model=parameter.valueFrom,
                 loc=(*loc, "valueFrom"),
                 fields=["path"],
@@ -98,7 +98,7 @@ def check_output_artifacts(template: Template) -> Iterable[Diagnosis]:
         return
 
     for idx, artifact in enumerate(template.outputs.artifacts or ()):
-        yield from require_all(
+        yield from require_non_empty(
             model=artifact,
             loc=("outputs", "artifacts", idx),
             fields=["path"],
@@ -111,7 +111,7 @@ def check_shared_fields(
     node: ContainerNode | ContainerTemplate | ScriptTemplate,
 ) -> Iterable[Diagnosis]:
     for i, envvar in enumerate(node.env or ()):
-        yield from require_all(
+        yield from require_non_empty(
             model=envvar,
             loc=("env", i),
             fields=["name"],

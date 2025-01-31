@@ -5,8 +5,8 @@ import typing
 from tugboat.constraints import (
     accept_none,
     mutually_exclusive,
-    require_all,
     require_exactly_one,
+    require_non_empty,
 )
 from tugboat.core import hookimpl
 from tugboat.references import get_template_context
@@ -58,7 +58,7 @@ def check_output_parameters(
 
 
 def _check_output_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
-    yield from require_all(
+    yield from require_non_empty(
         model=param,
         loc=(),
         fields=["name", "valueFrom"],
@@ -125,7 +125,7 @@ def check_output_artifacts(
 
 
 def _check_output_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
-    yield from require_all(
+    yield from require_non_empty(
         model=artifact,
         loc=(),
         fields=["name"],
