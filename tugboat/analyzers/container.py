@@ -88,7 +88,7 @@ def check_output_parameters(template: Template) -> Iterable[Diagnosis]:
         if parameter.valueFrom:
             yield from require_all(
                 model=parameter.valueFrom,
-                loc=loc,
+                loc=(*loc, "valueFrom"),
                 fields=["path"],
             )
 
