@@ -8,6 +8,34 @@ import tugboat.analyze
 logger = logging.getLogger(__name__)
 
 
+def test_analyze_step():
+    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_STEP_USAGE)
+    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+
+    loc = ("spec", "templates", 0, "steps", 0, 0)
+
+    assert IsPartialDict({"code": "M006", "loc": (*loc, "template")}) in diagnoses
+    assert IsPartialDict({"code": "M006", "loc": (*loc, "templateRef")}) in diagnoses
+
+
+MANIFEST_INVALID_STEP_USAGE = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  entrypoint: main
+  templates:
+    - name: main
+      steps:
+        - - name: step1
+            template: test
+            templateRef:
+              name: test
+              template: test
+"""
+
+
 def test_check_argument_parameters():
     diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_PARAMETERS)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))

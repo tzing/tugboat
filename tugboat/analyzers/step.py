@@ -33,6 +33,22 @@ if typing.TYPE_CHECKING:
     from tugboat.types import Diagnosis
 
 
+@hookimpl
+def analyze_step(
+    step: Step, template: Template, workflow: Workflow | WorkflowTemplate
+) -> Iterable[Diagnosis]:
+    yield from require_exactly_one(
+        model=step,
+        loc=(),
+        fields=["template", "templateRef", "inline"],
+    )
+    yield from mutually_exclusive(
+        model=step,
+        loc=(),
+        fields=["withItems", "withParam", "withSequence"],
+    )
+
+
 @hookimpl(specname="analyze_step")
 def check_argument_parameters(
     step: Step, template: Template, workflow: Workflow | WorkflowTemplate
@@ -244,3 +260,6 @@ def check_fields_references(
         ctx.parameters,
         exclude=["arguments", "inline", "withItems", "withSequence"],
     )
+
+
+# TODO check referenced template
