@@ -232,3 +232,15 @@ def check_deprecated(step: Step) -> Iterable[Diagnosis]:
             "msg": "Field 'onExit' is deprecated. Please use 'hooks[exit].template' instead.",
             "input": "onExit",
         }
+
+
+@hookimpl(specname="analyze_step")
+def check_fields_references(
+    step: Step, template: Template, workflow: Workflow | WorkflowTemplate
+) -> Iterable[Diagnosis]:
+    ctx = get_step_context(workflow, template, step)
+    yield from check_model_fields_references(
+        step,
+        ctx.parameters,
+        exclude=["arguments", "inline", "withItems", "withSequence"],
+    )

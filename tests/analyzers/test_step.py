@@ -107,7 +107,7 @@ spec:
 """
 
 
-def check_check_deprecated():
+def test_check_check_deprecated():
     diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DEPRECATED_ONEXIT)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
@@ -134,4 +134,32 @@ spec:
             template: print-message
             arguments:
               parameters: [{name: message, value: "hello1"}]
+"""
+
+
+def test_check_fields_references():
+    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_FIELDS_REFERENCES)
+    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+
+    assert IsPartialDict(
+        {
+            "code": "VAR002",
+            "loc": ("spec", "templates", 0, "steps", 0, 0, "when"),
+        }
+    )
+
+
+MANIFEST_FIELDS_REFERENCES = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: exit-handler-step-level-
+spec:
+  entrypoint: main
+  templates:
+    - name: main
+      steps:
+        - - name: hello
+            when: "{{ count }} > 0"
+            template: print-message
 """
