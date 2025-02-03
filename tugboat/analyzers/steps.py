@@ -55,11 +55,13 @@ def check_argument_parameters(
 
     for idx, param in enumerate(step.arguments.parameters or ()):
         yield from prepend_loc(
-            ("arguments", "parameters", idx), check_input_parameter(param, ctx)
+            ("arguments", "parameters", idx), _check_argument_parameter(param, ctx)
         )
 
 
-def check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
+def _check_argument_parameter(
+    param: Parameter, context: Context
+) -> Iterable[Diagnosis]:
     yield from require_non_empty(
         model=param,
         loc=(),
@@ -127,11 +129,13 @@ def check_argument_artifacts(
 
     for idx, artifact in enumerate(step.arguments.artifacts or []):
         yield from prepend_loc(
-            ("arguments", "artifacts", idx), check_input_artifact(artifact, ctx)
+            ("arguments", "artifacts", idx), _check_argument_artifact(artifact, ctx)
         )
 
 
-def check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
+def _check_argument_artifact(
+    artifact: Artifact, context: Context
+) -> Iterable[Diagnosis]:
     yield from require_non_empty(
         model=artifact,
         loc=(),
