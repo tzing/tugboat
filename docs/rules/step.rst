@@ -141,3 +141,52 @@ It is recommended to use the ``hooks[exit].template`` field instead.
                hooks:
                  exit:
                    template: exit
+
+
+:bdg:`STP005` Self-referencing step
+-----------------------------------
+
+The step references itself in the ``template`` field. This will cause an infinite loop.
+
+.. code-block:: yaml
+   :emphasize-lines: 11
+
+   apiVersion: argoproj.io/v1alpha1
+   kind: Workflow
+   metadata:
+     generateName: test-
+   spec:
+     entrypoint: main
+     templates:
+       - name: main
+         steps:
+           - - name: hello
+               template: main
+
+
+:bdg:`STP006` Reference to a non-existent template
+--------------------------------------------------
+
+The step references a non-existent template.
+
+.. code-block:: yaml
+   :emphasize-lines: 11
+
+   apiVersion: argoproj.io/v1alpha1
+   kind: Workflow
+   metadata:
+     generateName: test-
+   spec:
+     entrypoint: main
+     templates:
+       - name: main
+         steps:
+           - - name: hello
+               template: non-existent-template
+
+.. note::
+
+  This rule verifies the presence of a template within the same workflow.
+
+  If the template is defined in a different workflow and referenced using ``templateRef``, this rule will not detect it.
+  Tugboat does not currently support cross-workflow checks, even if the referenced workflow is included in the same run.
