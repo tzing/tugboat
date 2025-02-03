@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import logging
 import re
 import typing
+
+from rapidfuzz.process import extractOne
 
 from tugboat.constraints import (
     accept_none,
@@ -15,6 +18,7 @@ from tugboat.utils import (
     check_model_fields_references,
     check_value_references,
     find_duplicate_names,
+    join_with_or,
     prepend_loc,
 )
 
@@ -31,6 +35,8 @@ if typing.TYPE_CHECKING:
         WorkflowTemplate,
     )
     from tugboat.types import Diagnosis
+
+logger = logging.getLogger(__name__)
 
 
 @hookimpl
@@ -248,6 +254,66 @@ def _check_argument_artifact(
 
 
 @hookimpl(specname="analyze_step")
+def check_referenced_template(
+    step: Step, template: Template, workflow: Workflow | WorkflowTemplate
+) -> Iterable[Diagnosis]:
+    if step.template:
+        yield from prepend_loc(
+            ("template",), _check_referenced_template(step.template, template, workflow)
+        )
+
+    elif step.templateRef:
+        if step.templateRef.name == workflow.name:
+            yield from prepend_loc(
+                ("templateRef", "template"),
+                _check_referenced_template(
+                    step.templateRef.template, template, workflow
+                ),
+            )
+        else:
+            logger.debug(
+                "Step %s: references a templateRef (%s) that is not the same as current workflow (%s). Skipping.",
+                step.name,
+                step.templateRef.name,
+                workflow.name,
+            )
+
+
+def _check_referenced_template(
+    template_name: str, template: Template, workflow: Workflow | WorkflowTemplate
+) -> Iterable[Diagnosis]:
+    if template_name == template.name:
+        yield {
+            "code": "STP005",
+            "loc": (),
+            "summary": "Self-referencing",
+            "msg": "A step cannot reference its own template.",
+            "input": template_name,
+        }
+
+    if template_name not in workflow.template_dict:
+        templates = set(workflow.template_dict)
+        templates.remove(typing.cast(str, template.name))
+        templates = sorted(templates)
+
+        suggestion = None
+        if result := extractOne(template_name, templates):
+            suggestion, _, _ = result
+
+        yield {
+            "code": "STP006",
+            "loc": (),
+            "summary": "Template not found",
+            "msg": f"""
+                Template '{template_name}' does not exist in the workflow.
+                Available templates: {join_with_or(templates)}
+                """,
+            "input": template_name,
+            "fix": suggestion,
+        }
+
+
+@hookimpl(specname="analyze_step")
 def check_fields_references(
     step: Step, template: Template, workflow: Workflow | WorkflowTemplate
 ) -> Iterable[Diagnosis]:
@@ -257,6 +323,3 @@ def check_fields_references(
         ctx.parameters,
         exclude=["arguments", "inline", "withItems", "withSequence"],
     )
-
-
-# TODO check referenced template
