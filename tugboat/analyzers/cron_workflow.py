@@ -16,7 +16,7 @@ if typing.TYPE_CHECKING:
 @hookimpl
 def analyze(manifest: CronWorkflow) -> Iterator[Diagnosis]:
     # early escape if the manifest is not recognized
-    if manifest.kind not in ("CronWorkflow"):
+    if manifest.apiVersion != "argoproj.io/v1alpha1" or manifest.kind != "CronWorkflow":
         return
 
     # invoke checks

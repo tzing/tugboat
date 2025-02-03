@@ -22,6 +22,8 @@ if typing.TYPE_CHECKING:
 @hookimpl
 def analyze(manifest: WorkflowCompatible) -> Iterator[Diagnosis]:
     # early escape if the manifest is not recognized
+    if manifest.apiVersion != "argoproj.io/v1alpha1":
+        return
     if manifest.kind not in ("Workflow", "WorkflowTemplate"):
         return
 
