@@ -17,6 +17,13 @@ def test_analyze_step():
     assert IsPartialDict({"code": "M006", "loc": (*loc, "template")}) in diagnoses
     assert IsPartialDict({"code": "M006", "loc": (*loc, "templateRef")}) in diagnoses
 
+    assert (
+        IsPartialDict(
+            {"code": "STP004", "loc": ("spec", "templates", 0, "steps", 1, 0, "onExit")}
+        )
+        in diagnoses
+    )
+
 
 MANIFEST_INVALID_STEP_USAGE = """
 apiVersion: argoproj.io/v1alpha1
@@ -33,6 +40,11 @@ spec:
             templateRef:
               name: test
               template: test
+        - - name: deprecated
+            onExit: exit
+            template: print-message
+            arguments:
+              parameters: [{name: message, value: "hello1"}]
 """
 
 
@@ -132,36 +144,6 @@ spec:
                     data: "{{ workflow.invalid }}" # VAR002
                 - name: another
                   from: workflow.invalid # VAR002
-"""
-
-
-def test_check_check_deprecated():
-    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DEPRECATED_ONEXIT)
-    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-
-    assert (
-        IsPartialDict(
-            {"code": "STP004", "loc": ("spec", "templates", 0, "steps", 0, 0, "onExit")}
-        )
-        in diagnoses
-    )
-
-
-MANIFEST_DEPRECATED_ONEXIT = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: exit-handler-step-level-
-spec:
-  entrypoint: main
-  templates:
-    - name: main
-      steps:
-        - - name: hello1
-            onExit: exit
-            template: print-message
-            arguments:
-              parameters: [{name: message, value: "hello1"}]
 """
 
 

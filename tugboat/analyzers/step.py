@@ -48,6 +48,15 @@ def analyze_step(
         fields=["withItems", "withParam", "withSequence"],
     )
 
+    if step.onExit:
+        yield {
+            "code": "STP004",
+            "loc": ("onExit",),
+            "summary": "Deprecated field",
+            "msg": "Field 'onExit' is deprecated. Please use 'hooks[exit].template' instead.",
+            "input": "onExit",
+        }
+
 
 @hookimpl(specname="analyze_step")
 def check_argument_parameters(
@@ -236,18 +245,6 @@ def _check_argument_artifact(
                         """
                     )
             yield diag
-
-
-@hookimpl(specname="analyze_step")
-def check_deprecated(step: Step) -> Iterable[Diagnosis]:
-    if step.onExit:
-        yield {
-            "code": "STP004",
-            "loc": ("onExit",),
-            "summary": "Deprecated field",
-            "msg": "Field 'onExit' is deprecated. Please use 'hooks[exit].template' instead.",
-            "input": "onExit",
-        }
 
 
 @hookimpl(specname="analyze_step")
