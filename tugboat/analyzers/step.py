@@ -288,7 +288,7 @@ def _check_referenced_template(
             "code": "STP005",
             "loc": (),
             "summary": "Self-referencing",
-            "msg": "A step cannot reference its own template.",
+            "msg": "Self-referencing may cause infinite recursion.",
             "input": template_name,
         }
 
