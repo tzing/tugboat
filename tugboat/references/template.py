@@ -99,7 +99,7 @@ def _add_step_references(
         # parallel steps
         if step.withItems or step.withParam:
             ctx.parameters |= {
-                ("step", step.name, "outputs", "parameters"),
+                ("steps", step.name, "outputs", "parameters"),
             }
 
         # step outputs
