@@ -1,4 +1,5 @@
 import pytest
+from dirty_equals import IsPartialDict
 from pydantic import BaseModel
 
 from tugboat.references.context import ReferenceCollection
@@ -98,3 +99,26 @@ class TestCheckModelFieldsReferences:
                 "summary": "Syntax error",
             },
         ]
+
+    def test_exclude(self):
+
+        class Model(BaseModel):
+            foo: str
+
+        model = Model.model_validate(
+            {
+                "foo": "{{ error",
+            }
+        )
+
+        refs = ReferenceCollection()
+
+        assert list(check_model_fields_references(model, refs)) == [
+            IsPartialDict(
+                {
+                    "code": "VAR001",
+                    "loc": ("foo",),
+                }
+            )
+        ]
+        assert list(check_model_fields_references(model, refs, exclude=["foo"])) == []
