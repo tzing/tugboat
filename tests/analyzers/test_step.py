@@ -1,9 +1,11 @@
 import json
 import logging
 
+import pytest
 from dirty_equals import IsPartialDict
 
 import tugboat.analyze
+from tests.dirty_equals import ContainsSubStrings
 
 logger = logging.getLogger(__name__)
 
@@ -144,6 +146,78 @@ spec:
                     data: "{{ workflow.invalid }}" # VAR002
                 - name: another
                   from: workflow.invalid # VAR002
+"""
+
+
+def test_check_referenced_template(caplog: pytest.LogCaptureFixture):
+    with caplog.at_level("DEBUG", "tugboat.analyzers.step"):
+        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_TEMPLATE_REFERENCE)
+    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+
+    assert (
+        IsPartialDict(
+            {
+                "code": "STP005",
+                "loc": ("spec", "templates", 0, "steps", 0, 0, "template"),
+            }
+        )
+        in diagnoses
+    )
+    assert (
+        IsPartialDict(
+            {
+                "code": "STP006",
+                "loc": (
+                    "spec",
+                    "templates",
+                    1,
+                    "steps",
+                    0,
+                    0,
+                    "templateRef",
+                    "template",
+                ),
+                "msg": ContainsSubStrings(
+                    "Template 'not-exist-template' does not exist in the workflow.",
+                    "Available templates: 'another' or 'self-reference'",
+                ),
+            }
+        )
+        in diagnoses
+    )
+
+    assert (
+        "Step 'goodbye': "
+        "Referenced template 'another-workflow' is not the same as current workflow 'demo'."
+        in caplog.text
+    )
+
+
+MANIFEST_INVALID_TEMPLATE_REFERENCE = """
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: demo
+spec:
+  templates:
+    - name: self-reference
+      steps:
+        - - name: hello
+            template: self-reference
+
+    - name: invalid-reference
+      steps:
+        - - name: hello
+            templateRef:
+              name: demo
+              template: not-exist-template
+          - name: goodbye
+            templateRef:
+              name: another-workflow
+              template: whatever
+
+    - name: another
+      suspend: {}
 """
 
 

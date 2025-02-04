@@ -272,7 +272,7 @@ def check_referenced_template(
             )
         else:
             logger.debug(
-                "Step %s: references a templateRef (%s) that is not the same as current workflow (%s). Skipping.",
+                "Step '%s': Referenced template '%s' is not the same as current workflow '%s'. Skipping.",
                 step.name,
                 step.templateRef.name,
                 workflow.name,
