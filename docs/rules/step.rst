@@ -146,7 +146,9 @@ It is recommended to use the ``hooks[exit].template`` field instead.
 :bdg:`STP005` Self-referencing step
 -----------------------------------
 
-The step references itself in the ``template`` field. This will cause an infinite loop.
+The step references itself in the ``template`` field. This may cause an infinite loop.
+
+Since this may still be a intended behavior, this rule is default to warning level.
 
 .. code-block:: yaml
    :emphasize-lines: 11
