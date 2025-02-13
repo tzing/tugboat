@@ -118,13 +118,18 @@ def main(
     setup_logging(verbose)
     logger.debug("Tugboat sets sail!")
 
-    # handle option: manifest
+    # update and validate settings
     if manifest == ("-",):
+        # NOTE
+        # This is a workaround to handle `-`, which stands for stdin.
+        # We want to keep `-` as a valid command line option, but not allow it in the configuration file.
+        # So, the `Settings` object will reject this value during validation.
+        # This workaround deals with it separately to avoid validation errors.
+        # If you have a better solution, feel free to submit a PR! :)
         include = ()
     else:
         include = manifest
 
-    # update and validate settings
     update_settings(
         color=color,
         exclude=exclude,
@@ -132,6 +137,7 @@ def main(
         include=include,
         output_format=output_format,
     )
+
     logger.debug("Current settings: %s", settings.model_dump_json(indent=2))
 
     # determine the inputs
