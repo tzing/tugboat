@@ -130,7 +130,7 @@ def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
             loc = diag.get("loc", ())
             line, column = _get_line_column(document, loc)
             manifest_name = _get_manifest_name(document)
-            summary = diag.get("summary") or _get_summary(diag["msg"])
+            summary = diag.get("summary") or _get_summary(diag.get("msg"))
 
             line += 1
             column += 1
@@ -251,7 +251,7 @@ def _extract_noqa_codes(comments: Iterable[str]) -> Iterable[str]:
 
 
 def _get_summary(msg: str) -> str:
-    return msg.strip().splitlines()[0].split(". ")[0]
+    return (msg or "").strip().splitlines()[0].split(". ")[0]
 
 
 def analyze_raw(manifest: dict) -> list[Diagnosis]:
