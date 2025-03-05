@@ -256,6 +256,7 @@ class TestShouldIgnoreCode:
 
 
 class TestAnalyzeRaw:
+
     @hookimpl(tryfirst=True)
     def parse_manifest(self, manifest: dict):
         if manifest.get("kind") == "Unrecognized":
@@ -377,16 +378,34 @@ class TestAnalyzeRaw:
             }
         ]
 
-    def test_unrecognized_kind(self, plugin_manager):
+    def test_unrecognized_kind_1(
+        self, caplog: pytest.LogCaptureFixture, plugin_manager
+    ):
         plugin_manager.register(self)
 
-        diagnoses = analyze_raw(
-            {
-                "apiVersion": "v1",
-                "kind": "Unrecognized",
-            }
-        )
+        with caplog.at_level(logging.DEBUG):
+            diagnoses = analyze_raw(
+                {
+                    "apiVersion": "v1",
+                    "kind": "Unrecognized",
+                }
+            )
+
         assert diagnoses == []
+        assert "Kind v1/Unrecognized is not supported" in caplog.text
+
+    def test_unrecognized_kind_2(self, caplog: pytest.LogCaptureFixture):
+        with caplog.at_level(logging.DEBUG):
+            diagnoses = analyze_raw(
+                {
+                    "apiVersion": "",
+                    "kind": "",
+                    "foo": "bar",
+                }
+            )
+
+        assert diagnoses == []
+        assert "Kind unknown/Unknown is not supported" in caplog.text
 
     def test_not_manifest_obj(self, plugin_manager):
         plugin_manager.register(self)
