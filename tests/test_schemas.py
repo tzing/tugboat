@@ -19,6 +19,7 @@ from tugboat.schemas import (
 )
 from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Dict
+from tugboat.schemas.debug import DebugManifest
 
 logger = logging.getLogger(__name__)
 
@@ -200,6 +201,17 @@ class TestParseManifest:
             }
         )
         assert isinstance(manifest, WorkflowTemplate)
+
+    def test_debug(self, stable_hooks):
+        manifest = stable_hooks.parse_manifest(
+            manifest={
+                "apiVersion": "tugboat.example.com/v1",
+                "kind": "Debug",
+                "metadata": {"generateName": "test-"},
+                "spec": {},
+            }
+        )
+        assert isinstance(manifest, DebugManifest)
 
 
 class TestArgoExamples:
