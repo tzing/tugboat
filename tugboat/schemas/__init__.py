@@ -56,10 +56,12 @@ def parse_manifest(manifest: dict):
 
     :meta private:
     """
-    match manifest.get("kind"):
-        case "CronWorkflow":
-            return CronWorkflow.model_validate(manifest)
-        case "Workflow":
-            return Workflow.model_validate(manifest)
-        case "WorkflowTemplate":
-            return WorkflowTemplate.model_validate(manifest)
+    match manifest.get("apiVersion"):
+        case "argoproj.io/v1alpha1":
+            match manifest.get("kind"):
+                case "CronWorkflow":
+                    return CronWorkflow.model_validate(manifest)
+                case "Workflow":
+                    return Workflow.model_validate(manifest)
+                case "WorkflowTemplate":
+                    return WorkflowTemplate.model_validate(manifest)
