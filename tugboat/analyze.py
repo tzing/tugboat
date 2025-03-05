@@ -287,8 +287,9 @@ def analyze_raw(manifest: dict) -> list[Diagnosis]:
         ]
 
     # get the manifest name
+    kind = _get_manifest_kind(manifest)
     name = _get_manifest_name(manifest)
-    logger.debug("Analyzing manifest '%s' of kind '%s'", name, manifest.get("kind"))
+    logger.debug("Starting analysis of manifest '%s' (Kind %s)", name, kind)
 
     # parse the manifest
     try:
@@ -312,9 +313,7 @@ def analyze_raw(manifest: dict) -> list[Diagnosis]:
     logger.debug("Parsed manifest '%s' as %s object", name, type(manifest_obj))
 
     if not manifest_obj:
-        logger.debug(
-            "Manifest '%s' (kind %s) is not supported", name, manifest.get("kind")
-        )
+        logger.debug("Kind %s is not supported. Skipping manigest %s.", kind, name)
         return []
 
     if not isinstance(manifest_obj, Manifest):
@@ -369,6 +368,15 @@ def _get_manifest_name(manifest: dict) -> str | None:
         return name
     if name := metadata.get("generateName"):
         return name
+
+
+def _get_manifest_kind(manifest: dict) -> str | None:
+    if api_version := manifest.get("apiVersion"):
+        group, *_ = api_version.split("/", 1)
+    else:
+        group = "unknown"
+    kind = manifest.get("kind") or "Unknown"
+    return f"{group}/{kind}"
 
 
 def _sanitize_diagnosis(diagnosis: Diagnosis) -> Diagnosis:

@@ -37,6 +37,7 @@ __all__ = [
 from tugboat.core import hookimpl
 from tugboat.schemas.arguments import Artifact, Parameter
 from tugboat.schemas.cron_workflow import CronWorkflow
+from tugboat.schemas.debug import DebugManifest
 from tugboat.schemas.manifest import Manifest
 from tugboat.schemas.template import (
     ContainerNode,
@@ -56,10 +57,15 @@ def parse_manifest(manifest: dict):
 
     :meta private:
     """
-    match manifest.get("kind"):
-        case "CronWorkflow":
-            return CronWorkflow.model_validate(manifest)
-        case "Workflow":
-            return Workflow.model_validate(manifest)
-        case "WorkflowTemplate":
-            return WorkflowTemplate.model_validate(manifest)
+    match manifest.get("apiVersion"):
+        case "argoproj.io/v1alpha1":
+            match manifest.get("kind"):
+                case "CronWorkflow":
+                    return CronWorkflow.model_validate(manifest)
+                case "Workflow":
+                    return Workflow.model_validate(manifest)
+                case "WorkflowTemplate":
+                    return WorkflowTemplate.model_validate(manifest)
+
+        case "tugboat.example.com/v1":
+            return DebugManifest.model_validate(manifest)
