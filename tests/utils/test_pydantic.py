@@ -229,19 +229,19 @@ class TestComposeStringErrorMessage:
 
     def test_norway_problem(self):
         assert list(_compose_string_error_message("FOO", True)) == [
-            "Field FOO should be a valid string, got boolean.",
+            "Expected a string for field FOO, but received a boolean.",
             "Note that these inputs will be interpreted as boolean true: 'True', 'Yes', 'On', 'Y'.",
             "Try using quotes for strings to fix this issue.",
         ]
         assert list(_compose_string_error_message("FOO", False)) == [
-            "Field FOO should be a valid string, got boolean.",
+            "Expected a string for field FOO, but received a boolean.",
             "Note that these inputs will be interpreted as boolean false: 'False', 'No', 'Off', 'N'.",
             "Try using quotes for strings to fix this issue.",
         ]
 
     def test_sexagesimal(self):
         assert list(_compose_string_error_message("FOO", 1342)) == [
-            "Field FOO should be a valid string, got integer.",
+            "Expected a string for field FOO, but received a integer.",
             "Numbers separated by colons (e.g. 22:22) will be interpreted as sexagesimal.",
             "Try using quotes for strings to fix this issue.",
         ]

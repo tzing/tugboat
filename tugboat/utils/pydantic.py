@@ -226,7 +226,7 @@ def _compose_string_error_message(field: str, value: Any) -> Iterator[str]:
     Ref: https://ruudvanasseldonk.com/2023/01/11/the-yaml-document-from-hell
     """
     input_type = get_type_name(value)
-    yield f"Field {field} should be a valid string, got {input_type}."
+    yield f"Expected a string for field {field}, but received a {input_type}."
 
     # the Norway problem
     if isinstance(value, bool):
