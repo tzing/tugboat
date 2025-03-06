@@ -12,7 +12,6 @@ from pydantic import (
 )
 from pydantic_core import ErrorDetails
 
-from tests.dirty_equals import ContainsSubStrings
 from tugboat.utils.pydantic import (
     _compose_string_error_message,
     _extract_expects,
@@ -34,26 +33,11 @@ class TestTranslatePydanticError:
             "code": "M007",
             "loc": ("x",),
             "summary": "Input should be a valid boolean",
-            "msg": ContainsSubStrings(
-                "Expected a boolean for field 'x', but received a integer."
+            "msg": (
+                "Expected a boolean for field 'x', but received a integer.\n"
+                "Try using 'true' or 'false' without quotes."
             ),
             "input": 1234,
-        }
-
-    def test_bool_type(self):
-        class Model(BaseModel):
-            x: bool | list[bool]
-
-        error = get_validation_error(Model, {"x": None})
-        assert translate_pydantic_error(error) == {
-            "type": "failure",
-            "code": "M007",
-            "loc": ("x",),
-            "summary": "Input should be a valid boolean",
-            "msg": ContainsSubStrings(
-                "Expected a boolean for field 'x', but received a null."
-            ),
-            "input": None,
         }
 
     def test_enum(self):
@@ -70,9 +54,9 @@ class TestTranslatePydanticError:
             "code": "M008",
             "loc": ("x",),
             "summary": "Input should be 'hello' or 'world'",
-            "msg": ContainsSubStrings(
-                "Input 'hllo' is not a valid value for field 'x'.",
-                "Expected 'hello' or 'world'.",
+            "msg": (
+                "Input 'hllo' is not a valid value for field 'x'.\n"
+                "Expected 'hello' or 'world'."
             ),
             "input": "hllo",
             "fix": "hello",
@@ -109,7 +93,7 @@ class TestTranslatePydanticError:
             "input": "z",
         }
 
-    def test_int_type(self):
+    def test_int_parsing(self):
         class Model(BaseModel):
             x: int
 
@@ -119,7 +103,7 @@ class TestTranslatePydanticError:
             "code": "M007",
             "loc": ("x",),
             "summary": "Input should be a valid integer",
-            "msg": "Field 'x' should be a valid integer, got string.",
+            "msg": "Expected a integer for field 'x', but received a string.",
             "input": "foo",
         }
 
@@ -133,9 +117,9 @@ class TestTranslatePydanticError:
             "code": "M008",
             "loc": ("x",),
             "summary": "Input should be 'hello', 'world' or 'hola'",
-            "msg": ContainsSubStrings(
-                "Input 'warudo' is not a valid value for field 'x'.",
-                "Expected 'hello', 'world' or 'hola'.",
+            "msg": (
+                "Input 'warudo' is not a valid value for field 'x'.\n"
+                "Expected 'hello', 'world' or 'hola'."
             ),
             "input": "warudo",
             "fix": "world",
@@ -165,7 +149,7 @@ class TestTranslatePydanticError:
             "loc": ("x",),
             "summary": "Input should be a valid string",
             "msg": (
-                "Field 'x' should be a valid string, got null.\n"
+                "Expected a string for field 'x', but received a null.\n"
                 "Try using quotes for strings to fix this issue."
             ),
             "input": None,
@@ -198,7 +182,7 @@ class TestTranslatePydanticError:
             "code": "M007",
             "loc": (),
             "summary": "Input should be a valid integer",
-            "msg": "Field <unnamed> should be a valid integer, got string.",
+            "msg": "Expected a integer for field <unnamed>, but received a string.",
             "input": "foo",
         }
 

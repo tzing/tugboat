@@ -59,7 +59,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
        A diagnosis object that contains the error message and other relevant information.
     """
     match error["type"]:
-        case "bool_parsing":
+        case "bool_parsing" | "bool_type":
             _, field = _get_field_name(error["loc"])
             input_type = get_type_name(error["input"])
             return {
@@ -67,26 +67,10 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                 "code": "M007",
                 "loc": error["loc"],
                 "summary": "Input should be a valid boolean",
-                "msg": f"""
-                    Expected a boolean for field {field}, but received a {input_type}.
-                    Try using 'true' or 'false' without quotes.
-                    """,
-                "input": error["input"],
-            }
-
-        case "bool_type":
-            loc = error["loc"][:-1]  # last item is type name
-            _, field = _get_field_name(loc)
-            input_type = get_type_name(error["input"])
-            return {
-                "type": "failure",
-                "code": "M007",
-                "loc": loc,
-                "summary": "Input should be a valid boolean",
-                "msg": f"""
-                    Expected a boolean for field {field}, but received a {input_type}.
-                    Try using 'true' or 'false' without quotes.
-                    """,
+                "msg": (
+                    f"Expected a boolean for field {field}, but received a {input_type}.\n"
+                    "Try using 'true' or 'false' without quotes."
+                ),
                 "input": error["input"],
             }
 
@@ -104,10 +88,10 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                 "code": "M008",
                 "loc": error["loc"],
                 "summary": error["msg"],
-                "msg": f"""
-                    Input '{input_}' is not a valid value for field {field}.
-                    Expected {expected_literal}.
-                    """,
+                "msg": (
+                    f"Input '{input_}' is not a valid value for field {field}.\n"
+                    f"Expected {expected_literal}."
+                ),
                 "input": error["input"],
                 "fix": fix,
             }
@@ -125,13 +109,14 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
             }
 
         case "int_parsing" | "int_type":
+            _, field = _get_field_name(error["loc"])
             input_type = get_type_name(error["input"])
             return {
                 "type": "failure",
                 "code": "M007",
                 "loc": error["loc"],
                 "summary": "Input should be a valid integer",
-                "msg": f"Field {field_display} should be a valid integer, got {input_type}.",
+                "msg": f"Expected a integer for field {field}, but received a {input_type}.",
                 "input": error["input"],
             }
 
@@ -146,14 +131,13 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
             }
 
         case "string_type":
+            _, field = _get_field_name(error["loc"])
             return {
                 "type": "failure",
                 "code": "M007",
                 "loc": error["loc"],
                 "summary": "Input should be a valid string",
-                "msg": "\n".join(
-                    _compose_string_error_message(field_display, error["input"])
-                ),
+                "msg": "\n".join(_compose_string_error_message(field, error["input"])),
                 "input": error["input"],
             }
 
