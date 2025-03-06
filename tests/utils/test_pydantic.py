@@ -24,7 +24,7 @@ from tugboat.utils.pydantic import (
 
 class TestTranslatePydanticError:
 
-    def test_bool_type(self):
+    def test_bool_parsing(self):
         class Model(BaseModel):
             x: bool
 
@@ -35,9 +35,25 @@ class TestTranslatePydanticError:
             "loc": ("x",),
             "summary": "Input should be a valid boolean",
             "msg": ContainsSubStrings(
-                "Field 'x' should be a valid boolean, got integer."
+                "Expected a boolean for field 'x', but received a integer."
             ),
             "input": 1234,
+        }
+
+    def test_bool_type(self):
+        class Model(BaseModel):
+            x: bool | list[bool]
+
+        error = get_validation_error(Model, {"x": None})
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M007",
+            "loc": ("x",),
+            "summary": "Input should be a valid boolean",
+            "msg": ContainsSubStrings(
+                "Expected a boolean for field 'x', but received a null."
+            ),
+            "input": None,
         }
 
     def test_enum(self):

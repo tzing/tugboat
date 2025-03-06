@@ -58,19 +58,9 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
     ~tugboat.types.Diagnosis
        A diagnosis object that contains the error message and other relevant information.
     """
-    # get the last string in the location tuple as the field name
-    field_name = None
-    for loc in reversed(error["loc"]):
-        if isinstance(loc, str):
-            field_name = loc
-            break
-
-    field_name = field_name
-    field_display = f"'{field_name}'" if field_name else "<unnamed>"
-
-    # translate the error based on the error type
     match error["type"]:
-        case "bool_parsing" | "bool_type":
+        case "bool_parsing":
+            _, field = _get_field_name(error["loc"])
             input_type = get_type_name(error["input"])
             return {
                 "type": "failure",
@@ -78,7 +68,23 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                 "loc": error["loc"],
                 "summary": "Input should be a valid boolean",
                 "msg": f"""
-                    Field {field_display} should be a valid boolean, got {input_type}.
+                    Expected a boolean for field {field}, but received a {input_type}.
+                    Try using 'true' or 'false' without quotes.
+                    """,
+                "input": error["input"],
+            }
+
+        case "bool_type":
+            loc = error["loc"][:-1]  # last item is type name
+            _, field = _get_field_name(loc)
+            input_type = get_type_name(error["input"])
+            return {
+                "type": "failure",
+                "code": "M007",
+                "loc": loc,
+                "summary": "Input should be a valid boolean",
+                "msg": f"""
+                    Expected a boolean for field {field}, but received a {input_type}.
                     Try using 'true' or 'false' without quotes.
                     """,
                 "input": error["input"],
