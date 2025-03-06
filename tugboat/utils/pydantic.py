@@ -94,6 +94,8 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
             expected_literal = error.get("ctx", {}).get("expected", "")
             expected = _extract_expects(expected_literal)
 
+            _, field = _get_field_name(error["loc"])
+
             input_ = error["input"]
             fix, _, _ = extractOne(error["input"], expected)
 
@@ -103,7 +105,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                 "loc": error["loc"],
                 "summary": error["msg"],
                 "msg": f"""
-                    Input '{input_}' is not a valid value for field {field_display}.
+                    Input '{input_}' is not a valid value for field {field}.
                     Expected {expected_literal}.
                     """,
                 "input": error["input"],
@@ -111,14 +113,15 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
             }
 
         case "extra_forbidden":
+            raw_field_name, formatted_field = _get_field_name(error["loc"])
             *parents, _ = error["loc"]
             return {
                 "type": "failure",
                 "code": "M005",
                 "loc": error["loc"],
                 "summary": "Found redundant field",
-                "msg": f"Field {field_display} is not valid within {get_context_name(parents)}.",
-                "input": field_name,
+                "msg": f"Field {formatted_field} is not valid within {get_context_name(parents)}.",
+                "input": raw_field_name,
             }
 
         case "int_parsing" | "int_type":
@@ -133,12 +136,13 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
             }
 
         case "missing":
+            _, field = _get_field_name(error["loc"])
             return {
                 "type": "failure",
                 "code": "M004",
                 "loc": error["loc"],
                 "summary": "Missing required field",
-                "msg": f"Field {field_display} is required but missing",
+                "msg": f"Field {field} is required but missing",
             }
 
         case "string_type":
