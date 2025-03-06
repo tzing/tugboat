@@ -175,6 +175,23 @@ def get_type_name(value: Any) -> str:
     return type(value).__name__
 
 
+def _get_field_name(loc: tuple[int | str, ...]) -> tuple[str | None, str]:
+    """
+    Get the last string in the location tuple as the field name.
+
+    Returns
+    -------
+    raw : str
+        The raw field name.
+    quoted : str
+        The quoted field name for display.
+    """
+    for item in reversed(loc):
+        if isinstance(item, str):
+            return item, f"'{item}'"
+    return None, "<unnamed>"
+
+
 def _extract_expects(literal: str) -> Iterator[str]:
     """
     Extract the expected values from pydantic's error message.
