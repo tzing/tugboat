@@ -12,7 +12,6 @@ from pydantic import (
 )
 from pydantic_core import ErrorDetails
 
-from tests.dirty_equals import ContainsSubStrings
 from tugboat.utils.pydantic import (
     _compose_string_error_message,
     _extract_expects,
@@ -24,7 +23,7 @@ from tugboat.utils.pydantic import (
 
 class TestTranslatePydanticError:
 
-    def test_bool_type(self):
+    def test_bool_parsing(self):
         class Model(BaseModel):
             x: bool
 
@@ -34,8 +33,9 @@ class TestTranslatePydanticError:
             "code": "M007",
             "loc": ("x",),
             "summary": "Input should be a valid boolean",
-            "msg": ContainsSubStrings(
-                "Field 'x' should be a valid boolean, got integer."
+            "msg": (
+                "Expected a boolean for field 'x', but received a integer.\n"
+                "Try using 'true' or 'false' without quotes."
             ),
             "input": 1234,
         }
@@ -54,9 +54,9 @@ class TestTranslatePydanticError:
             "code": "M008",
             "loc": ("x",),
             "summary": "Input should be 'hello' or 'world'",
-            "msg": ContainsSubStrings(
-                "Input 'hllo' is not a valid value for field 'x'.",
-                "Expected 'hello' or 'world'.",
+            "msg": (
+                "Input 'hllo' is not a valid value for field 'x'.\n"
+                "Expected 'hello' or 'world'."
             ),
             "input": "hllo",
             "fix": "hello",
@@ -93,7 +93,7 @@ class TestTranslatePydanticError:
             "input": "z",
         }
 
-    def test_int_type(self):
+    def test_int_parsing(self):
         class Model(BaseModel):
             x: int
 
@@ -103,7 +103,7 @@ class TestTranslatePydanticError:
             "code": "M007",
             "loc": ("x",),
             "summary": "Input should be a valid integer",
-            "msg": "Field 'x' should be a valid integer, got string.",
+            "msg": "Expected a integer for field 'x', but received a string.",
             "input": "foo",
         }
 
@@ -117,9 +117,9 @@ class TestTranslatePydanticError:
             "code": "M008",
             "loc": ("x",),
             "summary": "Input should be 'hello', 'world' or 'hola'",
-            "msg": ContainsSubStrings(
-                "Input 'warudo' is not a valid value for field 'x'.",
-                "Expected 'hello', 'world' or 'hola'.",
+            "msg": (
+                "Input 'warudo' is not a valid value for field 'x'.\n"
+                "Expected 'hello', 'world' or 'hola'."
             ),
             "input": "warudo",
             "fix": "world",
@@ -149,7 +149,7 @@ class TestTranslatePydanticError:
             "loc": ("x",),
             "summary": "Input should be a valid string",
             "msg": (
-                "Field 'x' should be a valid string, got null.\n"
+                "Expected a string for field 'x', but received a null.\n"
                 "Try using quotes for strings to fix this issue."
             ),
             "input": None,
@@ -182,7 +182,7 @@ class TestTranslatePydanticError:
             "code": "M007",
             "loc": (),
             "summary": "Input should be a valid integer",
-            "msg": "Field <unnamed> should be a valid integer, got string.",
+            "msg": "Expected a integer for field <unnamed>, but received a string.",
             "input": "foo",
         }
 
@@ -229,19 +229,19 @@ class TestComposeStringErrorMessage:
 
     def test_norway_problem(self):
         assert list(_compose_string_error_message("FOO", True)) == [
-            "Field FOO should be a valid string, got boolean.",
+            "Expected a string for field FOO, but received a boolean.",
             "Note that these inputs will be interpreted as boolean true: 'True', 'Yes', 'On', 'Y'.",
             "Try using quotes for strings to fix this issue.",
         ]
         assert list(_compose_string_error_message("FOO", False)) == [
-            "Field FOO should be a valid string, got boolean.",
+            "Expected a string for field FOO, but received a boolean.",
             "Note that these inputs will be interpreted as boolean false: 'False', 'No', 'Off', 'N'.",
             "Try using quotes for strings to fix this issue.",
         ]
 
     def test_sexagesimal(self):
         assert list(_compose_string_error_message("FOO", 1342)) == [
-            "Field FOO should be a valid string, got integer.",
+            "Expected a string for field FOO, but received a integer.",
             "Numbers separated by colons (e.g. 22:22) will be interpreted as sexagesimal.",
             "Try using quotes for strings to fix this issue.",
         ]

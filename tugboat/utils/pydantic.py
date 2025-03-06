@@ -58,35 +58,27 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
     ~tugboat.types.Diagnosis
        A diagnosis object that contains the error message and other relevant information.
     """
-    # get the last string in the location tuple as the field name
-    field_name = None
-    for loc in reversed(error["loc"]):
-        if isinstance(loc, str):
-            field_name = loc
-            break
-
-    field_name = field_name
-    field_display = f"'{field_name}'" if field_name else "<unnamed>"
-
-    # translate the error based on the error type
     match error["type"]:
         case "bool_parsing" | "bool_type":
+            _, field = _get_field_name(error["loc"])
             input_type = get_type_name(error["input"])
             return {
                 "type": "failure",
                 "code": "M007",
                 "loc": error["loc"],
                 "summary": "Input should be a valid boolean",
-                "msg": f"""
-                    Field {field_display} should be a valid boolean, got {input_type}.
-                    Try using 'true' or 'false' without quotes.
-                    """,
+                "msg": (
+                    f"Expected a boolean for field {field}, but received a {input_type}.\n"
+                    "Try using 'true' or 'false' without quotes."
+                ),
                 "input": error["input"],
             }
 
         case "enum" | "literal_error":
             expected_literal = error.get("ctx", {}).get("expected", "")
             expected = _extract_expects(expected_literal)
+
+            _, field = _get_field_name(error["loc"])
 
             input_ = error["input"]
             fix, _, _ = extractOne(error["input"], expected)
@@ -96,54 +88,56 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                 "code": "M008",
                 "loc": error["loc"],
                 "summary": error["msg"],
-                "msg": f"""
-                    Input '{input_}' is not a valid value for field {field_display}.
-                    Expected {expected_literal}.
-                    """,
+                "msg": (
+                    f"Input '{input_}' is not a valid value for field {field}.\n"
+                    f"Expected {expected_literal}."
+                ),
                 "input": error["input"],
                 "fix": fix,
             }
 
         case "extra_forbidden":
+            raw_field_name, formatted_field = _get_field_name(error["loc"])
             *parents, _ = error["loc"]
             return {
                 "type": "failure",
                 "code": "M005",
                 "loc": error["loc"],
                 "summary": "Found redundant field",
-                "msg": f"Field {field_display} is not valid within {get_context_name(parents)}.",
-                "input": field_name,
+                "msg": f"Field {formatted_field} is not valid within {get_context_name(parents)}.",
+                "input": raw_field_name,
             }
 
         case "int_parsing" | "int_type":
+            _, field = _get_field_name(error["loc"])
             input_type = get_type_name(error["input"])
             return {
                 "type": "failure",
                 "code": "M007",
                 "loc": error["loc"],
                 "summary": "Input should be a valid integer",
-                "msg": f"Field {field_display} should be a valid integer, got {input_type}.",
+                "msg": f"Expected a integer for field {field}, but received a {input_type}.",
                 "input": error["input"],
             }
 
         case "missing":
+            _, field = _get_field_name(error["loc"])
             return {
                 "type": "failure",
                 "code": "M004",
                 "loc": error["loc"],
                 "summary": "Missing required field",
-                "msg": f"Field {field_display} is required but missing",
+                "msg": f"Field {field} is required but missing",
             }
 
         case "string_type":
+            _, field = _get_field_name(error["loc"])
             return {
                 "type": "failure",
                 "code": "M007",
                 "loc": error["loc"],
                 "summary": "Input should be a valid string",
-                "msg": "\n".join(
-                    _compose_string_error_message(field_display, error["input"])
-                ),
+                "msg": "\n".join(_compose_string_error_message(field, error["input"])),
                 "input": error["input"],
             }
 
@@ -173,6 +167,23 @@ def get_type_name(value: Any) -> str:
     if isinstance(value, Sequence):
         return "array"
     return type(value).__name__
+
+
+def _get_field_name(loc: tuple[int | str, ...]) -> tuple[str | None, str]:
+    """
+    Get the last string in the location tuple as the field name.
+
+    Returns
+    -------
+    raw : str
+        The raw field name.
+    quoted : str
+        The quoted field name for display.
+    """
+    for item in reversed(loc):
+        if isinstance(item, str):
+            return item, f"'{item}'"
+    return None, "<unnamed>"
 
 
 def _extract_expects(literal: str) -> Iterator[str]:
@@ -209,7 +220,7 @@ def _compose_string_error_message(field: str, value: Any) -> Iterator[str]:
     Ref: https://ruudvanasseldonk.com/2023/01/11/the-yaml-document-from-hell
     """
     input_type = get_type_name(value)
-    yield f"Field {field} should be a valid string, got {input_type}."
+    yield f"Expected a string for field {field}, but received a {input_type}."
 
     # the Norway problem
     if isinstance(value, bool):
