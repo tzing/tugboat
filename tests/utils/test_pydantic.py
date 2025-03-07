@@ -12,6 +12,7 @@ from pydantic import (
 )
 from pydantic_core import ErrorDetails
 
+from tugboat.schemas.basic import Array, Dict
 from tugboat.utils.pydantic import (
     _compose_string_error_message,
     _extract_expects,
@@ -74,6 +75,38 @@ class TestTranslatePydanticError:
             "input": 1234,
         }
 
+    def test_dict_type_1(self):
+        class Model(BaseModel):
+            x: dict
+
+        error = get_validation_error(Model, {"x": 1234})
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M007",
+            "loc": ("x",),
+            "summary": "Input should be a valid mapping",
+            "msg": "Expected a mapping for field 'x', but received a integer.",
+            "input": 1234,
+        }
+
+    def test_dict_type_2(self):
+        class Model(BaseModel):
+            x: Dict[str, int]
+
+        error = get_validation_error(Model, {"x": None})
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M007",
+            "loc": ("x",),
+            "summary": "Input should be a valid mapping",
+            "msg": (
+                "Expected a mapping for field 'x', but received a null.\n"
+                "If an empty mapping is intended, use '{}'."
+            ),
+            "input": None,
+            "fix": "{}",
+        }
+
     def test_enum(self):
         class MyEnum(enum.StrEnum):
             hello = "hello"
@@ -127,6 +160,20 @@ class TestTranslatePydanticError:
             "input": "z",
         }
 
+    def test_float_parsing(self):
+        class Model(BaseModel):
+            x: float
+
+        error = get_validation_error(Model, {"x": "foo"})
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M007",
+            "loc": ("x",),
+            "summary": "Input should be a valid floating point number",
+            "msg": "Expected a floating point number for field 'x', but received a string.",
+            "input": "foo",
+        }
+
     def test_int_parsing(self):
         class Model(BaseModel):
             x: int
@@ -139,6 +186,38 @@ class TestTranslatePydanticError:
             "summary": "Input should be a valid integer",
             "msg": "Expected a integer for field 'x', but received a string.",
             "input": "foo",
+        }
+
+    def test_list_error_1(self):
+        class Model(BaseModel):
+            x: list
+
+        error = get_validation_error(Model, {"x": "foo"})
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M007",
+            "loc": ("x",),
+            "summary": "Input should be a valid array",
+            "msg": "Expected an array for field 'x', but received a string.",
+            "input": "foo",
+        }
+
+    def test_list_error_2(self):
+        class Model(BaseModel):
+            x: Array[int]
+
+        error = get_validation_error(Model, {"x": {}})
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M007",
+            "loc": ("x",),
+            "summary": "Input should be a valid array",
+            "msg": (
+                "Expected an array for field 'x', but received a mapping.\n"
+                "If an empty array is intended, use '[]'."
+            ),
+            "input": {},
+            "fix": "[]",
         }
 
     def test_literal_error(self):

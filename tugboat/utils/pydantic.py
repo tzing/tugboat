@@ -135,19 +135,41 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
           - :ref:`code.m007`
         * - `bool_type <https://docs.pydantic.dev/latest/errors/validation_errors/#bool_type>`_
           - :ref:`code.m007`
+        * - `dict_type <https://docs.pydantic.dev/latest/errors/validation_errors/#dict_type>`_
+          - :ref:`code.m007`
+        * - `decimal_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#decimal_parsing>`_
+          - :ref:`code.m007`
+        * - `decimal_type <https://docs.pydantic.dev/latest/errors/validation_errors/#decimal_type>`_
+          - :ref:`code.m007`
         * - `enum <https://docs.pydantic.dev/latest/errors/validation_errors/#enum>`_
           - :ref:`code.m008`
         * - `extra_forbidden <https://docs.pydantic.dev/latest/errors/validation_errors/#extra_forbidden>`_
           - :ref:`code.m005`
+        * - `float_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#float_parsing>`_
+          - :ref:`code.m007`
+        * - `float_type <https://docs.pydantic.dev/latest/errors/validation_errors/#float_type>`_
+          - :ref:`code.m007`
+        * - `frozen_set_type <https://docs.pydantic.dev/latest/errors/validation_errors/#frozen_set_type>`_
+          - :ref:`code.m007`
         * - `int_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#int_parsing>`_
           - :ref:`code.m007`
         * - `int_type <https://docs.pydantic.dev/latest/errors/validation_errors/#int_type>`_
           - :ref:`code.m007`
+        * - `iterable_type <https://docs.pydantic.dev/latest/errors/validation_errors/#iterable_type>`_
+          - :ref:`code.m007`
+        * - `list_type <https://docs.pydantic.dev/latest/errors/validation_errors/#list_type>`_
+          - :ref:`code.m007`
         * - `literal_error <https://docs.pydantic.dev/latest/errors/validation_errors/#literal_error>`_
           - :ref:`code.m008`
+        * - `mapping_type <https://docs.pydantic.dev/latest/errors/validation_errors/#mapping_type>`_
+          - :ref:`code.m007`
         * - `missing <https://docs.pydantic.dev/latest/errors/validation_errors/#missing>`_
           - :ref:`code.m004`
+        * - `set_type <https://docs.pydantic.dev/latest/errors/validation_errors/#set_type>`_
+          - :ref:`code.m007`
         * - `string_type <https://docs.pydantic.dev/latest/errors/validation_errors/#string_type>`_
+          - :ref:`code.m007`
+        * - `tuple_type <https://docs.pydantic.dev/latest/errors/validation_errors/#tuple_type>`_
           - :ref:`code.m007`
         * - Any other error
           - :ref:`code.m003`
@@ -176,6 +198,45 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                     f"Expected a boolean for field {field}, but received a {input_type}.\n"
                     "Try using 'true' or 'false' without quotes."
                 ),
+                "input": error["input"],
+            }
+
+        case "dict_type" | "mapping_type":
+            _, field = _get_field_name(error["loc"])
+            input_type = get_type_name(error["input"])
+
+            if not error["input"]:
+                return {
+                    "type": "failure",
+                    "code": "M007",
+                    "loc": error["loc"],
+                    "summary": "Input should be a valid mapping",
+                    "msg": (
+                        f"Expected a mapping for field {field}, but received a {input_type}.\n"
+                        "If an empty mapping is intended, use '{}'."
+                    ),
+                    "input": error["input"],
+                    "fix": "{}",
+                }
+
+            return {
+                "type": "failure",
+                "code": "M007",
+                "loc": error["loc"],
+                "summary": "Input should be a valid mapping",
+                "msg": f"Expected a mapping for field {field}, but received a {input_type}.",
+                "input": error["input"],
+            }
+
+        case "decimal_parsing" | "decimal_type" | "float_parsing" | "float_type":
+            _, field = _get_field_name(error["loc"])
+            input_type = get_type_name(error["input"])
+            return {
+                "type": "failure",
+                "code": "M007",
+                "loc": error["loc"],
+                "summary": "Input should be a valid floating point number",
+                "msg": f"Expected a floating point number for field {field}, but received a {input_type}.",
                 "input": error["input"],
             }
 
@@ -211,6 +272,39 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                 "summary": "Found redundant field",
                 "msg": f"Field {formatted_field} is not valid within {get_context_name(parents)}.",
                 "input": raw_field_name,
+            }
+
+        case (
+            "frozen_set_type"
+            | "iterable_type"
+            | "list_type"
+            | "set_type"
+            | "tuple_type"
+        ):
+            _, field = _get_field_name(error["loc"])
+            input_type = get_type_name(error["input"])
+
+            if not error["input"]:
+                return {
+                    "type": "failure",
+                    "code": "M007",
+                    "loc": error["loc"],
+                    "summary": "Input should be a valid array",
+                    "msg": (
+                        f"Expected an array for field {field}, but received a {input_type}.\n"
+                        "If an empty array is intended, use '[]'."
+                    ),
+                    "input": error["input"],
+                    "fix": "[]",
+                }
+
+            return {
+                "type": "failure",
+                "code": "M007",
+                "loc": error["loc"],
+                "summary": "Input should be a valid array",
+                "msg": f"Expected an array for field {field}, but received a {input_type}.",
+                "input": error["input"],
             }
 
         case "int_parsing" | "int_type":
