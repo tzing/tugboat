@@ -16,9 +16,44 @@ from tugboat.utils.pydantic import (
     _compose_string_error_message,
     _extract_expects,
     _to_sexagesimal,
+    bulk_translate_pydantic_errors,
     get_type_name,
     translate_pydantic_error,
 )
+
+
+class TestBulkTranslatePydanticError:
+
+    def test(self):
+        class Model(BaseModel):
+            x: bool
+            y: bool | int | float | str
+
+        with pytest.raises(ValidationError) as exc_info:
+            Model.model_validate({"x": None, "y": None})
+
+        diagnoses = list(bulk_translate_pydantic_errors(exc_info.value.errors()))
+        assert diagnoses == [
+            {
+                "type": "failure",
+                "code": "M007",
+                "loc": ("x",),
+                "summary": "Input should be a valid boolean",
+                "msg": (
+                    "Expected a boolean for field 'x', but received a null.\n"
+                    "Try using 'true' or 'false' without quotes."
+                ),
+                "input": None,
+            },
+            {
+                "type": "failure",
+                "code": "M007",
+                "loc": ("y",),
+                "summary": "Input type mismatch",
+                "msg": "Expected bool, float, int or str for field 'y', but received a null.",
+                "input": None,
+            },
+        ]
 
 
 class TestTranslatePydanticError:
