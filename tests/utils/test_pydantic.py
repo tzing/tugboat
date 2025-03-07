@@ -91,7 +91,7 @@ class TestTranslatePydanticError:
 
     def test_dict_type_2(self):
         class Model(BaseModel):
-            x: Dict
+            x: Dict[str, int]
 
         error = get_validation_error(Model, {"x": None})
         assert translate_pydantic_error(error) == {
@@ -101,7 +101,7 @@ class TestTranslatePydanticError:
             "summary": "Input should be a valid mapping",
             "msg": (
                 f"Expected a mapping for field 'x', but received a null.\n"
-                "If an empty mapping is intended, use '{}'"
+                "If an empty mapping is intended, use '{}'."
             ),
             "input": None,
             "fix": "{}",
@@ -172,6 +172,38 @@ class TestTranslatePydanticError:
             "summary": "Input should be a valid integer",
             "msg": "Expected a integer for field 'x', but received a string.",
             "input": "foo",
+        }
+
+    def test_list_error_1(self):
+        class Model(BaseModel):
+            x: list
+
+        error = get_validation_error(Model, {"x": "foo"})
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M007",
+            "loc": ("x",),
+            "summary": "Input should be a valid array",
+            "msg": "Expected an array for field 'x', but received a string.",
+            "input": "foo",
+        }
+
+    def test_list_error_2(self):
+        class Model(BaseModel):
+            x: Array[int]
+
+        error = get_validation_error(Model, {"x": {}})
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M007",
+            "loc": ("x",),
+            "summary": "Input should be a valid array",
+            "msg": (
+                "Expected an array for field 'x', but received a mapping.\n"
+                "If an empty array is intended, use '[]'."
+            ),
+            "input": {},
+            "fix": "[]",
         }
 
     def test_literal_error(self):
