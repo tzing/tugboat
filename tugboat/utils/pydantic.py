@@ -45,15 +45,19 @@ def bulk_translate_pydantic_errors(
     # so handle them separately
 
     def _is_union_type_error(err: ErrorDetails, tp: str) -> bool:
-        # type check + loc check
-        # for type errors from union types, pydantic appends the type name to the loc
-        #
-        # e.g.
-        # {
-        #     "type": "int_type",
-        #     "loc": ("foo", "bar", "int"),
-        #     "msg": "Input should be a valid integer",
-        # }
+        """
+        filter error related to union types
+
+        we observed that pydantic appends the type name to the 'loc' for union type:
+
+        ```json
+        {
+            "type": "int_type",
+            "loc": ["foo", "bar", "int"],
+            "msg": "Input should be a valid integer"
+        }
+        ```
+        """
         return err["loc"][-1] == tp and (
             err["type"] == f"{tp}_type" or err["type"] == f"{tp}_parsing"
         )

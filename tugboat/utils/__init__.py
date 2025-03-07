@@ -1,4 +1,5 @@
 __all__ = [
+    "bulk_translate_pydantic_errors",
     "check_model_fields_references",
     "check_value_references",
     "find_duplicate_names",
@@ -8,7 +9,6 @@ __all__ = [
     "join_with_or",
     "prepend_loc",
     "translate_pydantic_error",
-    "bulk_translate_pydantic_errors",
 ]
 
 from tugboat.utils.humanize import (
