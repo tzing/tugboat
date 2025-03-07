@@ -100,7 +100,7 @@ class TestTranslatePydanticError:
             "loc": ("x",),
             "summary": "Input should be a valid mapping",
             "msg": (
-                f"Expected a mapping for field 'x', but received a null.\n"
+                "Expected a mapping for field 'x', but received a null.\n"
                 "If an empty mapping is intended, use '{}'."
             ),
             "input": None,
