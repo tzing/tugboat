@@ -135,6 +135,8 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
           - :ref:`code.m007`
         * - `bool_type <https://docs.pydantic.dev/latest/errors/validation_errors/#bool_type>`_
           - :ref:`code.m007`
+        * - `dict_type <https://docs.pydantic.dev/latest/errors/validation_errors/#dict_type>`_
+          - :ref:`code.m007`
         * - `enum <https://docs.pydantic.dev/latest/errors/validation_errors/#enum>`_
           - :ref:`code.m008`
         * - `extra_forbidden <https://docs.pydantic.dev/latest/errors/validation_errors/#extra_forbidden>`_
@@ -145,6 +147,8 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
           - :ref:`code.m007`
         * - `literal_error <https://docs.pydantic.dev/latest/errors/validation_errors/#literal_error>`_
           - :ref:`code.m008`
+        * - `mapping_type <https://docs.pydantic.dev/latest/errors/validation_errors/#mapping_type>`_
+          - :ref:`code.m007`
         * - `missing <https://docs.pydantic.dev/latest/errors/validation_errors/#missing>`_
           - :ref:`code.m004`
         * - `string_type <https://docs.pydantic.dev/latest/errors/validation_errors/#string_type>`_
@@ -176,6 +180,33 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                     f"Expected a boolean for field {field}, but received a {input_type}.\n"
                     "Try using 'true' or 'false' without quotes."
                 ),
+                "input": error["input"],
+            }
+
+        case "dict_type" | "mapping_type":
+            _, field = _get_field_name(error["loc"])
+            input_type = get_type_name(error["input"])
+
+            if not error["input"]:
+                return {
+                    "type": "failure",
+                    "code": "M007",
+                    "loc": error["loc"],
+                    "summary": "Input should be a valid mapping",
+                    "msg": (
+                        f"Expected a mapping for field {field}, but received a {input_type}.\n"
+                        "If an empty mapping is intended, use '{}'"
+                    ),
+                    "input": error["input"],
+                    "fix": "{}",
+                }
+
+            return {
+                "type": "failure",
+                "code": "M007",
+                "loc": error["loc"],
+                "summary": "Input should be a valid mapping",
+                "msg": f"Expected a mapping for field {field}, but received a {input_type}.",
                 "input": error["input"],
             }
 

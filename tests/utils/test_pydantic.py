@@ -12,6 +12,7 @@ from pydantic import (
 )
 from pydantic_core import ErrorDetails
 
+from tugboat.schemas.basic import Array, Dict
 from tugboat.utils.pydantic import (
     _compose_string_error_message,
     _extract_expects,
@@ -72,6 +73,38 @@ class TestTranslatePydanticError:
                 "Try using 'true' or 'false' without quotes."
             ),
             "input": 1234,
+        }
+
+    def test_dict_type_1(self):
+        class Model(BaseModel):
+            x: dict
+
+        error = get_validation_error(Model, {"x": 1234})
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M007",
+            "loc": ("x",),
+            "summary": "Input should be a valid mapping",
+            "msg": "Expected a mapping for field 'x', but received a integer.",
+            "input": 1234,
+        }
+
+    def test_dict_type_2(self):
+        class Model(BaseModel):
+            x: Dict
+
+        error = get_validation_error(Model, {"x": None})
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M007",
+            "loc": ("x",),
+            "summary": "Input should be a valid mapping",
+            "msg": (
+                f"Expected a mapping for field 'x', but received a null.\n"
+                "If an empty mapping is intended, use '{}'"
+            ),
+            "input": None,
+            "fix": "{}",
         }
 
     def test_enum(self):
