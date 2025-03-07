@@ -19,7 +19,7 @@ if typing.TYPE_CHECKING:
 
 def bulk_translate_pydantic_errors(
     errors: Iterable[ErrorDetails],
-) -> Iterator[Diagnosis]:
+) -> list[Diagnosis]:
     """
     Translate multiple Pydantic errors to diagnosis objects.
 
@@ -27,7 +27,20 @@ def bulk_translate_pydantic_errors(
     and merges some of the similar errors into a more concise message.
 
     See :func:`translate_pydantic_error` for the details of the translation.
+
+    Parameters
+    ----------
+    errors : ~collections.abc.Iterable[~pydantic_core.ErrorDetails]
+        An iterable of Pydantic error objects. These objects could be obtained from
+        :py:meth:`ValidationError.errors <pydantic_core.ValidationError.errors>` method.
+
+    Yields
+    ------
+    list[Diagnosis]
+        A list of diagnosis objects that contain the error messages
     """
+    diagnoes = []
+
     # for union types, pydantic raises multiple errors for the same field
     # so handle them separately
 
@@ -76,7 +89,7 @@ def bulk_translate_pydantic_errors(
 
         else:
             # other errors - yield as is
-            yield translate_pydantic_error(err)
+            diagnoes.append(translate_pydantic_error(err))
 
     # merge union type errors
     for loc, errors in union_errors.items():
@@ -88,16 +101,20 @@ def bulk_translate_pydantic_errors(
         _, field = _get_field_name(loc)
         input_type = get_type_name(errors[0]["input"])
 
-        yield {
-            "type": "failure",
-            "code": "M007",
-            "loc": loc,
-            "summary": "Input type mismatch",
-            "msg": (
-                f"Expected {expected_type_expr} for field {field}, but received a {input_type}."
-            ),
-            "input": errors[0]["input"],
-        }
+        diagnoes.append(
+            {
+                "type": "failure",
+                "code": "M007",
+                "loc": loc,
+                "summary": "Input type mismatch",
+                "msg": (
+                    f"Expected {expected_type_expr} for field {field}, but received a {input_type}."
+                ),
+                "input": errors[0]["input"],
+            }
+        )
+
+    return diagnoes
 
 
 def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:

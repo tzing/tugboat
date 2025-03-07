@@ -32,8 +32,7 @@ class TestBulkTranslatePydanticError:
         with pytest.raises(ValidationError) as exc_info:
             Model.model_validate({"x": None, "y": None})
 
-        diagnoses = list(bulk_translate_pydantic_errors(exc_info.value.errors()))
-        assert diagnoses == [
+        assert bulk_translate_pydantic_errors(exc_info.value.errors()) == [
             {
                 "type": "failure",
                 "code": "M007",

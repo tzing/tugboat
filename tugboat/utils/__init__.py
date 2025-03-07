@@ -8,6 +8,7 @@ __all__ = [
     "join_with_or",
     "prepend_loc",
     "translate_pydantic_error",
+    "bulk_translate_pydantic_errors",
 ]
 
 from tugboat.utils.humanize import (
@@ -22,4 +23,7 @@ from tugboat.utils.operator import (
     find_duplicate_names,
     prepend_loc,
 )
-from tugboat.utils.pydantic import translate_pydantic_error
+from tugboat.utils.pydantic import (
+    bulk_translate_pydantic_errors,
+    translate_pydantic_error,
+)
