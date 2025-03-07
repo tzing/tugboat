@@ -160,6 +160,20 @@ class TestTranslatePydanticError:
             "input": "z",
         }
 
+    def test_float_parsing(self):
+        class Model(BaseModel):
+            x: float
+
+        error = get_validation_error(Model, {"x": "foo"})
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M007",
+            "loc": ("x",),
+            "summary": "Input should be a valid floating point number",
+            "msg": "Expected a floating point number for field 'x', but received a string.",
+            "input": "foo",
+        }
+
     def test_int_parsing(self):
         class Model(BaseModel):
             x: int

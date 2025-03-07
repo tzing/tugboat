@@ -137,10 +137,18 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
           - :ref:`code.m007`
         * - `dict_type <https://docs.pydantic.dev/latest/errors/validation_errors/#dict_type>`_
           - :ref:`code.m007`
+        * - `decimal_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#decimal_parsing>`_
+          - :ref:`code.m007`
+        * - `decimal_type <https://docs.pydantic.dev/latest/errors/validation_errors/#decimal_type>`_
+          - :ref:`code.m007`
         * - `enum <https://docs.pydantic.dev/latest/errors/validation_errors/#enum>`_
           - :ref:`code.m008`
         * - `extra_forbidden <https://docs.pydantic.dev/latest/errors/validation_errors/#extra_forbidden>`_
           - :ref:`code.m005`
+        * - `float_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#float_parsing>`_
+          - :ref:`code.m007`
+        * - `float_type <https://docs.pydantic.dev/latest/errors/validation_errors/#float_type>`_
+          - :ref:`code.m007`
         * - `frozen_set_type <https://docs.pydantic.dev/latest/errors/validation_errors/#frozen_set_type>`_
           - :ref:`code.m007`
         * - `int_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#int_parsing>`_
@@ -217,6 +225,18 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                 "loc": error["loc"],
                 "summary": "Input should be a valid mapping",
                 "msg": f"Expected a mapping for field {field}, but received a {input_type}.",
+                "input": error["input"],
+            }
+
+        case "decimal_parsing" | "decimal_type" | "float_parsing" | "float_type":
+            _, field = _get_field_name(error["loc"])
+            input_type = get_type_name(error["input"])
+            return {
+                "type": "failure",
+                "code": "M007",
+                "loc": error["loc"],
+                "summary": "Input should be a valid floating point number",
+                "msg": f"Expected a floating point number for field {field}, but received a {input_type}.",
                 "input": error["input"],
             }
 
