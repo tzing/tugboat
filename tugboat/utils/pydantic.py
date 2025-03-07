@@ -1,19 +1,124 @@
 from __future__ import annotations
 
+import collections
 import typing
 from collections.abc import Mapping, Sequence
 
 from rapidfuzz.process import extractOne
 
-from tugboat.utils.humanize import get_context_name
+from tugboat.utils.humanize import get_context_name, join_with_or
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
     from typing import Any
 
     from pydantic_core import ErrorDetails
 
     from tugboat.types import Diagnosis
+
+
+def bulk_translate_pydantic_errors(
+    errors: Iterable[ErrorDetails],
+) -> list[Diagnosis]:
+    """
+    Translate multiple Pydantic errors to diagnosis objects.
+
+    This function helps to translate multiple Pydantic errors to diagnosis objects,
+    and merges some of the similar errors into a more concise message.
+
+    See :func:`translate_pydantic_error` for the details of the translation.
+
+    Parameters
+    ----------
+    errors : ~collections.abc.Iterable[~pydantic_core.ErrorDetails]
+        An iterable of Pydantic error objects. These objects could be obtained from
+        :py:meth:`ValidationError.errors <pydantic_core.ValidationError.errors>` method.
+
+    Yields
+    ------
+    list[Diagnosis]
+        A list of diagnosis objects that contain the error messages
+    """
+    diagnoes = []
+
+    # for union types, pydantic raises multiple errors for the same field
+    # so handle them separately
+
+    def _is_union_type_error(err: ErrorDetails, tp: str) -> bool:
+        """
+        filter error related to union types
+
+        we observed that pydantic appends the type name to the 'loc' for union type:
+
+        ```json
+        {
+            "type": "int_type",
+            "loc": ["foo", "bar", "int"],
+            "msg": "Input should be a valid integer"
+        }
+        ```
+        """
+        return err["loc"][-1] == tp and (
+            err["type"] == f"{tp}_type" or err["type"] == f"{tp}_parsing"
+        )
+
+    union_errors = collections.defaultdict(list)
+    for err in errors:
+        if (
+            False
+            or _is_union_type_error(err, "bool")
+            or _is_union_type_error(err, "bytes")
+            or _is_union_type_error(err, "date")
+            or _is_union_type_error(err, "datetime")
+            or _is_union_type_error(err, "decimal")
+            or _is_union_type_error(err, "dict")
+            or _is_union_type_error(err, "float")
+            or _is_union_type_error(err, "frozen_set")
+            or _is_union_type_error(err, "int")
+            or _is_union_type_error(err, "iterable")
+            or _is_union_type_error(err, "json")
+            or _is_union_type_error(err, "list")
+            or _is_union_type_error(err, "mapping")
+            or _is_union_type_error(err, "set")
+            or _is_union_type_error(err, "time_delta")
+            or _is_union_type_error(err, "time")
+            or _is_union_type_error(err, "tuple")
+            or _is_union_type_error(err, "url")
+            or _is_union_type_error(err, "uuid")
+        ):
+            union_errors[err["loc"][:-1]].append(err)
+
+        elif err["type"] == "string_type" and err["loc"][-1] == "str":  # :,)
+            union_errors[err["loc"][:-1]].append(err)
+
+        else:
+            # other errors - yield as is
+            diagnoes.append(translate_pydantic_error(err))
+
+    # merge union type errors
+    for loc, errors in union_errors.items():
+        # collect all expected types
+        expected_types = {err["loc"][-1] for err in errors}
+        expected_type_expr = join_with_or(sorted(expected_types), quote=False)
+
+        # build a more concise message
+        _, field = _get_field_name(loc)
+        input_type = get_type_name(errors[0]["input"])
+
+        diagnoes.append(
+            {
+                "type": "failure",
+                "code": "M007",
+                "loc": loc,
+                "summary": "Input type mismatch",
+                "msg": (
+                    f"Expected {expected_type_expr} for field {field}, but received a {input_type}."
+                ),
+                "input": errors[0]["input"],
+            }
+        )
+
+    return diagnoes
 
 
 def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:

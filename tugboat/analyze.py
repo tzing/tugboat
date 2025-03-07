@@ -14,7 +14,7 @@ from ruamel.yaml.tokens import CommentToken
 
 from tugboat.core import get_plugin_manager
 from tugboat.schemas import Manifest
-from tugboat.utils import translate_pydantic_error
+from tugboat.utils import bulk_translate_pydantic_errors
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
@@ -295,9 +295,7 @@ def analyze_raw(manifest: dict) -> list[Diagnosis]:
     try:
         manifest_obj = pm.hook.parse_manifest(manifest=manifest)
     except ValidationError as e:
-        diagnoses = map(translate_pydantic_error, e.errors())
-        diagnoses = map(_sanitize_diagnosis, diagnoses)
-        return list(diagnoses)
+        return bulk_translate_pydantic_errors(e.errors())
     except Exception as e:
         logger.exception("Error during execution of parse_manifest hook")
         return [

@@ -1,4 +1,5 @@
 __all__ = [
+    "bulk_translate_pydantic_errors",
     "check_model_fields_references",
     "check_value_references",
     "find_duplicate_names",
@@ -22,4 +23,7 @@ from tugboat.utils.operator import (
     find_duplicate_names,
     prepend_loc,
 )
-from tugboat.utils.pydantic import translate_pydantic_error
+from tugboat.utils.pydantic import (
+    bulk_translate_pydantic_errors,
+    translate_pydantic_error,
+)
