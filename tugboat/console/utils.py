@@ -35,6 +35,12 @@ class VirtualPath:
     def __str__(self) -> str:
         return self.name
 
+    def is_file(self) -> bool:
+        return True
+
+    def is_dir(self) -> bool:
+        return False
+
     def read_text(self) -> str:
         if self._content is None:
             self._content = self._stream.read()

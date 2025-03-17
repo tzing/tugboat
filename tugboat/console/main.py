@@ -6,7 +6,6 @@ import functools
 import logging
 import sys
 import typing
-from pathlib import Path
 
 import click
 import cloup
@@ -23,6 +22,8 @@ from tugboat.version import __version__
 
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
+    from pathlib import Path
+
 
 logger = logging.getLogger(__name__)
 
