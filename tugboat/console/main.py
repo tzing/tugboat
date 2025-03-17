@@ -24,6 +24,8 @@ if typing.TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
 
+    from pydantic import FilePath
+
 
 logger = logging.getLogger(__name__)
 
@@ -259,7 +261,8 @@ def update_settings(**kwargs):
 
     # special case: include (post-validation)
     if include == ("-",):
-        settings.include = [VirtualPath(sys.stdin.name, sys.stdin)]
+        path = typing.cast("FilePath", VirtualPath(sys.stdin.name, sys.stdin))
+        settings.include = [path]
 
 
 class DiagnosesCounter(collections.Counter):
