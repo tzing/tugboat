@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import collections
 import contextlib
+import functools
 import logging
 import sys
 import typing
-from pathlib import Path
 
 import click
 import cloup
@@ -16,12 +16,16 @@ from tugboat.analyze import analyze_yaml
 from tugboat.console.glob import gather_paths
 from tugboat.console.outputs import get_output_builder
 from tugboat.console.utils import VirtualPath
-from tugboat.settings import settings
+from tugboat.settings import Settings, settings
 from tugboat.utils import join_with_and
 from tugboat.version import __version__
 
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
+    from pathlib import Path
+
+    from pydantic import FilePath
+
 
 logger = logging.getLogger(__name__)
 
@@ -119,35 +123,20 @@ def main(
     logger.debug("Tugboat sets sail!")
 
     # update and validate settings
-    if manifest == ("-",):
-        # NOTE
-        # This is a workaround to handle `-`, which stands for stdin.
-        # We want to keep `-` as a valid command line option, but not allow it in the configuration file.
-        # So, the `Settings` object will reject this value during validation.
-        # This workaround deals with it separately to avoid validation errors.
-        # If you have a better solution, feel free to submit a PR! :)
-        include = ()
-    else:
-        include = manifest
-
     update_settings(
         color=color,
         exclude=exclude,
         follow_symlinks=follow_symlinks,
-        include=include,
+        include=manifest,
         output_format=output_format,
     )
 
     logger.debug("Current settings: %s", settings.model_dump_json(indent=2))
 
     # determine the inputs
-    if manifest == ("-",):
-        manifest_paths = [VirtualPath(sys.stdin.name, sys.stdin)]
-        manifest_paths = typing.cast(list[Path], manifest_paths)
-    else:
-        manifest_paths = gather_paths(
-            settings.include, settings.exclude, settings.follow_symlinks
-        )
+    manifest_paths = gather_paths(
+        settings.include, settings.exclude, settings.follow_symlinks
+    )
 
     if not manifest_paths:
         raise click.UsageError("No manifest found.")
@@ -222,23 +211,43 @@ def setup_logging(verbose_level: int):
         logger.addHandler(handler)
 
 
+@functools.wraps(Settings)
 def update_settings(**kwargs):
-    """Update the settings, if the option is provided by the user."""
+    """
+    Update settings based on command line arguments.
+
+    This function allows overriding settings that were loaded from config files
+    and environment variables. It handles special cases like stdin input and
+    color options.
+
+    The settings are updated in-place using the values passed in via command
+    line flags.
+    """
     update_args = {}
 
     # general settings
     for key in (
         "exclude",
         "follow_symlinks",
-        "include",
         "output_format",
     ):
         if value := kwargs.get(key):
             update_args[key] = value
 
-    for key in ("color",):
-        if (value := kwargs.get(key)) is not None:
-            update_args[key] = value
+    # special case: include
+    #
+    # Value `-` is a special symbol that stands for stdin.
+    # We want to keep it as a valid command line option, but not allowing it
+    # in the configuration file.
+    # The `Settings` object will reject this value during validation, so we
+    # handle it separately here.
+    if include := kwargs.get("include"):
+        if include != ("-",):
+            update_args["include"] = include
+
+    # special case: color
+    if (color := kwargs.get("color")) is not None:
+        update_args["color"] = color
 
     # inplace update
     # https://docs.pydantic.dev/latest/concepts/pydantic_settings/#in-place-reloading
@@ -249,6 +258,11 @@ def update_settings(**kwargs):
             field = ".".join(map(str, err["loc"]))
             msg = err["msg"]
             raise click.UsageError(f"{field}: {msg}") from None
+
+    # special case: include (post-validation)
+    if include == ("-",):
+        path = typing.cast("FilePath", VirtualPath(sys.stdin.name, sys.stdin))
+        settings.include = [path]
 
 
 class DiagnosesCounter(collections.Counter):
