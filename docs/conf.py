@@ -7,6 +7,10 @@ import datetime
 import importlib.metadata
 import os
 import subprocess
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent / "_ext"))
 
 is_tag_release = os.environ.get("READTHEDOCS_VERSION_TYPE") == "tag"
 
@@ -40,6 +44,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx_design",
+    "rule_directive",
 ]
 
 templates_path = ["_templates"]
