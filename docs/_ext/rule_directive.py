@@ -23,15 +23,22 @@ import typing
 from typing import cast
 
 from docutils import nodes
+from sphinx.addnodes import pending_xref
+from sphinx.domains import Domain, ObjType
+from sphinx.roles import XRefRole
 from sphinx.util.docutils import SphinxDirective
 
 if typing.TYPE_CHECKING:
+    from docutils.nodes import Element, Node, document, system_message
     from sphinx.application import Sphinx
+    from sphinx.builders import Builder
     from sphinx.domains.std import StandardDomain
+    from sphinx.environment import BuildEnvironment
 
 
 def setup(app: Sphinx):
     app.add_directive("rule", RuleDirective)
+    app.add_domain(TugboatDomain)
 
     return {
         "version": "0.1",
@@ -71,6 +78,10 @@ class RuleDirective(SphinxDirective):
         std_domain.labels[anchor] = (doc_name, anchor_id, f"{rule_code} ({rule_name})")
         std_domain.anonlabels[anchor] = (doc_name, anchor_id)
 
+        # register the rule in tugboat domain
+        tugboat_domain = self.env.get_domain("tugboat")
+        tugboat_domain.data["objects"][rule_code] = (doc_name, anchor_id, rule_name)
+
         # create section and populate it with title and content
         title = nodes.title()
         title += [
@@ -86,3 +97,34 @@ class RuleDirective(SphinxDirective):
         target = nodes.target(ids=[anchor_id])
 
         return [target, section]
+
+
+class TugboatDomain(Domain):
+
+    name = "tugboat"
+    label = "Tugboat"
+    roles = {"rule": XRefRole()}
+
+    object_types = {"rule": ObjType("tugboat rule", "ref")}
+
+    # { "code": (doc_name, anchor_id, name) }
+    initial_data = {"objects": {}}
+
+    def resolve_xref(
+        self,
+        env: BuildEnvironment,
+        fromdocname: str,
+        builder: Builder,
+        typ: str,
+        target: str,
+        node: pending_xref,
+        contnode: Element,
+    ) -> Element | None:
+        if obj := self.data["objects"].get(target):
+            doc_name, anchor_id, _ = obj
+            return pending_xref(refdoc=doc_name, reftarget=anchor_id)
+        return None
+
+    def get_objects(self):
+        for label, (doc_name, anchor_id, rule_name) in self.data["objects"].items():
+            yield (label, rule_name, "rule", doc_name, anchor_id, 1)
