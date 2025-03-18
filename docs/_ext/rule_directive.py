@@ -21,13 +21,13 @@ from __future__ import annotations
 
 import typing
 from typing import cast
+
 from docutils import nodes
 from sphinx.util.docutils import SphinxDirective
 
 if typing.TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.domains.std import StandardDomain
-    from sphinx.environment import BuildEnvironment
 
 
 def setup(app: Sphinx):
@@ -55,19 +55,19 @@ class RuleDirective(SphinxDirective):
         anchor = "tugboat.rule." + rule_code.lower()
         anchor_id = nodes.make_id(anchor)
 
-        # check for duplicate labels and warn if found
-        env = cast("BuildEnvironment", self.state.document.settings.env)
-        std_domain = cast("StandardDomain", env.get_domain("std"))
+        # register the label in Sphinx's standard domain
+        std_domain = cast("StandardDomain", self.env.get_domain("std"))
+
         if anchor in std_domain.labels:
-            other_doc = env.doc2path(std_domain.labels[anchor][0])
-            reporter = self.state.document.reporter
-            reporter.warning(
-                f"Duplicate label '{anchor_id}' already defined in {other_doc}",
+            # warn if the label is already defined in another document
+            other_doc_name, _, _ = std_domain.labels[anchor]
+            other_doc_path = self.env.doc2path(other_doc_name)
+            self.state.document.reporter.warning(
+                f"Duplicate label '{anchor_id}' already defined in {other_doc_path}",
                 line=self.lineno,
             )
 
-        # register the label in Sphinx's standard domain
-        doc_name = env.docname
+        doc_name = self.env.docname
         std_domain.labels[anchor] = (doc_name, anchor_id, f"{rule_code} ({rule_name})")
         std_domain.anonlabels[anchor] = (doc_name, anchor_id)
 
