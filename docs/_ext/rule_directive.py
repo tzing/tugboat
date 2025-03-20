@@ -27,6 +27,7 @@ from sphinx.addnodes import pending_xref
 from sphinx.domains import Domain, ObjType
 from sphinx.roles import XRefRole
 from sphinx.util.docutils import SphinxDirective
+from sphinx_design.badges_buttons import create_bdg_classes
 
 if typing.TYPE_CHECKING:
     from docutils.nodes import Element, Node, document, system_message
@@ -39,6 +40,7 @@ if typing.TYPE_CHECKING:
 def setup(app: Sphinx):
     app.add_directive("rule", RuleDirective)
     app.add_domain(TugboatDomain)
+    app.add_role("rule", TugboatRuleRole(nodeclass=pending_xref))
 
     return {
         "version": "0.1",
@@ -120,11 +122,45 @@ class TugboatDomain(Domain):
         node: pending_xref,
         contnode: Element,
     ) -> Element | None:
-        if obj := self.data["objects"].get(target):
-            doc_name, anchor_id, _ = obj
+        if data := self.data["objects"].get(target):
+            doc_name, anchor_id, _ = data
             return pending_xref(refdoc=doc_name, reftarget=anchor_id)
         return None
 
     def get_objects(self):
         for label, (doc_name, anchor_id, rule_name) in self.data["objects"].items():
             yield (label, rule_name, "rule", doc_name, anchor_id, 1)
+
+
+class TugboatRuleRole(XRefRole):
+
+    def result_nodes(
+        self,
+        document: document,
+        env: BuildEnvironment,
+        node: Element,
+        is_ref: bool,
+    ) -> tuple[list[Node], list[system_message]]:
+        rule_code: str = node["reftarget"].upper()
+
+        # build the reference content when the target is found and not overridden
+        data = env.get_domain("tugboat").data["objects"].get(rule_code)
+        if data and not node.get("explicit"):
+            node.clear()
+
+            doc_name, anchor_id, rule_name = data
+
+            # we want separate nodes for the rule code and name, the following
+            # handles the issue that pending_xref only takes the first child node
+            # as the ref target
+            container = nodes.inline()
+            container += [
+                nodes.inline(
+                    rule_code, rule_code, classes=create_bdg_classes("primary", True)
+                ),
+                nodes.Text(rule_name),
+            ]
+
+            node += container
+
+        return [node], []
