@@ -103,11 +103,53 @@ class RuleDirective(SphinxDirective):
         return [target, section]
 
 
+class TugboatRuleRole(XRefRole):
+    """
+    A cross-reference role for customizing Tugboat rule references in Sphinx
+    documentation.
+    """
+
+    def result_nodes(
+        self,
+        document: document,
+        env: BuildEnvironment,
+        node: Element,
+        is_ref: bool,
+    ) -> tuple[list[Node], list[system_message]]:
+        rule_code: str = node["reftarget"].upper()
+
+        domain = cast("TugboatDomain", env.get_domain("tg"))
+        data = domain.rules.get(rule_code)
+        if data and not node.get("explicit"):
+            node["refdomain"] = "tg"
+            node["reftarget"] = rule_code
+            node["refwarn"] = True
+            node.clear()
+
+            doc_name, anchor_id, rule_name = data
+
+            # I want to separate nodes for the rule code and name
+            # The following handles the issue that pending_xref only takes the
+            # first child node as the ref target
+            container = nodes.inline(classes=["inline-rule-ref"])
+            container += [
+                nodes.inline(text=rule_code, classes=["rule-code"]),
+                nodes.Text(" "),
+                nodes.Text(rule_name),
+            ]
+
+            node += container
+
+        return [node], []
+
+
 class TugboatDomain(Domain):
 
     name = "tugboat"
     label = "Tugboat"
-    roles: ClassVar = {"rule": XRefRole()}
+
+    directives: ClassVar = {"rule": RuleDirective}
+    roles: ClassVar = {"rule": TugboatRuleRole()}
 
     object_types: ClassVar = {"rule": ObjType("tugboat rule", "ref")}
 
@@ -135,39 +177,3 @@ class TugboatDomain(Domain):
     def get_objects(self):
         for label, (doc_name, anchor_id, rule_name) in self.data["objects"].items():
             yield (label, rule_name, "rule", doc_name, anchor_id, 1)
-
-
-class TugboatRuleRole(XRefRole):
-
-    def result_nodes(
-        self,
-        document: document,
-        env: BuildEnvironment,
-        node: Element,
-        is_ref: bool,
-    ) -> tuple[list[Node], list[system_message]]:
-        rule_code: str = node["reftarget"].upper()
-
-        # build the reference content when the target is found and not overridden
-        data = env.get_domain("tugboat").data["objects"].get(rule_code)
-        if data and not node.get("explicit"):
-            node["refdomain"] = "tugboat"
-            node["reftarget"] = rule_code
-            node["refwarn"] = True
-            node.clear()
-
-            doc_name, anchor_id, rule_name = data
-
-            # I want to separate nodes for the rule code and name
-            # The following handles the issue that pending_xref only takes the
-            # first child node as the ref target
-            container = nodes.inline(classes=["inline-rule-ref"])
-            container += [
-                nodes.inline(text=rule_code, classes=["rule-code"]),
-                nodes.Text(" "),
-                nodes.Text(rule_name),
-            ]
-
-            node += container
-
-        return [node], []
