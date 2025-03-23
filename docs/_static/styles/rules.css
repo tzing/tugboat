@@ -4,13 +4,17 @@
 
 .inline-rule-ref .rule-code {
     display: inline;
-    color: var(--sy-c-link);
+    color: var(--sy-c-light);
     font-size: 0.82em;
     font-weight: 600;
     padding-left: 4px;
     line-height: 1;
     vertical-align: 0.05em;
     text-decoration: none;
+}
+
+.inline-rule-ref:hover .rule-code {
+    color: var(--sy-c-link);
 }
 
 .localtoc .rule-code {
@@ -28,4 +32,15 @@
 .localtoc .active .rule-code {
     color: var(--sy-c-link);
     border-color: var(--sy-c-link);
+}
+
+.rule-section h2 .rule-code {
+    display: inline;
+    color: inherit;
+    font-size: 0.82em;
+    color: var(--sy-c-light);
+    font-weight: 500;
+    margin-right: 4px;
+    line-height: 1;
+    text-decoration: none;
 }
