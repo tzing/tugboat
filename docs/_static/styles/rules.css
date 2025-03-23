@@ -1,0 +1,44 @@
+.inline-rule-ref {
+    display: inline;
+}
+
+.inline-rule-ref .rule-code {
+    display: inline;
+    color: var(--sy-c-light);
+    font-size: 0.82em;
+    font-weight: 600;
+    padding-left: 4px;
+    line-height: 1;
+    vertical-align: 0.05em;
+    text-decoration: none;
+}
+
+a:hover .inline-rule-ref .rule-code {
+    color: var(--sy-c-link);
+}
+
+.localtoc .rule-code {
+    display: inline;
+    color: var(--sy-c-light);
+    font-size: 0.82em;
+    line-height: 1;
+    margin-right: 0;
+}
+
+.localtoc .active .rule-code {
+    color: var(--sy-c-link);
+}
+
+.localtoc a:hover .rule-code {
+    color: var(--sy-c-link);
+}
+
+.rule-section h2 .rule-code {
+    color: var(--sy-c-light);
+    display: inline;
+    font-size: 0.82em;
+    font-weight: 500;
+    line-height: 1;
+    margin-right: 4px;
+    text-decoration: none;
+}
