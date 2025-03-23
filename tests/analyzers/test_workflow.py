@@ -133,7 +133,7 @@ class TestRules:
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
-                {"code": "M010", "loc": ("metadata", "name"), "fix": "invalid-name"}
+                {"code": "M301", "loc": ("metadata", "name"), "fix": "invalid-name"}
             )
             in diagnoses
         )
@@ -142,7 +142,7 @@ class TestRules:
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_GENERATE_NAME)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
-            IsPartialDict({"code": "M010", "loc": ("metadata", "generateName")})
+            IsPartialDict({"code": "M301", "loc": ("metadata", "generateName")})
             in diagnoses
         )
 
@@ -150,7 +150,7 @@ class TestRules:
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_NAME)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
-            IsPartialDict({"code": "M006", "loc": ("spec", "workflowTemplateRef")})
+            IsPartialDict({"code": "M201", "loc": ("spec", "workflowTemplateRef")})
             in diagnoses
         )
 
@@ -158,7 +158,7 @@ class TestRules:
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_GENERATE_NAME)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
-            IsPartialDict({"code": "M004", "loc": ("spec", "entrypoint")}) in diagnoses
+            IsPartialDict({"code": "M101", "loc": ("spec", "entrypoint")}) in diagnoses
         )
 
     def test_check_entrypoint(self):
@@ -194,7 +194,7 @@ class TestRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "M005",
+                    "code": "M102",
                     "loc": ("spec", "arguments", "parameters", 1, "default"),
                 }
             )
@@ -208,7 +208,7 @@ class TestRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "M006",
+                    "code": "M201",
                     "loc": ("spec", "arguments", "artifacts", 1, "raw"),
                 }
             )
@@ -217,7 +217,7 @@ class TestRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "M006",
+                    "code": "M201",
                     "loc": ("spec", "arguments", "artifacts", 1, "s3"),
                 }
             )
@@ -242,10 +242,10 @@ MANIFEST_MALFORMED_NAME = """
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
-  name: invalid_name  # M009
+  name: invalid_name  # M302
 spec:
   templates: []
-  workflowTemplateRef:  # M006
+  workflowTemplateRef:  # M201
     name: test
 """
 
@@ -254,7 +254,7 @@ MANIFEST_MALFORMED_GENERATE_NAME = """
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
-  generateName: invalid_name_  # M010
+  generateName: invalid_name_  # M301
 spec:
   templates: []
 """
@@ -300,8 +300,8 @@ spec:
         raw:
           data: hello
       - name: data  # WT003
-        raw:  # M006
+        raw:  # M201
           data: world
-        s3:  # M006
+        s3:  # M201
           key: my-file
 """

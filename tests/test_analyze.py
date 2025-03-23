@@ -352,7 +352,7 @@ class TestAnalyzeRaw:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M004",
+                "code": "M101",
                 "loc": ("spec",),
                 "summary": "Missing required field",
                 "msg": "Field 'spec' is required but missing",

@@ -30,7 +30,7 @@ class TestAcceptNone:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M005",
+                "code": "M102",
                 "loc": ("spec", 0, 1, "baz", "baz"),
                 "summary": "Found redundant field 'baz'",
                 "msg": "Field 'baz' is not valid within the 'baz' section.",
@@ -46,7 +46,7 @@ class TestAcceptNone:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M005",
+                "code": "M102",
                 "loc": ("spec", 0, 1, "baz"),
                 "summary": "Found redundant field 'baz'",
                 "msg": "Field 'baz' is not valid within the 'spec' section.",
@@ -79,7 +79,7 @@ class TestMutuallyExclusive:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M006",
+                "code": "M201",
                 "loc": ("spec", "baz"),
                 "summary": "Mutually exclusive field set",
                 "msg": "Field 'baz' and 'foo' are mutually exclusive.",
@@ -87,7 +87,7 @@ class TestMutuallyExclusive:
             },
             {
                 "type": "failure",
-                "code": "M006",
+                "code": "M201",
                 "loc": ("spec", "foo"),
                 "summary": "Mutually exclusive field set",
                 "msg": "Field 'baz' and 'foo' are mutually exclusive.",
@@ -113,14 +113,14 @@ class TestRequireNonEmpty:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M004",
+                "code": "M101",
                 "loc": ("spec", "foo"),
                 "summary": "Missing required field 'foo'",
                 "msg": "Field 'foo' is required in the 'spec' section but missing.",
             },
             {
                 "type": "failure",
-                "code": "M011",
+                "code": "M202",
                 "loc": ("spec", "baz"),
                 "summary": "Missing input in field 'baz'",
                 "msg": "Field 'baz' is required in the 'spec' section but is currently empty.",
@@ -141,7 +141,7 @@ class TestRequireAll:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M004",
+                "code": "M101",
                 "loc": ("spec", "foo"),
                 "summary": "Missing required field 'foo'",
                 "msg": "Field 'foo' is required in the 'spec' section but missing.",
@@ -166,7 +166,7 @@ class TestRequireExactlyOne:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M004",
+                "code": "M101",
                 "loc": ("spec",),
                 "summary": "Missing required field",
                 "msg": ContainsSubStrings(
@@ -184,7 +184,7 @@ class TestRequireExactlyOne:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M006",
+                "code": "M201",
                 "loc": ("spec", "baz"),
                 "summary": "Mutually exclusive field set",
                 "msg": "Field 'baz' and 'foo' are mutually exclusive.",
@@ -192,7 +192,7 @@ class TestRequireExactlyOne:
             },
             {
                 "type": "failure",
-                "code": "M006",
+                "code": "M201",
                 "loc": ("spec", "foo"),
                 "summary": "Mutually exclusive field set",
                 "msg": "Field 'baz' and 'foo' are mutually exclusive.",

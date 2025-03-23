@@ -36,7 +36,7 @@ class TestBulkTranslatePydanticError:
         assert bulk_translate_pydantic_errors(exc_info.value.errors()) == [
             {
                 "type": "failure",
-                "code": "M007",
+                "code": "M103",
                 "loc": ("x",),
                 "summary": "Input should be a valid boolean",
                 "msg": (
@@ -47,7 +47,7 @@ class TestBulkTranslatePydanticError:
             },
             {
                 "type": "failure",
-                "code": "M007",
+                "code": "M103",
                 "loc": ("y",),
                 "summary": "Input type mismatch",
                 "msg": "Expected bool, float, int or str for field 'y', but received a null.",
@@ -65,7 +65,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {"x": 1234})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M007",
+            "code": "M103",
             "loc": ("x",),
             "summary": "Input should be a valid boolean",
             "msg": (
@@ -82,7 +82,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {"x": 1234})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M007",
+            "code": "M103",
             "loc": ("x",),
             "summary": "Input should be a valid mapping",
             "msg": "Expected a mapping for field 'x', but received a integer.",
@@ -96,7 +96,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {"x": None})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M007",
+            "code": "M103",
             "loc": ("x",),
             "summary": "Input should be a valid mapping",
             "msg": (
@@ -118,7 +118,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {"x": "hllo"})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M008",
+            "code": "M104",
             "loc": ("x",),
             "summary": "Input should be 'hello' or 'world'",
             "msg": (
@@ -142,7 +142,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {"x": [{"y": "foo", "z": "bar"}]})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M005",
+            "code": "M102",
             "loc": ("x", 0, "z"),
             "summary": "Found redundant field",
             "msg": "Field 'z' is not valid within the 'x' section.",
@@ -153,7 +153,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {"x": [{"y": "foo"}], "z": "bar"})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M005",
+            "code": "M102",
             "loc": ("z",),
             "summary": "Found redundant field",
             "msg": "Field 'z' is not valid within current context.",
@@ -167,7 +167,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {"x": "foo"})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M007",
+            "code": "M103",
             "loc": ("x",),
             "summary": "Input should be a valid floating point number",
             "msg": "Expected a floating point number for field 'x', but received a string.",
@@ -181,7 +181,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {"x": "foo"})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M007",
+            "code": "M103",
             "loc": ("x",),
             "summary": "Input should be a valid integer",
             "msg": "Expected a integer for field 'x', but received a string.",
@@ -195,7 +195,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {"x": "foo"})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M007",
+            "code": "M103",
             "loc": ("x",),
             "summary": "Input should be a valid array",
             "msg": "Expected an array for field 'x', but received a string.",
@@ -209,7 +209,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {"x": {}})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M007",
+            "code": "M103",
             "loc": ("x",),
             "summary": "Input should be a valid array",
             "msg": (
@@ -227,7 +227,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {"x": "warudo"})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M008",
+            "code": "M104",
             "loc": ("x",),
             "summary": "Input should be 'hello', 'world' or 'hola'",
             "msg": (
@@ -245,7 +245,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M004",
+            "code": "M101",
             "loc": ("x",),
             "summary": "Missing required field",
             "msg": "Field 'x' is required but missing",
@@ -258,7 +258,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {"x": None})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M007",
+            "code": "M103",
             "loc": ("x",),
             "summary": "Input should be a valid string",
             "msg": (
@@ -292,7 +292,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(int, "foo")
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M007",
+            "code": "M103",
             "loc": (),
             "summary": "Input should be a valid integer",
             "msg": "Expected a integer for field <unnamed>, but received a string.",

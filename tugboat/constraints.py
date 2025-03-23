@@ -45,14 +45,14 @@ def accept_none(
 
     Yield
     -----
-    :ref:`code.m005` for each unexpected field.
+    :rule:`m102` for each unexpected field.
     """
     for field_name in fields:
         if getattr(model, field_name, None) is not None:
             field_alias = get_alias(model, field_name)
             yield {
                 "type": "failure",
-                "code": "M005",
+                "code": "M102",
                 "loc": (*loc, field_alias),
                 "summary": f"Found redundant field '{field_alias}'",
                 "msg": f"Field '{field_alias}' is not valid within {get_context_name(loc)}.",
@@ -69,7 +69,7 @@ def mutually_exclusive(
 
     Yield
     -----
-    :ref:`code.m006` when more than one were set.
+    :rule:`m201` when more than one were set.
     """
     fields_with_values = [
         field for field in fields if getattr(model, field, None) is not None
@@ -84,7 +84,7 @@ def mutually_exclusive(
     for field_alias in fields_with_values:
         yield {
             "type": "failure",
-            "code": "M006",
+            "code": "M201",
             "loc": (*loc, field_alias),
             "summary": "Mutually exclusive field set",
             "msg": f"Field {exclusive_fields} are mutually exclusive.",
@@ -100,7 +100,7 @@ def require_all(
 
     Yield
     -----
-    :ref:`code.m004` when any of the fields are absent.
+    :rule:`m101` when any of the fields are absent.
     """
     for field_name in fields:
         if getattr(model, field_name, None) is None:
@@ -108,7 +108,7 @@ def require_all(
             context_name = get_context_name(loc)
             yield {
                 "type": "failure",
-                "code": "M004",
+                "code": "M101",
                 "loc": (*loc, field_alias),
                 "summary": f"Missing required field '{field_alias}'",
                 "msg": f"Field '{field_alias}' is required in {context_name} but missing.",
@@ -123,8 +123,8 @@ def require_non_empty(
 
     Yield
     -----
-    :ref:`code.m004` when any of the fields are absent.
-    :ref:`code.m011` when any of the fields are empty.
+    :rule:`m101` when any of the fields are absent.
+    :rule:`m202` when any of the fields are empty.
     """
     # check absent
     yield from require_all(model=model, loc=loc, fields=fields)
@@ -140,7 +140,7 @@ def require_non_empty(
             context_name = get_context_name(loc)
             yield {
                 "type": "failure",
-                "code": "M011",
+                "code": "M202",
                 "loc": (*loc, field_alias),
                 "summary": f"Missing input in field '{field_alias}'",
                 "msg": f"Field '{field_alias}' is required in {context_name} but is currently empty.",
@@ -155,8 +155,8 @@ def require_exactly_one(
 
     Yield
     -----
-    :ref:`code.m004` when none of the fields are set.
-    :ref:`code.m006` when more than one were set.
+    :rule:`m101` when none of the fields are set.
+    :rule:`m201` when more than one were set.
     """
     # check if any of the fields are set
     any_field_set = False
@@ -170,7 +170,7 @@ def require_exactly_one(
         required_fields = sorted(get_alias(model, field_name) for field_name in fields)
         yield {
             "type": "failure",
-            "code": "M004",
+            "code": "M101",
             "loc": tuple(loc),
             "summary": "Missing required field",
             "msg": f"""

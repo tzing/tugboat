@@ -23,8 +23,8 @@ def check_resource_name(
 
     Yield
     -----
-    :ref:`code.m009` for too short or too long name.
-    :ref:`code.m010` for invalid characters in the name.
+    :rule:`m302` for too short or too long name.
+    :rule:`m302` for invalid characters in the name.
 
     See also
     --------
@@ -41,7 +41,7 @@ def check_resource_name(
     if not name:
         yield {
             "type": "failure",
-            "code": "M009",
+            "code": "M302",
             "loc": (),
             "summary": "Resource name is too short",
             "msg": f"Resource name is empty, minimum length is {min_length}.",
@@ -49,7 +49,7 @@ def check_resource_name(
     elif len(name) < min_length:
         yield {
             "type": "failure",
-            "code": "M009",
+            "code": "M302",
             "loc": (),
             "summary": "Resource name is too short",
             "msg": f"Resource name '{name}' is too short, minimum length is {min_length}.",
@@ -59,7 +59,7 @@ def check_resource_name(
     if len(name) > max_length:
         yield {
             "type": "failure",
-            "code": "M009",
+            "code": "M302",
             "loc": (),
             "summary": "Resource name is too long",
             "msg": f"Resource name '{name}' is too long, maximum length is {max_length}.",
@@ -77,7 +77,7 @@ def check_resource_name(
 
     diagnosis: Diagnosis = {
         "type": "failure",
-        "code": "M010",
+        "code": "M301",
         "loc": (),
         "summary": "Invalid resource name",
         "msg": f"""
