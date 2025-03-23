@@ -5,30 +5,25 @@ Code ``M`` is primarily used for errors reported by the manifest parser.
 These errors are typically caused by incorrect syntax or missing required information in the manifest file.
 
 
-:bdg:`M001` Not a Kubernetes manifest
--------------------------------------
+.. rule:: M001 Not a Kubernetes manifest
 
-This error code is triggered when the input file does not look like a Kubernetes manifest.
-
-
-:bdg:`M002` Unsupported manifest kind
--------------------------------------
-
-The input manifest kind is not supported by the parser.
-
-Tugboat is not designed to parse every possible Kubernetes resource.
-This error code is triggered when the parser encounters a manifest kind that is not supported by Tugboat.
+   This error code is triggered when the input file does not look like a Kubernetes manifest.
 
 
-.. _code.m003:
+.. rule:: M002 Unsupported manifest kind
 
-:bdg:`M003` Malformed manifest
-------------------------------
+   The input manifest kind is not supported by the parser.
 
-The input manifest does not conform to the expected format.
+   Tugboat is not designed to parse every possible Kubernetes resource.
+   This error code is triggered when the parser encounters a manifest kind that is not supported by Tugboat.
 
-This error code is triggered when the parser encounters a general error in the manifest file.
-If the parser identifies a more specific issue, a more precise error code, such as :ref:`code.m004`, will be used instead.
+
+.. rule:: M003 Malformed manifest
+
+   The input manifest does not conform to the expected format.
+
+   This error code is triggered when the parser encounters a general error in the manifest file.
+   If the parser identifies a more specific issue, a more precise error code, such as :ref:`code.m004`, will be used instead.
 
 
 .. _code.m004:

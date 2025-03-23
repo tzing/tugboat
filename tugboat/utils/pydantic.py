@@ -172,7 +172,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
         * - `tuple_type <https://docs.pydantic.dev/latest/errors/validation_errors/#tuple_type>`_
           - :ref:`code.m007`
         * - Any other error
-          - :ref:`code.m003`
+          - :rule:`m003`
 
     Parameters
     ----------
