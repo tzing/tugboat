@@ -13,34 +13,32 @@
     text-decoration: none;
 }
 
-.inline-rule-ref:hover .rule-code {
+a:hover .inline-rule-ref .rule-code {
     color: var(--sy-c-link);
 }
 
 .localtoc .rule-code {
     display: inline;
     color: var(--sy-c-light);
-    padding: 0 4px;
     font-size: 0.82em;
-    margin-right: 4px;
     line-height: 1;
-    border-radius: 4px;
-    border: 1px solid var(--sy-c-light);
     margin-right: 0;
 }
 
 .localtoc .active .rule-code {
     color: var(--sy-c-link);
-    border-color: var(--sy-c-link);
+}
+
+.localtoc a:hover .rule-code {
+    color: var(--sy-c-link);
 }
 
 .rule-section h2 .rule-code {
-    display: inline;
-    color: inherit;
-    font-size: 0.82em;
     color: var(--sy-c-light);
+    display: inline;
+    font-size: 0.82em;
     font-weight: 500;
-    margin-right: 4px;
     line-height: 1;
+    margin-right: 4px;
     text-decoration: none;
 }
