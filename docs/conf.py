@@ -68,6 +68,9 @@ autodoc_default_options = {
 
 html_theme = "shibuya"
 html_static_path = ["_static"]
+html_css_files = [
+    "styles/rules.css",
+]
 
 html_context = {
     "source_type": "github",
