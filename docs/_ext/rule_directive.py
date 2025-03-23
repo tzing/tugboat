@@ -74,19 +74,9 @@ class RuleDirective(SphinxDirective):
 
         # register the label in Sphinx's standard domain
         std_domain = cast("StandardDomain", self.env.get_domain("std"))
-
-        if anchor in std_domain.labels:
-            # warn if the label is already defined in another document
-            other_doc_name, _, _ = std_domain.labels[anchor]
-            other_doc_path = self.env.doc2path(other_doc_name)
-            self.state.document.reporter.warning(
-                f"Duplicate label '{anchor_id}' already defined in {other_doc_path}",
-                line=self.lineno,
-            )
-
-        doc_name = self.env.docname
-        std_domain.labels[anchor] = (doc_name, anchor_id, f"{rule_code} ({rule_name})")
-        std_domain.anonlabels[anchor] = (doc_name, anchor_id)
+        std_domain.note_hyperlink_target(
+            anchor, self.env.docname, anchor_id, f"{rule_code} ({rule_name})"
+        )
 
         # register the rule in tugboat domain
         tugboat_domain = cast("TugboatDomain", self.env.get_domain("tg"))
