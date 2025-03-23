@@ -14,7 +14,7 @@ the rule ID and the rule name.
 The rule directive will also add a target to the rule ID for cross-referencing.
 For referencing the rule, you can leverage the following syntax::
 
-   :ref:`tugboat.rule.RULE-ID`
+   :ref:`tg.rule.RULE-ID`
 """
 
 from __future__ import annotations
@@ -63,7 +63,7 @@ class RuleDirective(SphinxDirective):
         rule_code, rule_name = self.arguments
         rule_code = rule_code.upper()
 
-        anchor = "tugboat.rule." + rule_code.lower()
+        anchor = "tg.rule." + rule_code.lower()
         anchor_id = nodes.make_id(anchor)
 
         # register the label in Sphinx's standard domain
@@ -83,7 +83,7 @@ class RuleDirective(SphinxDirective):
         std_domain.anonlabels[anchor] = (doc_name, anchor_id)
 
         # register the rule in tugboat domain
-        tugboat_domain = self.env.get_domain("tugboat")
+        tugboat_domain = self.env.get_domain("tg")
         tugboat_domain.data["objects"][rule_code] = (doc_name, anchor_id, rule_name)
 
         # create section and populate it with title and content
@@ -145,13 +145,13 @@ class TugboatRuleRole(XRefRole):
 
 class TugboatDomain(Domain):
 
-    name = "tugboat"
+    name = "tg"
     label = "Tugboat"
 
     directives: ClassVar = {"rule": RuleDirective}
     roles: ClassVar = {"rule": TugboatRuleRole()}
 
-    object_types: ClassVar = {"rule": ObjType("tugboat rule", "ref")}
+    object_types: ClassVar = {"rule": ObjType("Tugboat rule", "ref")}
 
     # code: (doc name, anchor id, name)
     initial_data: ClassVar = {"objects": {}}
