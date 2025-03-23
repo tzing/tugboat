@@ -45,7 +45,7 @@ def accept_none(
 
     Yield
     -----
-    :ref:`code.m005` for each unexpected field.
+    :rule:`m005` for each unexpected field.
     """
     for field_name in fields:
         if getattr(model, field_name, None) is not None:
@@ -69,7 +69,7 @@ def mutually_exclusive(
 
     Yield
     -----
-    :ref:`code.m006` when more than one were set.
+    :rule:`m006` when more than one were set.
     """
     fields_with_values = [
         field for field in fields if getattr(model, field, None) is not None
@@ -156,7 +156,7 @@ def require_exactly_one(
     Yield
     -----
     :rule:`m004` when none of the fields are set.
-    :ref:`code.m006` when more than one were set.
+    :rule:`m006` when more than one were set.
     """
     # check if any of the fields are set
     any_field_set = False

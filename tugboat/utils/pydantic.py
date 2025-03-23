@@ -132,45 +132,45 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
         * - Pydantic Error Type
           - Tugboat Code
         * - `bool_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#bool_parsing>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `bool_type <https://docs.pydantic.dev/latest/errors/validation_errors/#bool_type>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `dict_type <https://docs.pydantic.dev/latest/errors/validation_errors/#dict_type>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `decimal_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#decimal_parsing>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `decimal_type <https://docs.pydantic.dev/latest/errors/validation_errors/#decimal_type>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `enum <https://docs.pydantic.dev/latest/errors/validation_errors/#enum>`_
-          - :ref:`code.m008`
+          - :rule:`m008`
         * - `extra_forbidden <https://docs.pydantic.dev/latest/errors/validation_errors/#extra_forbidden>`_
-          - :ref:`code.m005`
+          - :rule:`m005`
         * - `float_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#float_parsing>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `float_type <https://docs.pydantic.dev/latest/errors/validation_errors/#float_type>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `frozen_set_type <https://docs.pydantic.dev/latest/errors/validation_errors/#frozen_set_type>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `int_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#int_parsing>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `int_type <https://docs.pydantic.dev/latest/errors/validation_errors/#int_type>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `iterable_type <https://docs.pydantic.dev/latest/errors/validation_errors/#iterable_type>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `list_type <https://docs.pydantic.dev/latest/errors/validation_errors/#list_type>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `literal_error <https://docs.pydantic.dev/latest/errors/validation_errors/#literal_error>`_
-          - :ref:`code.m008`
+          - :rule:`m008`
         * - `mapping_type <https://docs.pydantic.dev/latest/errors/validation_errors/#mapping_type>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `missing <https://docs.pydantic.dev/latest/errors/validation_errors/#missing>`_
           - :rule:`m004`
         * - `set_type <https://docs.pydantic.dev/latest/errors/validation_errors/#set_type>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `string_type <https://docs.pydantic.dev/latest/errors/validation_errors/#string_type>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - `tuple_type <https://docs.pydantic.dev/latest/errors/validation_errors/#tuple_type>`_
-          - :ref:`code.m007`
+          - :rule:`m007`
         * - Any other error
           - :rule:`m003`
 

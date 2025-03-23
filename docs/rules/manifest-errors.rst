@@ -46,98 +46,86 @@ These errors are typically caused by incorrect syntax or missing required inform
               image: alpine:latest
 
 
-.. _code.m005:
+.. rule:: M005 Found redundant field
 
-:bdg:`M005` Found redundant field
----------------------------------
+   The manifest contains an unexpected field.
 
-The manifest contains an unexpected field.
+   For instance, the following manifest contains an extra field, ``extraField``, within the root of the document:
 
-For instance, the following manifest contains an extra field, ``extraField``, within the root of the document:
+   .. code-block:: yaml
+      :emphasize-lines: 10
 
-.. code-block:: yaml
-   :emphasize-lines: 10
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     generateName: hello-
-   spec:
-     templates:
-       - name: hello
-         container:
-           image: alpine:latest
-   extraField: value
-
-.. _code.m006:
-
-:bdg:`M006` Mutually exclusive fields
--------------------------------------
-
-The manifest contains fields that are mutually exclusive.
-
-For instance, the following manifest contains both ``script`` and ``container`` fields within the same template:
-
-.. code-block:: yaml
-   :emphasize-lines: 8,12
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     generateName: hello-
-   spec:
-     templates:
-       - name: hello
-         script:
-           image: alpine:latest
-           source: |
-             echo 'Hello, world!'
-         container:
-           image: alpine:latest
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: hello-
+      spec:
+        templates:
+          - name: hello
+            container:
+              image: alpine:latest
+      extraField: value
 
 
-.. _code.m007:
+.. rule:: M006 Mutually exclusive fields
 
-:bdg:`M007` Type mismatch
--------------------------
+   The manifest contains fields that are mutually exclusive.
 
-The value of a field does not match the expected type.
+   For instance, the following manifest contains both ``script`` and ``container`` fields within the same template:
 
-The following manifest contains a number in ``entrypoint`` field, which is expected to be a string:
+   .. code-block:: yaml
+      :emphasize-lines: 8,12
 
-.. code-block:: yaml
-   :emphasize-lines: 6
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: hello-
+      spec:
+        templates:
+          - name: hello
+            script:
+              image: alpine:latest
+              source: |
+                echo 'Hello, world!'
+            container:
+              image: alpine:latest
 
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     generateName: hello-
-   spec:
-     entrypoint: 1234
 
+.. rule:: M007 Type mismatch
 
-.. _code.m008:
+   The value of a field does not match the expected type.
 
-:bdg:`M008` Invalid field value
--------------------------------
+   The following manifest contains a number in ``entrypoint`` field, which is expected to be a string:
 
-The value of a field is not valid.
+   .. code-block:: yaml
+      :emphasize-lines: 6
 
-For instance, the following manifest contains an invalid value for the ``imagePullPolicy`` field:
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: hello-
+      spec:
+        entrypoint: 1234
 
-.. code-block:: yaml
-   :emphasize-lines: 10
+.. rule:: M008 Invalid field value
 
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     generateName: hello-
-   spec:
-     templates:
-       - name: hello
-         container:
-           image: alpine:latest
-           imagePullPolicy: InvalidValue
+   The value of a field is not valid.
+
+   For instance, the following manifest contains an invalid value for the ``imagePullPolicy`` field:
+
+   .. code-block:: yaml
+      :emphasize-lines: 10
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: hello-
+      spec:
+        templates:
+          - name: hello
+            container:
+              image: alpine:latest
+              imagePullPolicy: InvalidValue
 
 
 .. _code.m009:
