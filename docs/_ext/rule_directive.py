@@ -51,6 +51,12 @@ def setup(app: Sphinx):
     }
 
 
+class RuleEntry(typing.NamedTuple):
+    doc_name: str
+    node_id: str
+    rule_name: str
+
+
 class RuleDirective(SphinxDirective):
     """Directive for defining a rule with code and name."""
 
@@ -84,7 +90,7 @@ class RuleDirective(SphinxDirective):
 
         # register the rule in tugboat domain
         tugboat_domain = self.env.get_domain("tg")
-        tugboat_domain.data["objects"][rule_code] = (doc_name, anchor_id, rule_name)
+        tugboat_domain.rules[rule_code] = (doc_name, anchor_id, rule_name)
 
         # create section and populate it with title and content
         title = nodes.title()
@@ -150,11 +156,7 @@ class TugboatDomain(Domain):
 
     directives: ClassVar = {"rule": RuleDirective}
     roles: ClassVar = {"rule": TugboatRuleRole()}
-
     object_types: ClassVar = {"rule": ObjType("Tugboat rule", "ref")}
-
-    # code: (doc name, anchor id, name)
-    initial_data: ClassVar = {"objects": {}}
 
     def resolve_xref(
         self,
@@ -166,7 +168,7 @@ class TugboatDomain(Domain):
         node: pending_xref,
         contnode: Element,
     ) -> Element | None:
-        if data := self.data["objects"].get(target):
+        if data := self.rules.get(target):
             doc_name, anchor_id, _ = data
             return make_refnode(
                 builder, fromdocname, doc_name, anchor_id, contnode, anchor_id
@@ -175,5 +177,9 @@ class TugboatDomain(Domain):
         return None
 
     def get_objects(self):
-        for label, (doc_name, anchor_id, rule_name) in self.data["objects"].items():
+        for label, (doc_name, anchor_id, rule_name) in self.rules.items():
             yield (label, rule_name, "rule", doc_name, anchor_id, 1)
+
+    @property
+    def rules(self) -> dict[str, RuleEntry]:
+        return self.data.setdefault("rules", {})
