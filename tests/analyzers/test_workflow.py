@@ -133,7 +133,7 @@ class TestRules:
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
-                {"code": "M010", "loc": ("metadata", "name"), "fix": "invalid-name"}
+                {"code": "M301", "loc": ("metadata", "name"), "fix": "invalid-name"}
             )
             in diagnoses
         )
@@ -142,7 +142,7 @@ class TestRules:
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_GENERATE_NAME)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
-            IsPartialDict({"code": "M010", "loc": ("metadata", "generateName")})
+            IsPartialDict({"code": "M301", "loc": ("metadata", "generateName")})
             in diagnoses
         )
 
@@ -242,7 +242,7 @@ MANIFEST_MALFORMED_NAME = """
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
-  name: invalid_name  # M009
+  name: invalid_name  # M302
 spec:
   templates: []
   workflowTemplateRef:  # M201
@@ -254,7 +254,7 @@ MANIFEST_MALFORMED_GENERATE_NAME = """
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
-  generateName: invalid_name_  # M010
+  generateName: invalid_name_  # M301
 spec:
   templates: []
 """

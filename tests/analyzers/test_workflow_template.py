@@ -12,7 +12,7 @@ class TestRules:
     def test_check_metadata_1(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_NAME_TOO_LONG)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-        assert IsPartialDict({"code": "M009"}) in diagnoses
+        assert IsPartialDict({"code": "M302"}) in diagnoses
 
     def test_check_metadata_2(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_USE_GENERATE_NAME)

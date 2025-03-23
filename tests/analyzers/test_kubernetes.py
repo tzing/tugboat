@@ -14,7 +14,7 @@ class TestCheckResourceName:
         # min length - name
         assert IsPartialDict(
             {
-                "code": "M009",
+                "code": "M302",
                 "msg": "Resource name 'abcde' is too short, minimum length is 10.",
             }
         ) in check_resource_name("abcde", min_length=10)
@@ -22,7 +22,7 @@ class TestCheckResourceName:
         # min length - generate name
         assert IsPartialDict(
             {
-                "code": "M009",
+                "code": "M302",
                 "msg": "Resource name 'abcd' is too short, minimum length is 5.",
             }
         ) in check_resource_name("abcd", min_length=10, is_generate_name=True)
@@ -36,7 +36,7 @@ class TestCheckResourceName:
         assert (
             IsPartialDict(
                 {
-                    "code": "M009",
+                    "code": "M302",
                     "msg": "Resource name is empty, minimum length is 1.",
                 }
             )
@@ -46,7 +46,7 @@ class TestCheckResourceName:
         # max length - name
         assert IsPartialDict(
             {
-                "code": "M009",
+                "code": "M302",
                 "msg": "Resource name 'abcde' is too long, maximum length is 4.",
             }
         ) in check_resource_name("abcde", max_length=4)
@@ -54,7 +54,7 @@ class TestCheckResourceName:
         # max length - generate name
         assert IsPartialDict(
             {
-                "code": "M009",
+                "code": "M302",
                 "msg": "Resource name 'abcd-' is too long, maximum length is 4.",
             }
         ) in check_resource_name("abcd-", max_length=9, is_generate_name=True)
@@ -63,7 +63,7 @@ class TestCheckResourceName:
         # invalid characters
         assert IsPartialDict(
             {
-                "code": "M010",
+                "code": "M301",
                 "msg": ContainsSubStrings(
                     "Resource name 'invalid_name' contains invalid characters."
                 ),
@@ -74,7 +74,7 @@ class TestCheckResourceName:
         # suffix `-` for name is not allowed
         assert IsPartialDict(
             {
-                "code": "M010",
+                "code": "M301",
                 "msg": ContainsSubStrings(
                     "Resource name 'name-' contains invalid characters."
                 ),
@@ -87,7 +87,7 @@ class TestCheckResourceName:
         # check alternative name
         assert IsPartialDict(
             {
-                "code": "M010",
+                "code": "M301",
                 "msg": ContainsSubStrings(
                     "Resource name 'invalid_name-' contains invalid characters."
                 ),

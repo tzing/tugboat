@@ -47,7 +47,7 @@ def check_metadata(workflow: CronWorkflow) -> Iterator[Diagnosis]:
         ):
             diagnosis["loc"] = "metadata", "name"
 
-            if diagnosis["code"] == "M009":
+            if diagnosis["code"] == "M302":
                 diagnosis["code"] = "CW001"
                 diagnosis["msg"] = (
                     f"""
@@ -68,7 +68,7 @@ def check_metadata(workflow: CronWorkflow) -> Iterator[Diagnosis]:
         ):
             diagnosis["loc"] = "metadata", "generateName"
 
-            if diagnosis["code"] == "M009":
+            if diagnosis["code"] == "M302":
                 diagnosis["code"] = "CW001"
                 length = MAX_CRON_WORKFLOW_NAME_LENGTH - GENERATED_SUFFIX_LENGTH
                 diagnosis["msg"] = (

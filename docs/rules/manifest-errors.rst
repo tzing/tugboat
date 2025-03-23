@@ -150,54 +150,47 @@ This section lists the error codes that are specific to Kubernetes manifest.
 
 .. M3xx Kubernetes-specific errors
 
-.. _code.m009:
+.. rule:: M301 Invalid resource name
 
-:bdg:`M009` Resource name length error
---------------------------------------
+   The resource name contains invalid characters.
 
-The resource name does not meet the required length criteria; it is either too long or too short.
+   Kubernetes requires most resource names to comply with the `RFC 1123`_ standard for DNS subdomain names [#kube-names]_:
 
-For generated names, Kubernetes typically trims the user-provided name to fit within the length limit.
-However, tugboat requires that the user-provided name reserves 5 characters for the generated suffix to ensure it is not truncated.
+   * Only lowercase alphanumeric characters, ``-``, or ``.``
+   * Must start with an alphanumeric character
+   * Must end with an alphanumeric character
 
-For example, the following resource name is too long for a WorkflowTemplate, which has a maximum name length of 63 characters.
-This given name (59 characters) may cause the last character of the given name to be truncated:
+   .. code-block:: yaml
+      :emphasize-lines: 4
 
-.. code-block:: yaml
-   :emphasize-lines: 4
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        name: invalid_name
+      spec:
+        ...
 
-   apiVersion: argoproj.io/v1alpha1
-   kind: WorkflowTemplate
-   metadata:
-     generateName: an-extreme-long-name-which-exceeds-the-maximum-name-length-
-   spec:
-     ...
+   In this example, the resource name ``invalid_name`` contains an underscore, which is not allowed.
 
+   .. _RFC 1123: https://tools.ietf.org/html/rfc1123
+   .. [#kube-names] Read `Object Names and IDs <https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names>`_ for more details.
 
-.. _code.m010:
+.. rule:: M302 Resource name length error
 
-:bdg:`M010` Invalid resource name
----------------------------------
+   The resource name does not meet the required length criteria; it is either too long or too short.
 
-The resource name contains invalid characters.
+   For generated names, Kubernetes typically trims the user-provided name to fit within the length limit.
+   However, tugboat requires that the user-provided name reserves 5 characters for the generated suffix to ensure it is not truncated.
 
-Kubernetes requires most resource names to comply with the `RFC 1123`_ standard for DNS subdomain names [#kube-names]_:
+   For example, the following resource name is too long for a WorkflowTemplate, which has a maximum name length of 63 characters.
+   This given name (59 characters) may cause the last character of the given name to be truncated:
 
-* Only lowercase alphanumeric characters, ``-``, or ``.``
-* Must start with an alphanumeric character
-* Must end with an alphanumeric character
+   .. code-block:: yaml
+      :emphasize-lines: 4
 
-.. code-block:: yaml
-   :emphasize-lines: 4
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     name: invalid_name
-   spec:
-     ...
-
-In this example, the resource name ``invalid_name`` contains an underscore, which is not allowed.
-
-.. _RFC 1123: https://tools.ietf.org/html/rfc1123
-.. [#kube-names] Read `Object Names and IDs <https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names>`_ for more details.
+      apiVersion: argoproj.io/v1alpha1
+      kind: WorkflowTemplate
+      metadata:
+        generateName: an-extreme-long-name-which-exceeds-the-maximum-name-length-
+      spec:
+        ...

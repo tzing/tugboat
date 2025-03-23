@@ -11,7 +11,7 @@ The prefix ``CW`` is used to identify potential issues with `cron workflows`_.
 
 The resource name does not meet the required length criteria; it is either too long or too short.
 
-This error is similar to :ref:`code.m009`.
+This error is similar to :rule:`m302`.
 
 Cron workflow names have a maximum length of 52 characters because Argo Workflows appends an 11-character suffix when creating the Workflow.
 
