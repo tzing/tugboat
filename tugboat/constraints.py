@@ -100,7 +100,7 @@ def require_all(
 
     Yield
     -----
-    :ref:`code.m004` when any of the fields are absent.
+    :rule:`m004` when any of the fields are absent.
     """
     for field_name in fields:
         if getattr(model, field_name, None) is None:
@@ -123,7 +123,7 @@ def require_non_empty(
 
     Yield
     -----
-    :ref:`code.m004` when any of the fields are absent.
+    :rule:`m004` when any of the fields are absent.
     :ref:`code.m011` when any of the fields are empty.
     """
     # check absent
@@ -155,7 +155,7 @@ def require_exactly_one(
 
     Yield
     -----
-    :ref:`code.m004` when none of the fields are set.
+    :rule:`m004` when none of the fields are set.
     :ref:`code.m006` when more than one were set.
     """
     # check if any of the fields are set

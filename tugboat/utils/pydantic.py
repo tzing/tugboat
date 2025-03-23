@@ -164,7 +164,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
         * - `mapping_type <https://docs.pydantic.dev/latest/errors/validation_errors/#mapping_type>`_
           - :ref:`code.m007`
         * - `missing <https://docs.pydantic.dev/latest/errors/validation_errors/#missing>`_
-          - :ref:`code.m004`
+          - :rule:`m004`
         * - `set_type <https://docs.pydantic.dev/latest/errors/validation_errors/#set_type>`_
           - :ref:`code.m007`
         * - `string_type <https://docs.pydantic.dev/latest/errors/validation_errors/#string_type>`_

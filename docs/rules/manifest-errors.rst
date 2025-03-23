@@ -23,30 +23,28 @@ These errors are typically caused by incorrect syntax or missing required inform
    The input manifest does not conform to the expected format.
 
    This error code is triggered when the parser encounters a general error in the manifest file.
-   If the parser identifies a more specific issue, a more precise error code, such as :ref:`code.m004`, will be used instead.
+   If the parser identifies a more specific issue, a more precise error code, such as :rule:`m004`, will be used instead.
 
 
-.. _code.m004:
+.. rule:: M004 Missing required field
 
-:bdg:`M004` Missing required field
-----------------------------------
+   A mandatory field is missing from the resource.
 
-A mandatory field is missing from the resource.
+   For instance, the following manifest lacks the required ``source`` field within the ``script`` section:
 
-For instance, the following manifest lacks the required ``source`` field within the ``script`` section:
+   .. code-block:: yaml
+      :emphasize-lines: 8-9
 
-.. code-block:: yaml
-   :emphasize-lines: 8-9
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: hello-
+      spec:
+        templates:
+          - name: hello
+            script:
+              image: alpine:latest
 
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     generateName: hello-
-   spec:
-     templates:
-       - name: hello
-         script:
-           image: alpine:latest
 
 .. _code.m005:
 
