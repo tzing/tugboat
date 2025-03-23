@@ -124,7 +124,7 @@ def require_non_empty(
     Yield
     -----
     :rule:`m101` when any of the fields are absent.
-    :ref:`code.m011` when any of the fields are empty.
+    :rule:`m202` when any of the fields are empty.
     """
     # check absent
     yield from require_all(model=model, loc=loc, fields=fields)
@@ -140,7 +140,7 @@ def require_non_empty(
             context_name = get_context_name(loc)
             yield {
                 "type": "failure",
-                "code": "M011",
+                "code": "M202",
                 "loc": (*loc, field_alias),
                 "summary": f"Missing input in field '{field_alias}'",
                 "msg": f"Field '{field_alias}' is required in {context_name} but is currently empty.",

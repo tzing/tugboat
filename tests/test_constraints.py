@@ -120,7 +120,7 @@ class TestRequireNonEmpty:
             },
             {
                 "type": "failure",
-                "code": "M011",
+                "code": "M202",
                 "loc": ("spec", "baz"),
                 "summary": "Missing input in field 'baz'",
                 "msg": "Field 'baz' is required in the 'spec' section but is currently empty.",

@@ -1,9 +1,7 @@
 Manifest Errors (``M``)
 =======================
 
-Code ``M`` is primarily used for errors reported by the manifest parser.
-These errors are typically caused by incorrect syntax or missing required information in the manifest file.
-
+This section lists the error codes that are specific to Kubernetes manifest.
 
 .. M0xx Fatal errors on manifest parsing
 
@@ -103,6 +101,7 @@ These errors are typically caused by incorrect syntax or missing required inform
               image: alpine:latest
               imagePullPolicy: InvalidValue
 
+
 .. M2xx Conditional logic errors
 
 .. rule:: M201 Mutually exclusive fields
@@ -128,6 +127,28 @@ These errors are typically caused by incorrect syntax or missing required inform
             container:
               image: alpine:latest
 
+.. rule:: M202 Empty input
+
+   The field is empty while it is expected to have a value in current context.
+
+   For instance, the following manifest is missing the value in ``entrypoint`` field, which is required for a Workflow:
+
+   .. code-block:: yaml
+      :emphasize-lines: 6
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: hello-
+      spec:
+        entrypoint: ""
+        templates:
+          - name: hello
+            script:
+              image: alpine:latest
+
+
+.. M3xx Kubernetes-specific errors
 
 .. _code.m009:
 
@@ -180,27 +201,3 @@ In this example, the resource name ``invalid_name`` contains an underscore, whic
 
 .. _RFC 1123: https://tools.ietf.org/html/rfc1123
 .. [#kube-names] Read `Object Names and IDs <https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names>`_ for more details.
-
-
-.. _code.m011:
-
-:bdg:`M011` Empty input
------------------------
-
-The field is empty when it is expected to have a value.
-
-For instance, the following manifest is missing the value in ``entrypoint`` field:
-
-.. code-block:: yaml
-   :emphasize-lines: 6
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     generateName: hello-
-   spec:
-     entrypoint: ""
-     templates:
-       - name: hello
-         script:
-           image: alpine:latest
