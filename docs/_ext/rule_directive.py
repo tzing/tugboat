@@ -30,6 +30,8 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import make_refnode
 
 if typing.TYPE_CHECKING:
+    from typing import ClassVar
+
     from docutils.nodes import Element, Node, document, system_message
     from sphinx.application import Sphinx
     from sphinx.builders import Builder
@@ -105,12 +107,12 @@ class TugboatDomain(Domain):
 
     name = "tugboat"
     label = "Tugboat"
-    roles = {"rule": XRefRole()}
+    roles: ClassVar = {"rule": XRefRole()}
 
-    object_types = {"rule": ObjType("tugboat rule", "ref")}
+    object_types: ClassVar = {"rule": ObjType("tugboat rule", "ref")}
 
-    # { "code": (doc_name, anchor_id, name) }
-    initial_data = {"objects": {}}
+    # code: (doc name, anchor id, name)
+    initial_data: ClassVar = {"objects": {}}
 
     def resolve_xref(
         self,
