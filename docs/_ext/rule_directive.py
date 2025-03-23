@@ -89,8 +89,8 @@ class RuleDirective(SphinxDirective):
         std_domain.anonlabels[anchor] = (doc_name, anchor_id)
 
         # register the rule in tugboat domain
-        tugboat_domain = self.env.get_domain("tg")
-        tugboat_domain.rules[rule_code] = (doc_name, anchor_id, rule_name)
+        tugboat_domain = cast("TugboatDomain", self.env.get_domain("tg"))
+        tugboat_domain.note_rule(rule_code, rule_name, anchor_id)
 
         # create section and populate it with title and content
         title = nodes.title()
@@ -177,9 +177,16 @@ class TugboatDomain(Domain):
         return None
 
     def get_objects(self):
-        for label, (doc_name, anchor_id, rule_name) in self.rules.items():
-            yield (label, rule_name, "rule", doc_name, anchor_id, 1)
+        for label, (doc_name, node_id, rule_name) in self.rules.items():
+            yield (label, rule_name, "rule", doc_name, node_id, 1)
 
     @property
     def rules(self) -> dict[str, RuleEntry]:
         return self.data.setdefault("rules", {})
+
+    def note_rule(self, rule_code: str, rule_name: str, node_id: str):
+        self.rules[rule_code.upper()] = RuleEntry(
+            doc_name=self.env.docname,
+            node_id=node_id,
+            rule_name=rule_name,
+        )
