@@ -27,7 +27,7 @@ from sphinx.addnodes import pending_xref
 from sphinx.domains import Domain, ObjType
 from sphinx.roles import XRefRole
 from sphinx.util.docutils import SphinxDirective
-from sphinx_design.badges_buttons import create_bdg_classes
+from sphinx.util.nodes import make_refnode
 
 if typing.TYPE_CHECKING:
     from docutils.nodes import Element, Node, document, system_message
@@ -124,7 +124,10 @@ class TugboatDomain(Domain):
     ) -> Element | None:
         if data := self.data["objects"].get(target):
             doc_name, anchor_id, _ = data
-            return pending_xref(refdoc=doc_name, reftarget=anchor_id)
+            return make_refnode(
+                builder, fromdocname, doc_name, anchor_id, contnode, anchor_id
+            )
+
         return None
 
     def get_objects(self):
@@ -146,17 +149,22 @@ class TugboatRuleRole(XRefRole):
         # build the reference content when the target is found and not overridden
         data = env.get_domain("tugboat").data["objects"].get(rule_code)
         if data and not node.get("explicit"):
+            node["refdomain"] = "tugboat"
+            node["reftarget"] = rule_code
+            node["refwarn"] = True
             node.clear()
 
             doc_name, anchor_id, rule_name = data
 
-            # we want separate nodes for the rule code and name, the following
-            # handles the issue that pending_xref only takes the first child node
-            # as the ref target
-            container = nodes.inline()
+            # I want to separate nodes for the rule code and name
+            # The following handles the issue that pending_xref only takes the
+            # first child node as the ref target
+            container = nodes.inline(classes=["inline-rule-ref"])
             container += [
                 nodes.inline(
-                    rule_code, rule_code, classes=create_bdg_classes("primary", True)
+                    rule_code,
+                    rule_code,
+                    classes=["rule-code"],
                 ),
                 nodes.Text(rule_name),
             ]
