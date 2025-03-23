@@ -30,7 +30,7 @@ class TestAcceptNone:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M005",
+                "code": "M102",
                 "loc": ("spec", 0, 1, "baz", "baz"),
                 "summary": "Found redundant field 'baz'",
                 "msg": "Field 'baz' is not valid within the 'baz' section.",
@@ -46,7 +46,7 @@ class TestAcceptNone:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M005",
+                "code": "M102",
                 "loc": ("spec", 0, 1, "baz"),
                 "summary": "Found redundant field 'baz'",
                 "msg": "Field 'baz' is not valid within the 'spec' section.",
@@ -113,7 +113,7 @@ class TestRequireNonEmpty:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M004",
+                "code": "M101",
                 "loc": ("spec", "foo"),
                 "summary": "Missing required field 'foo'",
                 "msg": "Field 'foo' is required in the 'spec' section but missing.",
@@ -141,7 +141,7 @@ class TestRequireAll:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M004",
+                "code": "M101",
                 "loc": ("spec", "foo"),
                 "summary": "Missing required field 'foo'",
                 "msg": "Field 'foo' is required in the 'spec' section but missing.",
@@ -166,7 +166,7 @@ class TestRequireExactlyOne:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M004",
+                "code": "M101",
                 "loc": ("spec",),
                 "summary": "Missing required field",
                 "msg": ContainsSubStrings(

@@ -47,7 +47,7 @@ def test_check_input_artifacts():
     assert (
         IsPartialDict(
             {
-                "code": "M004",
+                "code": "M101",
                 "loc": ("spec", "templates", 0, "inputs", "artifacts", 0, "path"),
             }
         )
@@ -79,7 +79,7 @@ def test_check_output():
     assert (
         IsPartialDict(
             {
-                "code": "M004",
+                "code": "M101",
                 "loc": (
                     "spec",
                     "templates",
@@ -96,7 +96,7 @@ def test_check_output():
     assert (
         IsPartialDict(
             {
-                "code": "M004",
+                "code": "M101",
                 "loc": (
                     "spec",
                     "templates",
@@ -114,7 +114,7 @@ def test_check_output():
     assert (
         IsPartialDict(
             {
-                "code": "M004",
+                "code": "M101",
                 "loc": ("spec", "templates", 0, "outputs", "artifacts", 0, "path"),
             }
         )

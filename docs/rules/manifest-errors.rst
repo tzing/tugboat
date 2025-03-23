@@ -5,10 +5,11 @@ Code ``M`` is primarily used for errors reported by the manifest parser.
 These errors are typically caused by incorrect syntax or missing required information in the manifest file.
 
 
+.. M0xx Fatal errors on manifest parsing
+
 .. rule:: M001 Not a Kubernetes manifest
 
    This error code is triggered when the input file does not look like a Kubernetes manifest.
-
 
 .. rule:: M002 Unsupported manifest kind
 
@@ -17,16 +18,17 @@ These errors are typically caused by incorrect syntax or missing required inform
    Tugboat is not designed to parse every possible Kubernetes resource.
    This error code is triggered when the parser encounters a manifest kind that is not supported by Tugboat.
 
-
 .. rule:: M003 Malformed manifest
 
    The input manifest does not conform to the expected format.
 
    This error code is triggered when the parser encounters a general error in the manifest file.
-   If the parser identifies a more specific issue, a more precise error code, such as :rule:`m004`, will be used instead.
+   If the parser identifies a more specific issue, a more precise error code, such as :rule:`m101`, will be used instead.
 
 
-.. rule:: M004 Missing required field
+.. M1xx Schema validation errors
+
+.. rule:: M101 Missing required field
 
    A mandatory field is missing from the resource.
 
@@ -45,8 +47,7 @@ These errors are typically caused by incorrect syntax or missing required inform
             script:
               image: alpine:latest
 
-
-.. rule:: M005 Found redundant field
+.. rule:: M102 Found redundant field
 
    The manifest contains an unexpected field.
 
@@ -66,6 +67,21 @@ These errors are typically caused by incorrect syntax or missing required inform
               image: alpine:latest
       extraField: value
 
+.. rule:: M103 Type mismatch
+
+   The value of a field does not match the expected type.
+
+   The following manifest contains a number in ``entrypoint`` field, which is expected to be a string:
+
+   .. code-block:: yaml
+      :emphasize-lines: 6
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: hello-
+      spec:
+        entrypoint: 1234
 
 .. rule:: M006 Mutually exclusive fields
 
@@ -89,23 +105,6 @@ These errors are typically caused by incorrect syntax or missing required inform
                 echo 'Hello, world!'
             container:
               image: alpine:latest
-
-
-.. rule:: M007 Type mismatch
-
-   The value of a field does not match the expected type.
-
-   The following manifest contains a number in ``entrypoint`` field, which is expected to be a string:
-
-   .. code-block:: yaml
-      :emphasize-lines: 6
-
-      apiVersion: argoproj.io/v1alpha1
-      kind: Workflow
-      metadata:
-        generateName: hello-
-      spec:
-        entrypoint: 1234
 
 .. rule:: M008 Invalid field value
 

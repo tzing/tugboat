@@ -45,14 +45,14 @@ def accept_none(
 
     Yield
     -----
-    :rule:`m005` for each unexpected field.
+    :rule:`m102` for each unexpected field.
     """
     for field_name in fields:
         if getattr(model, field_name, None) is not None:
             field_alias = get_alias(model, field_name)
             yield {
                 "type": "failure",
-                "code": "M005",
+                "code": "M102",
                 "loc": (*loc, field_alias),
                 "summary": f"Found redundant field '{field_alias}'",
                 "msg": f"Field '{field_alias}' is not valid within {get_context_name(loc)}.",
@@ -100,7 +100,7 @@ def require_all(
 
     Yield
     -----
-    :rule:`m004` when any of the fields are absent.
+    :rule:`m101` when any of the fields are absent.
     """
     for field_name in fields:
         if getattr(model, field_name, None) is None:
@@ -108,7 +108,7 @@ def require_all(
             context_name = get_context_name(loc)
             yield {
                 "type": "failure",
-                "code": "M004",
+                "code": "M101",
                 "loc": (*loc, field_alias),
                 "summary": f"Missing required field '{field_alias}'",
                 "msg": f"Field '{field_alias}' is required in {context_name} but missing.",
@@ -123,7 +123,7 @@ def require_non_empty(
 
     Yield
     -----
-    :rule:`m004` when any of the fields are absent.
+    :rule:`m101` when any of the fields are absent.
     :ref:`code.m011` when any of the fields are empty.
     """
     # check absent
@@ -155,7 +155,7 @@ def require_exactly_one(
 
     Yield
     -----
-    :rule:`m004` when none of the fields are set.
+    :rule:`m101` when none of the fields are set.
     :rule:`m006` when more than one were set.
     """
     # check if any of the fields are set
@@ -170,7 +170,7 @@ def require_exactly_one(
         required_fields = sorted(get_alias(model, field_name) for field_name in fields)
         yield {
             "type": "failure",
-            "code": "M004",
+            "code": "M101",
             "loc": tuple(loc),
             "summary": "Missing required field",
             "msg": f"""

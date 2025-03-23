@@ -108,7 +108,7 @@ def bulk_translate_pydantic_errors(
         diagnoes.append(
             {
                 "type": "failure",
-                "code": "M007",
+                "code": "M103",
                 "loc": loc,
                 "summary": "Input type mismatch",
                 "msg": (
@@ -132,45 +132,45 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
         * - Pydantic Error Type
           - Tugboat Code
         * - `bool_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#bool_parsing>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `bool_type <https://docs.pydantic.dev/latest/errors/validation_errors/#bool_type>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `dict_type <https://docs.pydantic.dev/latest/errors/validation_errors/#dict_type>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `decimal_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#decimal_parsing>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `decimal_type <https://docs.pydantic.dev/latest/errors/validation_errors/#decimal_type>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `enum <https://docs.pydantic.dev/latest/errors/validation_errors/#enum>`_
           - :rule:`m008`
         * - `extra_forbidden <https://docs.pydantic.dev/latest/errors/validation_errors/#extra_forbidden>`_
-          - :rule:`m005`
+          - :rule:`m102`
         * - `float_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#float_parsing>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `float_type <https://docs.pydantic.dev/latest/errors/validation_errors/#float_type>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `frozen_set_type <https://docs.pydantic.dev/latest/errors/validation_errors/#frozen_set_type>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `int_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#int_parsing>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `int_type <https://docs.pydantic.dev/latest/errors/validation_errors/#int_type>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `iterable_type <https://docs.pydantic.dev/latest/errors/validation_errors/#iterable_type>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `list_type <https://docs.pydantic.dev/latest/errors/validation_errors/#list_type>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `literal_error <https://docs.pydantic.dev/latest/errors/validation_errors/#literal_error>`_
           - :rule:`m008`
         * - `mapping_type <https://docs.pydantic.dev/latest/errors/validation_errors/#mapping_type>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `missing <https://docs.pydantic.dev/latest/errors/validation_errors/#missing>`_
-          - :rule:`m004`
+          - :rule:`m101`
         * - `set_type <https://docs.pydantic.dev/latest/errors/validation_errors/#set_type>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `string_type <https://docs.pydantic.dev/latest/errors/validation_errors/#string_type>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - `tuple_type <https://docs.pydantic.dev/latest/errors/validation_errors/#tuple_type>`_
-          - :rule:`m007`
+          - :rule:`m103`
         * - Any other error
           - :rule:`m003`
 
@@ -191,7 +191,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
             input_type = get_type_name(error["input"])
             return {
                 "type": "failure",
-                "code": "M007",
+                "code": "M103",
                 "loc": error["loc"],
                 "summary": "Input should be a valid boolean",
                 "msg": (
@@ -208,7 +208,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
             if not error["input"]:
                 return {
                     "type": "failure",
-                    "code": "M007",
+                    "code": "M103",
                     "loc": error["loc"],
                     "summary": "Input should be a valid mapping",
                     "msg": (
@@ -221,7 +221,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
 
             return {
                 "type": "failure",
-                "code": "M007",
+                "code": "M103",
                 "loc": error["loc"],
                 "summary": "Input should be a valid mapping",
                 "msg": f"Expected a mapping for field {field}, but received a {input_type}.",
@@ -233,7 +233,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
             input_type = get_type_name(error["input"])
             return {
                 "type": "failure",
-                "code": "M007",
+                "code": "M103",
                 "loc": error["loc"],
                 "summary": "Input should be a valid floating point number",
                 "msg": f"Expected a floating point number for field {field}, but received a {input_type}.",
@@ -267,7 +267,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
             *parents, _ = error["loc"]
             return {
                 "type": "failure",
-                "code": "M005",
+                "code": "M102",
                 "loc": error["loc"],
                 "summary": "Found redundant field",
                 "msg": f"Field {formatted_field} is not valid within {get_context_name(parents)}.",
@@ -287,7 +287,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
             if not error["input"]:
                 return {
                     "type": "failure",
-                    "code": "M007",
+                    "code": "M103",
                     "loc": error["loc"],
                     "summary": "Input should be a valid array",
                     "msg": (
@@ -300,7 +300,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
 
             return {
                 "type": "failure",
-                "code": "M007",
+                "code": "M103",
                 "loc": error["loc"],
                 "summary": "Input should be a valid array",
                 "msg": f"Expected an array for field {field}, but received a {input_type}.",
@@ -312,7 +312,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
             input_type = get_type_name(error["input"])
             return {
                 "type": "failure",
-                "code": "M007",
+                "code": "M103",
                 "loc": error["loc"],
                 "summary": "Input should be a valid integer",
                 "msg": f"Expected a integer for field {field}, but received a {input_type}.",
@@ -323,7 +323,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
             _, field = _get_field_name(error["loc"])
             return {
                 "type": "failure",
-                "code": "M004",
+                "code": "M101",
                 "loc": error["loc"],
                 "summary": "Missing required field",
                 "msg": f"Field {field} is required but missing",
@@ -333,7 +333,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
             _, field = _get_field_name(error["loc"])
             return {
                 "type": "failure",
-                "code": "M007",
+                "code": "M103",
                 "loc": error["loc"],
                 "summary": "Input should be a valid string",
                 "msg": "\n".join(_compose_string_error_message(field, error["input"])),

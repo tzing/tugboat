@@ -158,7 +158,7 @@ class TestRules:
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_GENERATE_NAME)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
-            IsPartialDict({"code": "M004", "loc": ("spec", "entrypoint")}) in diagnoses
+            IsPartialDict({"code": "M101", "loc": ("spec", "entrypoint")}) in diagnoses
         )
 
     def test_check_entrypoint(self):
@@ -194,7 +194,7 @@ class TestRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "M005",
+                    "code": "M102",
                     "loc": ("spec", "arguments", "parameters", 1, "default"),
                 }
             )
