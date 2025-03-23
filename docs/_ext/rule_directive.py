@@ -40,9 +40,11 @@ if typing.TYPE_CHECKING:
 
 
 def setup(app: Sphinx):
-    app.add_directive("rule", RuleDirective)
     app.add_domain(TugboatDomain)
-    app.add_role("rule", TugboatRuleRole(nodeclass=pending_xref))
+
+    # shortcut for using the rule directive and role
+    app.add_directive("rule", RuleDirective)
+    app.add_role("rule", RuleRole(nodeclass=pending_xref))
 
     return {
         "version": "0.1",
@@ -69,18 +71,18 @@ class RuleDirective(SphinxDirective):
         rule_code, rule_name = self.arguments
         rule_code = rule_code.upper()
 
-        anchor = "tg.rule." + rule_code.lower()
-        anchor_id = nodes.make_id(anchor)
+        ref_name = "tg.rule." + rule_code.lower()
+        node_id = nodes.make_id(ref_name)
 
         # register the label in Sphinx's standard domain
         std_domain = cast("StandardDomain", self.env.get_domain("std"))
         std_domain.note_hyperlink_target(
-            anchor, self.env.docname, anchor_id, f"{rule_code} ({rule_name})"
+            ref_name, self.env.docname, node_id, f"{rule_code} ({rule_name})"
         )
 
         # register the rule in tugboat domain
         tugboat_domain = cast("TugboatDomain", self.env.get_domain("tg"))
-        tugboat_domain.note_rule(rule_code, rule_name, anchor_id)
+        tugboat_domain.note_rule(rule_code, rule_name, node_id)
 
         # create section and populate it with title and content
         title = nodes.title()
@@ -94,12 +96,12 @@ class RuleDirective(SphinxDirective):
         section += title
         section += self.parse_content_to_nodes()
 
-        target = nodes.target(ids=[anchor_id])
+        target = nodes.target(ids=[node_id])
 
         return [target, section]
 
 
-class TugboatRuleRole(XRefRole):
+class RuleRole(XRefRole):
     """
     A cross-reference role for customizing Tugboat rule references in Sphinx
     documentation.
@@ -122,8 +124,6 @@ class TugboatRuleRole(XRefRole):
             node["refwarn"] = True
             node.clear()
 
-            doc_name, anchor_id, rule_name = data
-
             # I want to separate nodes for the rule code and name
             # The following handles the issue that pending_xref only takes the
             # first child node as the ref target
@@ -131,7 +131,7 @@ class TugboatRuleRole(XRefRole):
             container += [
                 nodes.inline(text=rule_code, classes=["rule-code"]),
                 nodes.Text(" "),
-                nodes.Text(rule_name),
+                nodes.Text(data.rule_name),
             ]
 
             node += container
@@ -145,7 +145,7 @@ class TugboatDomain(Domain):
     label = "Tugboat"
 
     directives: ClassVar = {"rule": RuleDirective}
-    roles: ClassVar = {"rule": TugboatRuleRole()}
+    roles: ClassVar = {"rule": RuleRole()}
     object_types: ClassVar = {"rule": ObjType("Tugboat rule", "ref")}
 
     def resolve_xref(
@@ -159,9 +159,13 @@ class TugboatDomain(Domain):
         contnode: Element,
     ) -> Element | None:
         if data := self.rules.get(target):
-            doc_name, anchor_id, _ = data
             return make_refnode(
-                builder, fromdocname, doc_name, anchor_id, contnode, anchor_id
+                builder,
+                fromdocname,
+                data.doc_name,
+                data.node_id,
+                contnode,
+                data.node_id,
             )
 
         return None
