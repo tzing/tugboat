@@ -118,7 +118,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {"x": "hllo"})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M008",
+            "code": "M104",
             "loc": ("x",),
             "summary": "Input should be 'hello' or 'world'",
             "msg": (
@@ -227,7 +227,7 @@ class TestTranslatePydanticError:
         error = get_validation_error(Model, {"x": "warudo"})
         assert translate_pydantic_error(error) == {
             "type": "failure",
-            "code": "M008",
+            "code": "M104",
             "loc": ("x",),
             "summary": "Input should be 'hello', 'world' or 'hola'",
             "msg": (

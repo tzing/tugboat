@@ -17,7 +17,7 @@ class TestGeneralRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "M006",
+                    "code": "M201",
                     "loc": ("spec", "templates", 0, "container"),
                 }
             )
@@ -26,7 +26,7 @@ class TestGeneralRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "M006",
+                    "code": "M201",
                     "loc": ("spec", "templates", 0, "script"),
                 }
             )

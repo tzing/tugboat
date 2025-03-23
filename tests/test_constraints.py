@@ -79,7 +79,7 @@ class TestMutuallyExclusive:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M006",
+                "code": "M201",
                 "loc": ("spec", "baz"),
                 "summary": "Mutually exclusive field set",
                 "msg": "Field 'baz' and 'foo' are mutually exclusive.",
@@ -87,7 +87,7 @@ class TestMutuallyExclusive:
             },
             {
                 "type": "failure",
-                "code": "M006",
+                "code": "M201",
                 "loc": ("spec", "foo"),
                 "summary": "Mutually exclusive field set",
                 "msg": "Field 'baz' and 'foo' are mutually exclusive.",
@@ -184,7 +184,7 @@ class TestRequireExactlyOne:
         assert diagnoses == [
             {
                 "type": "failure",
-                "code": "M006",
+                "code": "M201",
                 "loc": ("spec", "baz"),
                 "summary": "Mutually exclusive field set",
                 "msg": "Field 'baz' and 'foo' are mutually exclusive.",
@@ -192,7 +192,7 @@ class TestRequireExactlyOne:
             },
             {
                 "type": "failure",
-                "code": "M006",
+                "code": "M201",
                 "loc": ("spec", "foo"),
                 "summary": "Mutually exclusive field set",
                 "msg": "Field 'baz' and 'foo' are mutually exclusive.",

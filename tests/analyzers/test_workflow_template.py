@@ -22,7 +22,7 @@ class TestRules:
     def test_check_spec(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_USE_GENERATE_NAME)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-        assert IsPartialDict({"code": "M006"}) in diagnoses
+        assert IsPartialDict({"code": "M201"}) in diagnoses
 
     def test_check_entrypoint(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_ENTRYPOINT)
@@ -63,7 +63,7 @@ class TestRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "M006",
+                    "code": "M201",
                     "loc": ("spec", "arguments", "artifacts", 0, "raw"),
                 }
             )
@@ -72,7 +72,7 @@ class TestRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "M006",
+                    "code": "M201",
                     "loc": ("spec", "arguments", "artifacts", 0, "s3"),
                 }
             )
@@ -97,7 +97,7 @@ metadata:
   generateName: test-workflow-  # WT001
 spec:
   templates: []
-  workflowTemplateRef:  # M006
+  workflowTemplateRef:  # M201
     name: test
 """
 
@@ -137,9 +137,9 @@ spec:
         default: foo
     artifacts:
       - name: data  # WT003
-        raw:  # M006
+        raw:  # M201
           data: world
-        s3:  # M006
+        s3:  # M201
           key: my-file
       - name: data  # WT003
         raw:

@@ -16,8 +16,8 @@ def test_analyze_step():
 
     loc = ("spec", "templates", 0, "steps", 0, 0)
 
-    assert IsPartialDict({"code": "M006", "loc": (*loc, "template")}) in diagnoses
-    assert IsPartialDict({"code": "M006", "loc": (*loc, "templateRef")}) in diagnoses
+    assert IsPartialDict({"code": "M201", "loc": (*loc, "template")}) in diagnoses
+    assert IsPartialDict({"code": "M201", "loc": (*loc, "templateRef")}) in diagnoses
 
     assert (
         IsPartialDict(

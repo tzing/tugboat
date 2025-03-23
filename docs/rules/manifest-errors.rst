@@ -83,7 +83,29 @@ These errors are typically caused by incorrect syntax or missing required inform
       spec:
         entrypoint: 1234
 
-.. rule:: M006 Mutually exclusive fields
+.. rule:: M104 Invalid field value
+
+   The value of a field is not valid.
+
+   For instance, the following manifest contains an invalid value for the ``imagePullPolicy`` field:
+
+   .. code-block:: yaml
+      :emphasize-lines: 10
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: hello-
+      spec:
+        templates:
+          - name: hello
+            container:
+              image: alpine:latest
+              imagePullPolicy: InvalidValue
+
+.. M2xx Conditional logic errors
+
+.. rule:: M201 Mutually exclusive fields
 
    The manifest contains fields that are mutually exclusive.
 
@@ -105,26 +127,6 @@ These errors are typically caused by incorrect syntax or missing required inform
                 echo 'Hello, world!'
             container:
               image: alpine:latest
-
-.. rule:: M008 Invalid field value
-
-   The value of a field is not valid.
-
-   For instance, the following manifest contains an invalid value for the ``imagePullPolicy`` field:
-
-   .. code-block:: yaml
-      :emphasize-lines: 10
-
-      apiVersion: argoproj.io/v1alpha1
-      kind: Workflow
-      metadata:
-        generateName: hello-
-      spec:
-        templates:
-          - name: hello
-            container:
-              image: alpine:latest
-              imagePullPolicy: InvalidValue
 
 
 .. _code.m009:

@@ -69,7 +69,7 @@ def mutually_exclusive(
 
     Yield
     -----
-    :rule:`m006` when more than one were set.
+    :rule:`m201` when more than one were set.
     """
     fields_with_values = [
         field for field in fields if getattr(model, field, None) is not None
@@ -84,7 +84,7 @@ def mutually_exclusive(
     for field_alias in fields_with_values:
         yield {
             "type": "failure",
-            "code": "M006",
+            "code": "M201",
             "loc": (*loc, field_alias),
             "summary": "Mutually exclusive field set",
             "msg": f"Field {exclusive_fields} are mutually exclusive.",
@@ -156,7 +156,7 @@ def require_exactly_one(
     Yield
     -----
     :rule:`m101` when none of the fields are set.
-    :rule:`m006` when more than one were set.
+    :rule:`m201` when more than one were set.
     """
     # check if any of the fields are set
     any_field_set = False

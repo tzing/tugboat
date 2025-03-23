@@ -150,7 +150,7 @@ class TestRules:
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_NAME)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
-            IsPartialDict({"code": "M006", "loc": ("spec", "workflowTemplateRef")})
+            IsPartialDict({"code": "M201", "loc": ("spec", "workflowTemplateRef")})
             in diagnoses
         )
 
@@ -208,7 +208,7 @@ class TestRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "M006",
+                    "code": "M201",
                     "loc": ("spec", "arguments", "artifacts", 1, "raw"),
                 }
             )
@@ -217,7 +217,7 @@ class TestRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "M006",
+                    "code": "M201",
                     "loc": ("spec", "arguments", "artifacts", 1, "s3"),
                 }
             )
@@ -245,7 +245,7 @@ metadata:
   name: invalid_name  # M009
 spec:
   templates: []
-  workflowTemplateRef:  # M006
+  workflowTemplateRef:  # M201
     name: test
 """
 
@@ -300,8 +300,8 @@ spec:
         raw:
           data: hello
       - name: data  # WT003
-        raw:  # M006
+        raw:  # M201
           data: world
-        s3:  # M006
+        s3:  # M201
           key: my-file
 """

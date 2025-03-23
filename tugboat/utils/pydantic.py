@@ -142,7 +142,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
         * - `decimal_type <https://docs.pydantic.dev/latest/errors/validation_errors/#decimal_type>`_
           - :rule:`m103`
         * - `enum <https://docs.pydantic.dev/latest/errors/validation_errors/#enum>`_
-          - :rule:`m008`
+          - :rule:`m104`
         * - `extra_forbidden <https://docs.pydantic.dev/latest/errors/validation_errors/#extra_forbidden>`_
           - :rule:`m102`
         * - `float_parsing <https://docs.pydantic.dev/latest/errors/validation_errors/#float_parsing>`_
@@ -160,7 +160,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
         * - `list_type <https://docs.pydantic.dev/latest/errors/validation_errors/#list_type>`_
           - :rule:`m103`
         * - `literal_error <https://docs.pydantic.dev/latest/errors/validation_errors/#literal_error>`_
-          - :rule:`m008`
+          - :rule:`m104`
         * - `mapping_type <https://docs.pydantic.dev/latest/errors/validation_errors/#mapping_type>`_
           - :rule:`m103`
         * - `missing <https://docs.pydantic.dev/latest/errors/validation_errors/#missing>`_
@@ -251,7 +251,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
 
             return {
                 "type": "failure",
-                "code": "M008",
+                "code": "M104",
                 "loc": error["loc"],
                 "summary": error["msg"],
                 "msg": (
