@@ -166,6 +166,7 @@ class TugboatRuleRole(XRefRole):
                     rule_code,
                     classes=["rule-code"],
                 ),
+                nodes.Text(" "),
                 nodes.Text(rule_name),
             ]
 

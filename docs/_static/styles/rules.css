@@ -1,35 +1,14 @@
 .inline-rule-ref {
-    text-decoration: none;
-    color: inherit;
+    display: inline;
 }
 
 .inline-rule-ref .rule-code {
-    position: relative;
     display: inline;
-    color: var(--yue-c-code-text);
-    padding: 0 4px;
+    color: var(--sy-c-link);
     font-size: 0.82em;
     font-weight: 600;
-    margin-right: 4px;
+    padding-left: 4px;
     line-height: 1;
-    background: none;
-    z-index: 0;
-}
-
-.inline-rule-ref .rule-code::before {
-    content: '';
-    position: absolute;
-    inset: 0 -2px;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 1.6em;
-    background: var(--yue-c-code-background);
-    border-radius: 4px;
-    z-index: -1;
-}
-
-@supports (-webkit-touch-callout: none) {
-    .inline-rule-ref .rule-code::before {
-        transform: translateY(-50%) translateZ(0);
-    }
+    vertical-align: 0.05em;
+    text-decoration: none;
 }
