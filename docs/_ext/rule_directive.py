@@ -88,8 +88,8 @@ class RuleDirective(SphinxDirective):
         title = nodes.title()
         title += [
             nodes.inline(text=rule_code, classes=["rule-code"]),
-            nodes.inline(text=" - ", classes=["rule-separator"]),
-            nodes.inline(text=rule_name, classes=["rule-name"]),
+            nodes.Text(" "),
+            nodes.Text(rule_name),
         ]
 
         section = nodes.section(classes=["rule-section"])
@@ -161,11 +161,7 @@ class TugboatRuleRole(XRefRole):
             # first child node as the ref target
             container = nodes.inline(classes=["inline-rule-ref"])
             container += [
-                nodes.inline(
-                    rule_code,
-                    rule_code,
-                    classes=["rule-code"],
-                ),
+                nodes.inline(text=rule_code, classes=["rule-code"]),
                 nodes.Text(" "),
                 nodes.Text(rule_name),
             ]
