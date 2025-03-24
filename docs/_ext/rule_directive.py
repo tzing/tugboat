@@ -107,6 +107,21 @@ class RuleRole(XRefRole):
     documentation.
     """
 
+    def process_link(
+        self,
+        env: BuildEnvironment,
+        refnode: Element,
+        has_explicit_title: bool,
+        title: str,
+        target: str,
+    ) -> tuple[str, str]:
+        # this role is added to the standard domain, so we need to set the
+        # reference domain to "tg" to ensure that the reference is resolved
+        # correctly
+        refnode["refdomain"] = "tg"
+        refnode["refwarn"] = True
+        return title, target.upper()
+
     def result_nodes(
         self,
         document: document,
@@ -114,14 +129,11 @@ class RuleRole(XRefRole):
         node: Element,
         is_ref: bool,
     ) -> tuple[list[Node], list[system_message]]:
-        rule_code: str = node["reftarget"].upper()
+        rule_code: str = node["reftarget"]
 
         domain = cast("TugboatDomain", env.get_domain("tg"))
         data = domain.rules.get(rule_code)
         if data and not node.get("explicit"):
-            node["refdomain"] = "tg"
-            node["reftarget"] = rule_code
-            node["refwarn"] = True
             node.clear()
 
             # I want to separate nodes for the rule code and name
