@@ -285,7 +285,7 @@ def _check_referenced_template(
     if template_name == template.name:
         yield {
             "type": "skipped",
-            "code": "STP005",
+            "code": "STP201",
             "loc": (),
             "summary": "Self-referencing",
             "msg": "Self-referencing may cause infinite recursion.",
@@ -302,7 +302,7 @@ def _check_referenced_template(
             suggestion, _, _ = result
 
         yield {
-            "code": "STP006",
+            "code": "STP202",
             "loc": (),
             "summary": "Template not found",
             "msg": f"""

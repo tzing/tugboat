@@ -157,7 +157,7 @@ def test_check_referenced_template(caplog: pytest.LogCaptureFixture):
     assert (
         IsPartialDict(
             {
-                "code": "STP005",
+                "code": "STP201",
                 "loc": ("spec", "templates", 0, "steps", 0, 0, "template"),
             }
         )
@@ -166,7 +166,7 @@ def test_check_referenced_template(caplog: pytest.LogCaptureFixture):
     assert (
         IsPartialDict(
             {
-                "code": "STP006",
+                "code": "STP202",
                 "loc": (
                     "spec",
                     "templates",

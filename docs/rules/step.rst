@@ -7,57 +7,6 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
 .. _template: https://argo-workflows.readthedocs.io/en/latest/fields/#template
 
 
-
-:bdg:`STP005` Self-referencing step
------------------------------------
-
-The step references itself in the ``template`` field. This may cause an infinite loop.
-
-Since this may still be a intended behavior, this rule is default to warning level.
-
-.. code-block:: yaml
-   :emphasize-lines: 11
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     generateName: test-
-   spec:
-     entrypoint: main
-     templates:
-       - name: main
-         steps:
-           - - name: hello
-               template: main
-
-
-:bdg:`STP006` Reference to a non-existent template
---------------------------------------------------
-
-The step references a non-existent template.
-
-.. code-block:: yaml
-   :emphasize-lines: 11
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     generateName: test-
-   spec:
-     entrypoint: main
-     templates:
-       - name: main
-         steps:
-           - - name: hello
-               template: non-existent-template
-
-.. note::
-
-  This rule verifies the presence of a template within the same workflow.
-
-  If the template is defined in a different workflow and referenced using ``templateRef``, this rule will not detect it.
-  Tugboat does not currently support cross-workflow checks, even if the referenced workflow is included in the same run.
-
 .. STP1xx duplicated items
 
 .. rule:: STP101 Duplicate step names
@@ -142,6 +91,57 @@ The step references a non-existent template.
                       - name: message
                         raw:
                           data: hello-2
+
+
+.. STP2xx reference issues
+
+.. rule:: STP201 Self-referencing step
+
+   The step references itself in the ``template`` field. This may cause an infinite loop.
+
+   Since this may still be a intended behavior, this rule is default to warning level.
+
+   .. code-block:: yaml
+      :emphasize-lines: 11
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: test-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  template: main
+
+.. rule:: STP202 Reference to a non-existent template
+
+   The step references a non-existent template.
+
+   .. code-block:: yaml
+      :emphasize-lines: 11
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: test-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  template: non-existent-template
+
+   .. note::
+
+     This rule verifies the presence of a template within the same workflow.
+
+     If the template is defined in a different workflow and referenced using ``templateRef``, this rule will not detect it.
+     Tugboat does not currently support cross-workflow checks, even if the referenced workflow is included in the same run.
+
 
 .. STP9xx deprecated items
 
