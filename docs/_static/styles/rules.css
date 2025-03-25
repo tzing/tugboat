@@ -25,11 +25,11 @@ a:hover .inline-rule-ref .rule-code {
     margin-right: 0;
 }
 
-.localtoc .active .rule-code {
+.localtoc li.active>a>.rule-code {
     color: var(--sy-c-link);
 }
 
-.localtoc a:hover .rule-code {
+.localtoc a:hover>.rule-code {
     color: var(--sy-c-link);
 }
 
