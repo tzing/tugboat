@@ -137,10 +137,10 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
 
    .. note::
 
-     This rule verifies the presence of a template within the same workflow.
+      This rule verifies the presence of a template within the same workflow.
 
-     If the template is defined in a different workflow and referenced using ``templateRef``, this rule will not detect it.
-     Tugboat does not currently support cross-workflow checks, even if the referenced workflow is included in the same run.
+      If the template is defined in a different workflow and referenced using ``templateRef``, this rule will not detect it.
+      Tugboat does not currently support cross-workflow checks, even if the referenced workflow is included in the same run.
 
 
 .. STP9xx deprecated items
