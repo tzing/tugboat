@@ -62,12 +62,12 @@ def test_check_argument_parameters():
         in diagnoses
     )
 
-    # STP002: Duplicated input parameter name
+    # STP102: Duplicated input parameter name
     assert (
-        IsPartialDict({"code": "STP002", "loc": (*loc_prefix, 0, "name")}) in diagnoses
+        IsPartialDict({"code": "STP102", "loc": (*loc_prefix, 0, "name")}) in diagnoses
     )
     assert (
-        IsPartialDict({"code": "STP002", "loc": (*loc_prefix, 1, "name")}) in diagnoses
+        IsPartialDict({"code": "STP102", "loc": (*loc_prefix, 1, "name")}) in diagnoses
     )
 
     # VAR002: Invalid reference
@@ -90,10 +90,10 @@ spec:
             template: test
             arguments:
               parameters:
-                - name: message # STP002
+                - name: message # STP102
                   valueFrom:
                     path: /tmp/message  # M102
-                - name: message # STP002
+                - name: message # STP102
                   value: "{{ workflow.invalid}}" # VAR002
 """
 
@@ -104,12 +104,12 @@ def test_check_argument_artifacts():
 
     loc_prefix = ("spec", "templates", 0, "steps", 0, 0, "arguments", "artifacts")
 
-    # STP003: Duplicated input artifact name
+    # STP103: Duplicated input artifact name
     assert (
-        IsPartialDict({"code": "STP003", "loc": (*loc_prefix, 0, "name")}) in diagnoses
+        IsPartialDict({"code": "STP103", "loc": (*loc_prefix, 0, "name")}) in diagnoses
     )
     assert (
-        IsPartialDict({"code": "STP003", "loc": (*loc_prefix, 1, "name")}) in diagnoses
+        IsPartialDict({"code": "STP103", "loc": (*loc_prefix, 1, "name")}) in diagnoses
     )
 
     # VAR002: Invalid reference
@@ -139,9 +139,9 @@ spec:
             template: print-message
             arguments:
               artifacts:
-                - name: message # STP003
+                - name: message # STP103
                   from: "{{ workflow.invalid }}" # VAR002
-                - name: message # STP003
+                - name: message # STP103
                   raw:
                     data: "{{ workflow.invalid }}" # VAR002
                 - name: another

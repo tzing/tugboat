@@ -6,94 +6,6 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
 .. _steps: https://argo-workflows.readthedocs.io/en/latest/walk-through/steps/
 .. _template: https://argo-workflows.readthedocs.io/en/latest/fields/#template
 
-
-:bdg:`STP001` Duplicate step names
-----------------------------------
-
-The template contains multiple steps with the same name.
-
-.. code-block:: yaml
-   :emphasize-lines: 10,16
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     generateName: steps-
-   spec:
-     entrypoint: hello-hello
-     templates:
-       - name: hello-hello
-         steps:
-           - - name: hello
-               template: print-message
-               arguments:
-                 parameters:
-                   - name: message
-                     value: "hello-1"
-           - - name: hello
-               template: print-message
-               arguments:
-                 parameters:
-                   - name: message
-                     value: "hello-2"
-
-
-:bdg:`STP002` Duplicate input parameters
-----------------------------------------
-
-The step includes several input parameters (``<step>.arguments.parameters``) that share the same name.
-The parameter was set multiple times.
-
-.. code-block:: yaml
-   :emphasize-lines: 14,16
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     name: test-
-   spec:
-     entrypoint: main
-     templates:
-       - name: main
-         steps:
-           - - name: hello
-               template: print-message
-               arguments:
-                 parameters:
-                   - name: message
-                     value: hello-1
-                   - name: message
-                     value: hello-2
-
-:bdg:`STP003` Duplicate input artifacts
----------------------------------------
-
-The step includes several input artifacts (``<step>.arguments.artifacts``) that share the same name.
-The artifact was set multiple times.
-
-.. code-block:: yaml
-   :emphasize-lines: 14,17
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     name: test-
-   spec:
-     entrypoint: main
-     templates:
-       - name: main
-         steps:
-           - - name: hello
-               template: print-message
-               arguments:
-                 artifacts:
-                   - name: message
-                     raw:
-                       data: hello-1
-                   - name: message
-                     raw:
-                       data: hello-2
-
 :bdg:`STP004` Deprecated Field: ``onExit``
 -------------------------------------------
 
@@ -192,3 +104,88 @@ The step references a non-existent template.
 
   If the template is defined in a different workflow and referenced using ``templateRef``, this rule will not detect it.
   Tugboat does not currently support cross-workflow checks, even if the referenced workflow is included in the same run.
+
+.. STP1xx duplicated items
+
+.. rule:: STP101 Duplicate step names
+
+   The template contains multiple steps with the same name.
+
+   .. code-block:: yaml
+      :emphasize-lines: 10,16
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: steps-
+      spec:
+        entrypoint: hello-hello
+        templates:
+          - name: hello-hello
+            steps:
+              - - name: hello
+                  template: print-message
+                  arguments:
+                    parameters:
+                      - name: message
+                        value: "hello-1"
+              - - name: hello
+                  template: print-message
+                  arguments:
+                    parameters:
+                      - name: message
+                        value: "hello-2"
+
+.. rule:: STP102 Duplicate input parameters
+
+   The step includes several input parameters (``<step>.arguments.parameters``) that share the same name.
+   The parameter was set multiple times.
+
+   .. code-block:: yaml
+      :emphasize-lines: 14,16
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        name: test-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  template: print-message
+                  arguments:
+                    parameters:
+                      - name: message
+                        value: hello-1
+                      - name: message
+                        value: hello-2
+
+.. rule:: STP103 Duplicate input artifacts
+
+   The step includes several input artifacts (``<step>.arguments.artifacts``) that share the same name.
+   The artifact was set multiple times.
+
+   .. code-block:: yaml
+      :emphasize-lines: 14,17
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        name: test-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  template: print-message
+                  arguments:
+                    artifacts:
+                      - name: message
+                        raw:
+                          data: hello-1
+                      - name: message
+                        raw:
+                          data: hello-2
