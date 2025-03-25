@@ -132,6 +132,7 @@ def _check_argument_parameter(
             case "VAR002":
                 ctx = typing.cast(dict, diag.get("ctx"))
                 ref = ".".join(ctx["ref"])
+                diag["code"] = "STP301"
                 diag["msg"] = (
                     f"The parameter reference '{ref}' used in parameter '{param.name}' is invalid."
                 )
@@ -211,7 +212,7 @@ def _check_argument_artifact(
             closest = context.artifacts.find_closest(ref)
             if ref not in context.artifacts:
                 yield {
-                    "code": "VAR002",
+                    "code": "STP302",
                     "loc": ("from",),
                     "summary": "Invalid reference",
                     "msg": f"The reference '{artifact.from_}' used in artifact '{artifact.name}' is invalid.",
@@ -228,6 +229,7 @@ def _check_argument_artifact(
                 case "VAR002":
                     ctx = typing.cast(dict, diag.get("ctx"))
                     ref = ".".join(ctx["ref"])
+                    diag["code"] = "STP302"
                     diag["msg"] = (
                         f"The reference '{ref}' used in artifact '{artifact.name}' is invalid."
                     )
@@ -244,6 +246,7 @@ def _check_argument_artifact(
                 case "VAR002":
                     ctx = typing.cast(dict, diag.get("ctx"))
                     ref = ".".join(ctx["ref"])
+                    diag["code"] = "STP302"
                     diag["msg"] = (
                         f"""
                         The parameter reference '{ref}' used in artifact '{artifact.name}' is invalid.

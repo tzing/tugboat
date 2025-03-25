@@ -93,7 +93,7 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
                           data: hello-2
 
 
-.. STP2xx reference issues
+.. STP2xx template reference issues
 
 .. rule:: STP201 Self-referencing step
 
@@ -141,6 +141,23 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
 
       If the template is defined in a different workflow and referenced using ``templateRef``, this rule will not detect it.
       Tugboat does not currently support cross-workflow checks, even if the referenced workflow is included in the same run.
+
+
+.. STP3xx variable reference issues
+
+.. rule:: STP301 Invalid parameter reference
+
+   Found invalid parameter reference in the step input parameter.
+
+   This rule is a variation of :rule:`VAR002`.
+   It is triggered when a step input parameter references an invalid objective.
+
+.. rule:: STP302 Invalid artifact reference
+
+   Found invalid artifact reference in the step input artifact.
+
+   This rule is a variation of :rule:`VAR002`.
+   It is triggered when a step input artifact references an invalid objective.
 
 
 .. STP9xx deprecated items

@@ -70,9 +70,9 @@ def test_check_argument_parameters():
         IsPartialDict({"code": "STP102", "loc": (*loc_prefix, 1, "name")}) in diagnoses
     )
 
-    # VAR002: Invalid reference
+    # STP301: Invalid reference
     assert (
-        IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 1, "value")}) in diagnoses
+        IsPartialDict({"code": "STP301", "loc": (*loc_prefix, 1, "value")}) in diagnoses
     )
 
 
@@ -94,7 +94,7 @@ spec:
                   valueFrom:
                     path: /tmp/message  # M102
                 - name: message # STP102
-                  value: "{{ workflow.invalid}}" # VAR002
+                  value: "{{ workflow.invalid}}" # STP301
 """
 
 
@@ -112,16 +112,16 @@ def test_check_argument_artifacts():
         IsPartialDict({"code": "STP103", "loc": (*loc_prefix, 1, "name")}) in diagnoses
     )
 
-    # VAR002: Invalid reference
+    # STP302: Invalid reference
     assert (
-        IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 0, "from")}) in diagnoses
+        IsPartialDict({"code": "STP302", "loc": (*loc_prefix, 0, "from")}) in diagnoses
     )
     assert (
-        IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 1, "raw", "data")})
+        IsPartialDict({"code": "STP302", "loc": (*loc_prefix, 1, "raw", "data")})
         in diagnoses
     )
     assert (
-        IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 2, "from")}) in diagnoses
+        IsPartialDict({"code": "STP302", "loc": (*loc_prefix, 2, "from")}) in diagnoses
     )
 
 
@@ -140,12 +140,12 @@ spec:
             arguments:
               artifacts:
                 - name: message # STP103
-                  from: "{{ workflow.invalid }}" # VAR002
+                  from: "{{ workflow.invalid }}" # STP302
                 - name: message # STP103
                   raw:
-                    data: "{{ workflow.invalid }}" # VAR002
+                    data: "{{ workflow.invalid }}" # STP302
                 - name: another
-                  from: workflow.invalid # VAR002
+                  from: workflow.invalid # STP302
 """
 
 
