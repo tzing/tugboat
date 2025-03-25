@@ -7,188 +7,204 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
 .. _template: https://argo-workflows.readthedocs.io/en/latest/fields/#template
 
 
-:bdg:`STP001` Duplicate step names
-----------------------------------
+.. STP1xx duplicated items
 
-The template contains multiple steps with the same name.
+.. rule:: STP101 Duplicate step names
 
-.. code-block:: yaml
-   :emphasize-lines: 10,16
+   The template contains multiple steps with the same name.
 
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     generateName: steps-
-   spec:
-     entrypoint: hello-hello
-     templates:
-       - name: hello-hello
-         steps:
-           - - name: hello
-               template: print-message
-               arguments:
-                 parameters:
-                   - name: message
-                     value: "hello-1"
-           - - name: hello
-               template: print-message
-               arguments:
-                 parameters:
-                   - name: message
-                     value: "hello-2"
+   .. code-block:: yaml
+      :emphasize-lines: 10,16
 
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: steps-
+      spec:
+        entrypoint: hello-hello
+        templates:
+          - name: hello-hello
+            steps:
+              - - name: hello
+                  template: print-message
+                  arguments:
+                    parameters:
+                      - name: message
+                        value: "hello-1"
+              - - name: hello
+                  template: print-message
+                  arguments:
+                    parameters:
+                      - name: message
+                        value: "hello-2"
 
-:bdg:`STP002` Duplicate input parameters
-----------------------------------------
+.. rule:: STP102 Duplicate input parameters
 
-The step includes several input parameters (``<step>.arguments.parameters``) that share the same name.
-The parameter was set multiple times.
+   The step includes several input parameters (``<step>.arguments.parameters``) that share the same name.
+   The parameter was set multiple times.
 
-.. code-block:: yaml
-   :emphasize-lines: 14,16
+   .. code-block:: yaml
+      :emphasize-lines: 14,16
 
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     name: test-
-   spec:
-     entrypoint: main
-     templates:
-       - name: main
-         steps:
-           - - name: hello
-               template: print-message
-               arguments:
-                 parameters:
-                   - name: message
-                     value: hello-1
-                   - name: message
-                     value: hello-2
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        name: test-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  template: print-message
+                  arguments:
+                    parameters:
+                      - name: message
+                        value: hello-1
+                      - name: message
+                        value: hello-2
 
-:bdg:`STP003` Duplicate input artifacts
----------------------------------------
+.. rule:: STP103 Duplicate input artifacts
 
-The step includes several input artifacts (``<step>.arguments.artifacts``) that share the same name.
-The artifact was set multiple times.
+   The step includes several input artifacts (``<step>.arguments.artifacts``) that share the same name.
+   The artifact was set multiple times.
 
-.. code-block:: yaml
-   :emphasize-lines: 14,17
+   .. code-block:: yaml
+      :emphasize-lines: 14,17
 
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     name: test-
-   spec:
-     entrypoint: main
-     templates:
-       - name: main
-         steps:
-           - - name: hello
-               template: print-message
-               arguments:
-                 artifacts:
-                   - name: message
-                     raw:
-                       data: hello-1
-                   - name: message
-                     raw:
-                       data: hello-2
-
-:bdg:`STP004` Deprecated Field: ``onExit``
--------------------------------------------
-
-The ``onExit`` field in the step definition is deprecated.
-
-As of Argo Workflow version 3.1, the ``onExit`` field is deprecated.
-It is recommended to use the ``hooks[exit].template`` field instead.
-
-.. code-block:: yaml
-   :caption: ❌ Example of incorrect code for this rule
-   :emphasize-lines: 11
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     generateName: exit-handler-step-level-
-   spec:
-     entrypoint: main
-     templates:
-       - name: main
-         steps:
-           - - name: hello1
-               onExit: exit
-               template: print-message
-               arguments:
-                 parameters: [{name: message, value: "hello1"}]
-
-.. code-block:: yaml
-   :caption: ✅ Example of correct code for this rule
-   :emphasize-lines: 14-16
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     generateName: exit-handler-step-level-
-   spec:
-     entrypoint: main
-     templates:
-       - name: main
-         steps:
-           - - name: hello1
-               template: print-message
-               arguments:
-                 parameters: [{ name: message, value: "hello1" }]
-               hooks:
-                 exit:
-                   template: exit
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        name: test-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  template: print-message
+                  arguments:
+                    artifacts:
+                      - name: message
+                        raw:
+                          data: hello-1
+                      - name: message
+                        raw:
+                          data: hello-2
 
 
-:bdg:`STP005` Self-referencing step
------------------------------------
+.. STP2xx template reference issues
 
-The step references itself in the ``template`` field. This may cause an infinite loop.
+.. rule:: STP201 Self-referencing step
 
-Since this may still be a intended behavior, this rule is default to warning level.
+   The step references itself in the ``template`` field. This may cause an infinite loop.
 
-.. code-block:: yaml
-   :emphasize-lines: 11
+   Since this may still be a intended behavior, this rule is default to warning level.
 
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     generateName: test-
-   spec:
-     entrypoint: main
-     templates:
-       - name: main
-         steps:
-           - - name: hello
-               template: main
+   .. code-block:: yaml
+      :emphasize-lines: 11
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: test-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  template: main
+
+.. rule:: STP202 Reference to a non-existent template
+
+   The step references a non-existent template.
+
+   .. code-block:: yaml
+      :emphasize-lines: 11
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: test-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  template: non-existent-template
+
+   .. note::
+
+      This rule verifies the presence of a template within the same workflow.
+
+      If the template is defined in a different workflow and referenced using ``templateRef``, this rule will not detect it.
+      Tugboat does not currently support cross-workflow checks, even if the referenced workflow is included in the same run.
 
 
-:bdg:`STP006` Reference to a non-existent template
---------------------------------------------------
+.. STP3xx variable reference issues
 
-The step references a non-existent template.
+.. rule:: STP301 Invalid parameter reference
 
-.. code-block:: yaml
-   :emphasize-lines: 11
+   Found invalid parameter reference in the step input parameter.
 
-   apiVersion: argoproj.io/v1alpha1
-   kind: Workflow
-   metadata:
-     generateName: test-
-   spec:
-     entrypoint: main
-     templates:
-       - name: main
-         steps:
-           - - name: hello
-               template: non-existent-template
+   This rule is a variation of :rule:`VAR002`.
+   It is triggered when a step input parameter references an invalid objective.
 
-.. note::
+.. rule:: STP302 Invalid artifact reference
 
-  This rule verifies the presence of a template within the same workflow.
+   Found invalid artifact reference in the step input artifact.
 
-  If the template is defined in a different workflow and referenced using ``templateRef``, this rule will not detect it.
-  Tugboat does not currently support cross-workflow checks, even if the referenced workflow is included in the same run.
+   This rule is a variation of :rule:`VAR002`.
+   It is triggered when a step input artifact references an invalid objective.
+
+
+.. STP9xx deprecated items
+
+.. rule:: STP901 Deprecated Field: ``onExit``
+
+   The ``onExit`` field in the step definition is deprecated.
+
+   As of Argo Workflow version 3.1, the ``onExit`` field is deprecated.
+   It is recommended to use the ``hooks[exit].template`` field instead.
+
+   .. code-block:: yaml
+      :caption: ❌ Example of incorrect code for this rule
+      :emphasize-lines: 11
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: exit-handler-step-level-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello1
+                  onExit: exit
+                  template: print-message
+                  arguments:
+                    parameters: [{name: message, value: "hello1"}]
+
+   .. code-block:: yaml
+      :caption: ✅ Example of correct code for this rule
+      :emphasize-lines: 14-16
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: exit-handler-step-level-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello1
+                  template: print-message
+                  arguments:
+                    parameters: [{ name: message, value: "hello1" }]
+                  hooks:
+                    exit:
+                      template: exit

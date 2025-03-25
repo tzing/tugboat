@@ -21,7 +21,7 @@ def test_analyze_step():
 
     assert (
         IsPartialDict(
-            {"code": "STP004", "loc": ("spec", "templates", 0, "steps", 1, 0, "onExit")}
+            {"code": "STP901", "loc": ("spec", "templates", 0, "steps", 1, 0, "onExit")}
         )
         in diagnoses
     )
@@ -62,17 +62,17 @@ def test_check_argument_parameters():
         in diagnoses
     )
 
-    # STP002: Duplicated input parameter name
+    # STP102: Duplicated input parameter name
     assert (
-        IsPartialDict({"code": "STP002", "loc": (*loc_prefix, 0, "name")}) in diagnoses
+        IsPartialDict({"code": "STP102", "loc": (*loc_prefix, 0, "name")}) in diagnoses
     )
     assert (
-        IsPartialDict({"code": "STP002", "loc": (*loc_prefix, 1, "name")}) in diagnoses
+        IsPartialDict({"code": "STP102", "loc": (*loc_prefix, 1, "name")}) in diagnoses
     )
 
-    # VAR002: Invalid reference
+    # STP301: Invalid reference
     assert (
-        IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 1, "value")}) in diagnoses
+        IsPartialDict({"code": "STP301", "loc": (*loc_prefix, 1, "value")}) in diagnoses
     )
 
 
@@ -90,11 +90,11 @@ spec:
             template: test
             arguments:
               parameters:
-                - name: message # STP002
+                - name: message # STP102
                   valueFrom:
                     path: /tmp/message  # M102
-                - name: message # STP002
-                  value: "{{ workflow.invalid}}" # VAR002
+                - name: message # STP102
+                  value: "{{ workflow.invalid}}" # STP301
 """
 
 
@@ -104,24 +104,24 @@ def test_check_argument_artifacts():
 
     loc_prefix = ("spec", "templates", 0, "steps", 0, 0, "arguments", "artifacts")
 
-    # STP003: Duplicated input artifact name
+    # STP103: Duplicated input artifact name
     assert (
-        IsPartialDict({"code": "STP003", "loc": (*loc_prefix, 0, "name")}) in diagnoses
+        IsPartialDict({"code": "STP103", "loc": (*loc_prefix, 0, "name")}) in diagnoses
     )
     assert (
-        IsPartialDict({"code": "STP003", "loc": (*loc_prefix, 1, "name")}) in diagnoses
+        IsPartialDict({"code": "STP103", "loc": (*loc_prefix, 1, "name")}) in diagnoses
     )
 
-    # VAR002: Invalid reference
+    # STP302: Invalid reference
     assert (
-        IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 0, "from")}) in diagnoses
+        IsPartialDict({"code": "STP302", "loc": (*loc_prefix, 0, "from")}) in diagnoses
     )
     assert (
-        IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 1, "raw", "data")})
+        IsPartialDict({"code": "STP302", "loc": (*loc_prefix, 1, "raw", "data")})
         in diagnoses
     )
     assert (
-        IsPartialDict({"code": "VAR002", "loc": (*loc_prefix, 2, "from")}) in diagnoses
+        IsPartialDict({"code": "STP302", "loc": (*loc_prefix, 2, "from")}) in diagnoses
     )
 
 
@@ -139,13 +139,13 @@ spec:
             template: print-message
             arguments:
               artifacts:
-                - name: message # STP003
-                  from: "{{ workflow.invalid }}" # VAR002
-                - name: message # STP003
+                - name: message # STP103
+                  from: "{{ workflow.invalid }}" # STP302
+                - name: message # STP103
                   raw:
-                    data: "{{ workflow.invalid }}" # VAR002
+                    data: "{{ workflow.invalid }}" # STP302
                 - name: another
-                  from: workflow.invalid # VAR002
+                  from: workflow.invalid # STP302
 """
 
 
@@ -157,7 +157,7 @@ def test_check_referenced_template(caplog: pytest.LogCaptureFixture):
     assert (
         IsPartialDict(
             {
-                "code": "STP005",
+                "code": "STP201",
                 "loc": ("spec", "templates", 0, "steps", 0, 0, "template"),
             }
         )
@@ -166,7 +166,7 @@ def test_check_referenced_template(caplog: pytest.LogCaptureFixture):
     assert (
         IsPartialDict(
             {
-                "code": "STP006",
+                "code": "STP202",
                 "loc": (
                     "spec",
                     "templates",

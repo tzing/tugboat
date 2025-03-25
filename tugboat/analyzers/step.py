@@ -56,7 +56,7 @@ def analyze_step(
 
     if step.onExit:
         yield {
-            "code": "STP004",
+            "code": "STP901",
             "loc": ("onExit",),
             "summary": "Deprecated field",
             "msg": "Field 'onExit' is deprecated. Please use 'hooks[exit].template' instead.",
@@ -74,7 +74,7 @@ def check_argument_parameters(
     # report duplicate names
     for idx, name in find_duplicate_names(step.arguments.parameters or ()):
         yield {
-            "code": "STP002",
+            "code": "STP102",
             "loc": ("arguments", "parameters", idx, "name"),
             "summary": "Duplicate parameter name",
             "msg": f"Parameter name '{name}' is duplicated.",
@@ -132,6 +132,7 @@ def _check_argument_parameter(
             case "VAR002":
                 ctx = typing.cast(dict, diag.get("ctx"))
                 ref = ".".join(ctx["ref"])
+                diag["code"] = "STP301"
                 diag["msg"] = (
                     f"The parameter reference '{ref}' used in parameter '{param.name}' is invalid."
                 )
@@ -148,7 +149,7 @@ def check_argument_artifacts(
     # report duplicate names
     for idx, name in find_duplicate_names(step.arguments.artifacts or ()):
         yield {
-            "code": "STP003",
+            "code": "STP103",
             "loc": ("arguments", "artifacts", idx, "name"),
             "summary": "Duplicate artifact name",
             "msg": f"Artifact name '{name}' is duplicated.",
@@ -211,7 +212,7 @@ def _check_argument_artifact(
             closest = context.artifacts.find_closest(ref)
             if ref not in context.artifacts:
                 yield {
-                    "code": "VAR002",
+                    "code": "STP302",
                     "loc": ("from",),
                     "summary": "Invalid reference",
                     "msg": f"The reference '{artifact.from_}' used in artifact '{artifact.name}' is invalid.",
@@ -228,6 +229,7 @@ def _check_argument_artifact(
                 case "VAR002":
                     ctx = typing.cast(dict, diag.get("ctx"))
                     ref = ".".join(ctx["ref"])
+                    diag["code"] = "STP302"
                     diag["msg"] = (
                         f"The reference '{ref}' used in artifact '{artifact.name}' is invalid."
                     )
@@ -244,6 +246,7 @@ def _check_argument_artifact(
                 case "VAR002":
                     ctx = typing.cast(dict, diag.get("ctx"))
                     ref = ".".join(ctx["ref"])
+                    diag["code"] = "STP302"
                     diag["msg"] = (
                         f"""
                         The parameter reference '{ref}' used in artifact '{artifact.name}' is invalid.
@@ -285,7 +288,7 @@ def _check_referenced_template(
     if template_name == template.name:
         yield {
             "type": "skipped",
-            "code": "STP005",
+            "code": "STP201",
             "loc": (),
             "summary": "Self-referencing",
             "msg": "Self-referencing may cause infinite recursion.",
@@ -302,7 +305,7 @@ def _check_referenced_template(
             suggestion, _, _ = result
 
         yield {
-            "code": "STP006",
+            "code": "STP202",
             "loc": (),
             "summary": "Template not found",
             "msg": f"""

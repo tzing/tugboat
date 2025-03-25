@@ -52,7 +52,7 @@ def check_step_names(template: Template):
         if len(locs) > 1:
             for loc in locs:
                 yield {
-                    "code": "STP001",
+                    "code": "STP101",
                     "loc": loc,
                     "summary": "Duplicate step name",
                     "msg": f"Step name '{name}' is duplicated.",
