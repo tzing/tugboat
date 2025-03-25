@@ -33,7 +33,7 @@ a:hover .inline-rule-ref .rule-code {
     color: var(--sy-c-link);
 }
 
-.rule-section h2 .rule-code {
+.rule-section .rule-title .rule-code {
     color: var(--sy-c-light);
     display: inline;
     font-size: 0.82em;

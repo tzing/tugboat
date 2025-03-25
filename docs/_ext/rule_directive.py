@@ -85,7 +85,7 @@ class RuleDirective(SphinxDirective):
         tugboat_domain.note_rule(rule_code, rule_name, node_id)
 
         # create section and populate it with title and content
-        title = nodes.title()
+        title = nodes.title(classes=["rule-title"])
         title += [
             nodes.inline(text=rule_code, classes=["rule-code"]),
             nodes.Text(" "),
