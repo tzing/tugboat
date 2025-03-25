@@ -27,7 +27,7 @@ The comment may include the rule codes (separated by commas) for the violations 
 
 The comment should be placed on the same line as the section where the violation occurs, or the parent level of the section.
 
-The following example demonstrates how to ignore :ref:`code.var002` in the Argo workflow manifest.
+The following example demonstrates how to ignore :rule:`var002` in the Argo workflow manifest.
 We want to ignore this violation because the template file is intended to be a Jinja template, rather than an Argo tag template.
 
 .. code-block:: yaml
