@@ -21,7 +21,7 @@ def test_analyze_step():
 
     assert (
         IsPartialDict(
-            {"code": "STP004", "loc": ("spec", "templates", 0, "steps", 1, 0, "onExit")}
+            {"code": "STP901", "loc": ("spec", "templates", 0, "steps", 1, 0, "onExit")}
         )
         in diagnoses
     )

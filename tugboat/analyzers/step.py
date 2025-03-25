@@ -56,7 +56,7 @@ def analyze_step(
 
     if step.onExit:
         yield {
-            "code": "STP004",
+            "code": "STP901",
             "loc": ("onExit",),
             "summary": "Deprecated field",
             "msg": "Field 'onExit' is deprecated. Please use 'hooks[exit].template' instead.",
