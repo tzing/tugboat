@@ -135,20 +135,20 @@ class RuleRole(XRefRole):
         data = domain.rules.get(rule_code)
         if data and not node.get("explicit"):
             node.clear()
-
-            # I want to separate nodes for the rule code and name
-            # The following handles the issue that pending_xref only takes the
-            # first child node as the ref target
-            container = nodes.inline(classes=["inline-rule-ref"])
-            container += [
-                nodes.inline(text=rule_code, classes=["rule-code"]),
-                nodes.Text(" "),
-                nodes.Text(data.rule_name),
-            ]
-
-            node += container
+            node += make_rule_contnode(rule_code, data.rule_name)
 
         return [node], []
+
+
+def make_rule_contnode(rule_code: str, rule_name: str) -> Node:
+    """Create content node for a rule reference."""
+    container = nodes.inline(classes=["inline-rule-ref"])
+    container += [
+        nodes.inline(text=rule_code, classes=["rule-code"]),
+        nodes.Text(" "),
+        nodes.Text(rule_name),
+    ]
+    return container
 
 
 class TugboatDomain(Domain):
@@ -204,8 +204,7 @@ class TugboatDomain(Domain):
                 fromdocname,
                 data.doc_name,
                 data.node_id,
-                contnode,
+                make_rule_contnode(target, data.rule_name),
                 data.node_id,
             )
-
         return None
