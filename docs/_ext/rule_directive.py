@@ -30,12 +30,12 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import make_refnode
 
 if typing.TYPE_CHECKING:
-    from typing import ClassVar
+    from collections.abc import Set
+    from typing import Any, ClassVar
 
     from docutils.nodes import Element, Node, document, system_message
     from sphinx.application import Sphinx
     from sphinx.builders import Builder
-    from sphinx.domains.std import StandardDomain
     from sphinx.environment import BuildEnvironment
 
 
@@ -75,7 +75,7 @@ class RuleDirective(SphinxDirective):
         node_id = nodes.make_id(ref_name)
 
         # register the label in Sphinx's standard domain
-        std_domain = cast("StandardDomain", self.env.get_domain("std"))
+        std_domain = self.env.domains.standard_domain
         std_domain.note_hyperlink_target(
             ref_name, self.env.docname, node_id, f"{rule_code} ({rule_name})"
         )
@@ -107,6 +107,21 @@ class RuleRole(XRefRole):
     documentation.
     """
 
+    def process_link(
+        self,
+        env: BuildEnvironment,
+        refnode: Element,
+        has_explicit_title: bool,
+        title: str,
+        target: str,
+    ) -> tuple[str, str]:
+        # this role is added to the standard domain, so we need to set the
+        # reference domain to "tg" to ensure that the reference is resolved
+        # correctly
+        refnode["refdomain"] = "tg"
+        refnode["refwarn"] = True
+        return title, target.upper()
+
     def result_nodes(
         self,
         document: document,
@@ -114,29 +129,26 @@ class RuleRole(XRefRole):
         node: Element,
         is_ref: bool,
     ) -> tuple[list[Node], list[system_message]]:
-        rule_code: str = node["reftarget"].upper()
+        rule_code: str = node["reftarget"]
 
         domain = cast("TugboatDomain", env.get_domain("tg"))
         data = domain.rules.get(rule_code)
         if data and not node.get("explicit"):
-            node["refdomain"] = "tg"
-            node["reftarget"] = rule_code
-            node["refwarn"] = True
             node.clear()
-
-            # I want to separate nodes for the rule code and name
-            # The following handles the issue that pending_xref only takes the
-            # first child node as the ref target
-            container = nodes.inline(classes=["inline-rule-ref"])
-            container += [
-                nodes.inline(text=rule_code, classes=["rule-code"]),
-                nodes.Text(" "),
-                nodes.Text(data.rule_name),
-            ]
-
-            node += container
+            node += make_rule_contnode(rule_code, data.rule_name)
 
         return [node], []
+
+
+def make_rule_contnode(rule_code: str, rule_name: str) -> Node:
+    """Create content node for a rule reference."""
+    container = nodes.inline(classes=["inline-rule-ref"])
+    container += [
+        nodes.inline(text=rule_code, classes=["rule-code"]),
+        nodes.Text(" "),
+        nodes.Text(rule_name),
+    ]
+    return container
 
 
 class TugboatDomain(Domain):
@@ -147,6 +159,34 @@ class TugboatDomain(Domain):
     directives: ClassVar = {"rule": RuleDirective}
     roles: ClassVar = {"rule": RuleRole()}
     object_types: ClassVar = {"rule": ObjType("Tugboat rule", "ref")}
+
+    @property
+    def rules(self) -> dict[str, RuleEntry]:
+        return self.data.setdefault("rules", {})
+
+    def note_rule(self, rule_code: str, rule_name: str, node_id: str):
+        self.rules[rule_code.upper()] = RuleEntry(
+            doc_name=self.env.docname,
+            node_id=node_id,
+            rule_name=rule_name,
+        )
+
+    def get_objects(self):
+        for label, (doc_name, node_id, rule_name) in self.rules.items():
+            yield (label, rule_name, "rule", doc_name, node_id, 1)
+
+    def clear_doc(self, docname: str):
+        to_remove = []
+        for rule_code, data in self.rules.items():
+            if data.doc_name == docname:
+                to_remove.append(rule_code)
+        for rule_code in to_remove:
+            self.rules.pop(rule_code)
+
+    def merge_domaindata(self, docnames: Set[str], otherdata: dict[str, Any]):
+        for rule_code, data in otherdata.get("rules", {}).items():
+            if data.doc_name in docnames:
+                self.rules[rule_code] = data
 
     def resolve_xref(
         self,
@@ -164,23 +204,7 @@ class TugboatDomain(Domain):
                 fromdocname,
                 data.doc_name,
                 data.node_id,
-                contnode,
+                make_rule_contnode(target, data.rule_name),
                 data.node_id,
             )
-
         return None
-
-    def get_objects(self):
-        for label, (doc_name, node_id, rule_name) in self.rules.items():
-            yield (label, rule_name, "rule", doc_name, node_id, 1)
-
-    @property
-    def rules(self) -> dict[str, RuleEntry]:
-        return self.data.setdefault("rules", {})
-
-    def note_rule(self, rule_code: str, rule_name: str, node_id: str):
-        self.rules[rule_code.upper()] = RuleEntry(
-            doc_name=self.env.docname,
-            node_id=node_id,
-            rule_name=rule_name,
-        )
