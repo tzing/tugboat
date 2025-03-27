@@ -29,53 +29,6 @@ For instance, the following workflow specifies an entrypoint that does not exist
            image: alpine:latest
 
 
-:bdg:`WT002` Duplicate parameter names
---------------------------------------
-
-The workflow template contains multiple input parameters (``.spec.arguments.parameters``) with the same name.
-
-In the following example, the template ``message`` is duplicated:
-
-.. code-block:: yaml
-   :emphasize-lines: 8,10
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: WorkflowTemplate
-   metadata:
-     name: demo
-   spec:
-     arguments:
-       parameters:
-         - name: message
-           value: "Hello, World!"
-         - name: message
-           value: "Hello, Tugboat!"
-
-
-:bdg:`WT003` Duplicate artifact names
--------------------------------------
-
-The workflow template contains multiple input artifacts (``.spec.arguments.artifacts``) with the same name.
-
-In the following example, the artifact ``message`` is duplicated:
-
-.. code-block:: yaml
-   :emphasize-lines: 8,11
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: WorkflowTemplate
-   metadata:
-     name: demo
-   spec:
-     arguments:
-       artifacts:
-         - name: message
-           raw:
-              data: "Hello, World!"
-         - name: message
-           raw:
-              data: >-
-                Hello, Tugboat!
 
 
 :bdg:`WT004` Use strict name
@@ -95,3 +48,50 @@ This is because the workflow template will be referenced by its name in the work
      generateName: demo-
    spec:
      templates: []
+
+.. WT1xx duplicated items
+
+.. rule:: WT101 Duplicate parameter names
+
+   The workflow template contains multiple input parameters (``.spec.arguments.parameters``) with the same name.
+
+   In the following example, the template ``message`` is duplicated:
+
+   .. code-block:: yaml
+      :emphasize-lines: 8,10
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: WorkflowTemplate
+      metadata:
+        name: demo
+      spec:
+        arguments:
+          parameters:
+            - name: message
+              value: "Hello, World!"
+            - name: message
+              value: "Hello, Tugboat!"
+
+.. rule:: WT102 Duplicate artifact names
+
+   The workflow template contains multiple input artifacts (``.spec.arguments.artifacts``) with the same name.
+
+   In the following example, the artifact ``message`` is duplicated:
+
+   .. code-block:: yaml
+      :emphasize-lines: 8,11
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: WorkflowTemplate
+      metadata:
+        name: demo
+      spec:
+        arguments:
+          artifacts:
+            - name: message
+              raw:
+                 data: "Hello, World!"
+            - name: message
+              raw:
+                 data: >-
+                   Hello, Tugboat!

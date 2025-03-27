@@ -67,7 +67,7 @@ def check_arguments(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
     ):
         match diagnosis["code"]:
             case "WF101":
-                diagnosis["code"] = "WT002"
+                diagnosis["code"] = "WT101"
             case "WF102":
-                diagnosis["code"] = "WT003"
+                diagnosis["code"] = "WT102"
         yield diagnosis

@@ -36,26 +36,26 @@ class TestRules:
 
         assert (
             IsPartialDict(
-                {"code": "WT002", "loc": ("spec", "arguments", "parameters", 0, "name")}
+                {"code": "WT101", "loc": ("spec", "arguments", "parameters", 0, "name")}
             )
             in diagnoses
         )
         assert (
             IsPartialDict(
-                {"code": "WT002", "loc": ("spec", "arguments", "parameters", 1, "name")}
+                {"code": "WT101", "loc": ("spec", "arguments", "parameters", 1, "name")}
             )
             in diagnoses
         )
 
         assert (
             IsPartialDict(
-                {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 0, "name")}
+                {"code": "WT102", "loc": ("spec", "arguments", "artifacts", 0, "name")}
             )
             in diagnoses
         )
         assert (
             IsPartialDict(
-                {"code": "WT003", "loc": ("spec", "arguments", "artifacts", 1, "name")}
+                {"code": "WT102", "loc": ("spec", "arguments", "artifacts", 1, "name")}
             )
             in diagnoses
         )
@@ -128,20 +128,20 @@ metadata:
 spec:
   arguments:
     parameters:
-      - name: message  # WT002
+      - name: message  # WT101
         valueFrom:
           configMapKeyRef:
             name: my-config
             key: my-key
-      - name: message  # WT002
+      - name: message  # WT101
         default: foo
     artifacts:
-      - name: data  # WT003
+      - name: data  # WT102
         raw:  # M201
           data: world
         s3:  # M201
           key: my-file
-      - name: data  # WT003
+      - name: data  # WT102
         raw:
           data: hello
 """

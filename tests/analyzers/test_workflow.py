@@ -288,18 +288,18 @@ metadata:
 spec:
   arguments:
     parameters:
-      - name: message  # WT002
+      - name: message  # WT101
         valueFrom:
           configMapKeyRef:
             name: my-config
             key: my-key
-      - name: message  # WT002
+      - name: message  # WT101
         default: foo
     artifacts:
-      - name: data  # WT003
+      - name: data  # WT102
         raw:
           data: hello
-      - name: data  # WT003
+      - name: data  # WT102
         raw:  # M201
           data: world
         s3:  # M201
