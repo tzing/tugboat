@@ -241,7 +241,7 @@ class TestInputRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "TPL203",
+                    "code": "TPL202",
                     "loc": (
                         "spec",
                         "templates",
@@ -313,9 +313,9 @@ spec:
           - name: data # TPL103
             raw:
               data:
-                This is a message from {{ workflow.namee }}. # TPL203
+                This is a message from {{ workflow.namee }}. # TPL202
           - name: data # TPL103
-            from: "{{ invalid }}" # TPL202
+            from: "{{ invalid }}" # M102
 """
 
 

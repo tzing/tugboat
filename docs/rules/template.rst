@@ -195,7 +195,7 @@ Rules
                 - name: data
                   value: "{{ inputs.parameters.invalid }}"
 
-.. rule:: TPL203 Improper use of raw artifact field
+.. rule:: TPL202 Improper use of raw artifact field
 
    This rule is triggered when a raw artifact in the input arguments references something other than a parameter.
    Raw artifacts are designed to accept only parameter references, but users often mistakenly try to reference artifacts in this field.

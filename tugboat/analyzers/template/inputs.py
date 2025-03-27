@@ -174,7 +174,7 @@ def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diag
                 case "VAR002":
                     ctx = typing.cast(dict, diag.get("ctx"))
                     ref = ".".join(ctx["ref"])
-                    diag["code"] = "TPL203"
+                    diag["code"] = "TPL202"
                     diag["msg"] = (
                         f"""
                         The parameter reference '{ref}' used in artifact '{artifact.name}' is invalid.
