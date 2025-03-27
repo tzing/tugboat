@@ -26,14 +26,8 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
     from tugboat.references import Context
-    from tugboat.schemas import (
-        Artifact,
-        Parameter,
-        Step,
-        Template,
-        Workflow,
-        WorkflowTemplate,
-    )
+    from tugboat.schemas import Step, Template, Workflow, WorkflowTemplate
+    from tugboat.schemas.arguments import RelaxedArtifact, RelaxedParameter
     from tugboat.types import Diagnosis
 
 logger = logging.getLogger(__name__)
@@ -91,7 +85,7 @@ def check_argument_parameters(
 
 
 def _check_argument_parameter(
-    param: Parameter, context: Context
+    param: RelaxedParameter, context: Context
 ) -> Iterable[Diagnosis]:
     yield from require_non_empty(
         model=param,
@@ -166,7 +160,7 @@ def check_argument_artifacts(
 
 
 def _check_argument_artifact(
-    artifact: Artifact, context: Context
+    artifact: RelaxedArtifact, context: Context
 ) -> Iterable[Diagnosis]:
     yield from require_non_empty(
         model=artifact,

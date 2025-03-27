@@ -15,7 +15,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from tugboat.schemas.arguments import Arguments
+from tugboat.schemas.arguments import Arguments, RelaxedArguments
 from tugboat.schemas.basic import Array, Dict
 from tugboat.schemas.template.container import (
     ContainerNode,
@@ -159,6 +159,8 @@ class Step(_StepBase):
 
     .. _Step: https://argo-workflows.readthedocs.io/en/latest/fields/#workflowstep
     """
+
+    arguments: RelaxedArguments | None = None  # type: ignore[reportIncompatibleVariableOverride]
 
 
 class TemplateRef(_BaseModel):
