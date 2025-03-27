@@ -47,7 +47,7 @@ We want to ignore this violation because the template file is intended to be a J
              - name: template
                path: /tmp/template.j2
                raw:
-                 data: | # noqa: VAR002; this is a Jinja template
+                 data: | # noqa: TPL202; this is a Jinja template
                    Hello {{name}}
              - name: data
                path: /tmp/data.json
@@ -77,7 +77,7 @@ For example, if the violation originates from a ``data`` field, placing the ``# 
      templates:
        - name: render
          inputs:
-           # noqa: VAR002
+           # noqa: TPL202
            artifacts:
              - name: template
                path: /tmp/template.j2

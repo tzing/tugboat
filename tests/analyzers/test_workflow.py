@@ -168,11 +168,11 @@ class TestRules:
             IsPartialDict({"code": "WF001", "loc": ("spec", "entrypoint")}) in diagnoses
         )
         assert (
-            IsPartialDict({"code": "TPL001", "loc": ("spec", "templates", 0, "name")})
+            IsPartialDict({"code": "TPL101", "loc": ("spec", "templates", 0, "name")})
             in diagnoses
         )
         assert (
-            IsPartialDict({"code": "TPL001", "loc": ("spec", "templates", 2, "name")})
+            IsPartialDict({"code": "TPL101", "loc": ("spec", "templates", 2, "name")})
             in diagnoses
         )
 
@@ -268,13 +268,13 @@ metadata:
 spec:
   entrypoint: main  # WT001
   templates:
-    - name: hello  # TPL001
+    - name: hello  # TPL101
       container:
         image: busybox
     - name: world
       container:
         image: busybox
-    - name: hello  # TPL001
+    - name: hello  # TPL101
       container:
         image: busybox
 """
