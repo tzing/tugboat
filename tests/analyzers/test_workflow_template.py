@@ -28,7 +28,7 @@ class TestRules:
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_ENTRYPOINT)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert IsPartialDict({"code": "WT001"}) in diagnoses
-        assert IsPartialDict({"code": "TPL001"}) in diagnoses
+        assert IsPartialDict({"code": "TPL101"}) in diagnoses
 
     def test_check_arguments(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_ARGUMENTS)
@@ -109,13 +109,13 @@ metadata:
 spec:
   entrypoint: main  # WT001
   templates:
-    - name: hello  # TPL001
+    - name: hello  # TPL101
       container:
         image: busybox
     - name: world
       container:
         image: busybox
-    - name: hello  # TPL001
+    - name: hello  # TPL101
       container:
         image: busybox
 """

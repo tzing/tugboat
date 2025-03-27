@@ -41,7 +41,7 @@ def check_input_parameters(
     # report duplicate names
     for idx, name in find_duplicate_names(template.inputs.parameters or ()):
         yield {
-            "code": "TPL002",
+            "code": "TPL102",
             "loc": ("inputs", "parameters", idx, "name"),
             "summary": "Duplicate parameter name",
             "msg": f"Parameter name '{name}' is duplicated.",
@@ -113,7 +113,7 @@ def check_input_artifacts(
     # report duplicate names
     for idx, name in find_duplicate_names(template.inputs.artifacts or ()):
         yield {
-            "code": "TPL003",
+            "code": "TPL103",
             "loc": ("inputs", "artifacts", idx, "name"),
             "summary": "Duplicate parameter name",
             "msg": f"Parameter name '{name}' is duplicated.",

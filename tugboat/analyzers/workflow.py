@@ -107,7 +107,7 @@ def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
     # report duplicate names
     for idx, name in find_duplicate_names(workflow.spec.templates):
         yield {
-            "code": "TPL001",
+            "code": "TPL101",
             "loc": ("spec", "templates", idx, "name"),
             "summary": "Duplicate template name",
             "msg": f"Template name '{name}' is duplicated.",

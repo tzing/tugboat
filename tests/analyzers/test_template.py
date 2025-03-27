@@ -163,7 +163,7 @@ class TestInputRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "TPL002",
+                    "code": "TPL102",
                     "loc": ("spec", "templates", 0, "inputs", "parameters", 0, "name"),
                 }
             )
@@ -172,7 +172,7 @@ class TestInputRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "TPL002",
+                    "code": "TPL102",
                     "loc": ("spec", "templates", 0, "inputs", "parameters", 1, "name"),
                 }
             )
@@ -223,7 +223,7 @@ class TestInputRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "TPL003",
+                    "code": "TPL103",
                     "loc": ("spec", "templates", 0, "inputs", "artifacts", 0, "name"),
                 }
             )
@@ -232,7 +232,7 @@ class TestInputRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "TPL003",
+                    "code": "TPL103",
                     "loc": ("spec", "templates", 0, "inputs", "artifacts", 1, "name"),
                 }
             )
@@ -290,10 +290,10 @@ spec:
     - name: main
       inputs:
         parameters:
-          - name: message # TPL002
+          - name: message # TPL102
             valueFrom:
               path: /malformed # M102
-          - name: message # TPL002
+          - name: message # TPL102
             value: "{{ workflow.name " # VAR001
           - name: message-3
             value: "{{ workflow.invalid}}" # VAR002
@@ -310,11 +310,11 @@ spec:
     - name: test
       inputs:
         artifacts:
-          - name: data # TPL003
+          - name: data # TPL103
             raw:
               data:
                 This is a message from {{ workflow.namee }}. # VAR002
-          - name: data # TPL003
+          - name: data # TPL103
             from: "{{ invalid }}" # VAR002
 """
 
@@ -327,7 +327,7 @@ class TestOutputRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "TPL004",
+                    "code": "TPL104",
                     "loc": ("spec", "templates", 0, "outputs", "parameters", 0, "name"),
                 }
             )
@@ -336,7 +336,7 @@ class TestOutputRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "TPL004",
+                    "code": "TPL104",
                     "loc": ("spec", "templates", 0, "outputs", "parameters", 1, "name"),
                 }
             )
@@ -384,7 +384,7 @@ class TestOutputRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "TPL005",
+                    "code": "TPL105",
                     "loc": ("spec", "templates", 0, "outputs", "artifacts", 0, "name"),
                 }
             )
@@ -393,7 +393,7 @@ class TestOutputRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "TPL005",
+                    "code": "TPL105",
                     "loc": ("spec", "templates", 0, "outputs", "artifacts", 1, "name"),
                 }
             )
@@ -440,8 +440,8 @@ spec:
         image: busybox:latest
       outputs:
         parameters:
-          - name: message # TPL004
-          - name: message # TPL004
+          - name: message # TPL104
+          - name: message # TPL104
             valueFrom:
               parameter: "{{ workflow.invalid}}" # VAR002
 """
@@ -456,9 +456,9 @@ spec:
     - name: main
       outputs:
         artifacts:
-          - name: data # TPL005
+          - name: data # TPL105
             path: /data
             archive: {} # M101
-          - name: data # TPL005
+          - name: data # TPL105
             from: '{{ invalid }}'
 """
