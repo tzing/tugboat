@@ -204,18 +204,19 @@ def _check_argument_artifact(
 
     if artifact.from_:
         # `from` value can be either wrapped by the cruely brackets or not
+        from_ = artifact.from_.strip()
 
-        # when it is unwrapped, it is a reference to an artifact
+        # when it is unwrapped, it should be a reference to an artifact
         # EXAMPLE> artifact: inputs.artifacts.artifact-1
-        if re.fullmatch(r"\s*[a-zA-Z0-9.-]+\s*", artifact.from_):
-            ref = tuple(artifact.from_.strip().split("."))
-            closest = context.artifacts.find_closest(ref)
+        if re.fullmatch(r"[a-zA-Z0-9.-]+", from_):
+            ref = tuple(from_.split("."))
             if ref not in context.artifacts:
+                closest = context.artifacts.find_closest(ref)
                 yield {
                     "code": "STP302",
                     "loc": ("from",),
                     "summary": "Invalid reference",
-                    "msg": f"The reference '{artifact.from_}' used in artifact '{artifact.name}' is invalid.",
+                    "msg": f"The reference '{from_}' used in artifact '{artifact.name}' is invalid.",
                     "input": artifact.from_,
                     "fix": ".".join(closest),
                 }
@@ -223,7 +224,7 @@ def _check_argument_artifact(
         # when it is wrapped, it may be a reference to a parameter or an artifact
         mixed_references = context.parameters + context.artifacts
         for diag in prepend_loc(
-            ("from",), check_value_references(artifact.from_, mixed_references)
+            ("from",), check_value_references(from_, mixed_references)
         ):
             match diag["code"]:
                 case "VAR002":
@@ -246,7 +247,7 @@ def _check_argument_artifact(
                 case "VAR002":
                     ctx = typing.cast(dict, diag.get("ctx"))
                     ref = ".".join(ctx["ref"])
-                    diag["code"] = "STP302"
+                    diag["code"] = "STP303"
                     diag["msg"] = (
                         f"""
                         The parameter reference '{ref}' used in artifact '{artifact.name}' is invalid.
