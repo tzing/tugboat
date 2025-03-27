@@ -62,6 +62,11 @@ def test_check_argument_parameters():
         in diagnoses
     )
 
+    # M103: Type error
+    assert (
+        IsPartialDict({"code": "M103", "loc": (*loc_prefix, 2, "value")}) in diagnoses
+    )
+
     # STP102: Duplicated input parameter name
     assert (
         IsPartialDict({"code": "STP102", "loc": (*loc_prefix, 0, "name")}) in diagnoses
@@ -95,6 +100,9 @@ spec:
                     path: /tmp/message  # M102
                 - name: message # STP102
                   value: "{{ workflow.invalid}}" # STP301
+                - name: param-3
+                  value:
+                    foo: bar # M103
 """
 
 

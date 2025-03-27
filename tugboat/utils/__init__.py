@@ -5,6 +5,7 @@ __all__ = [
     "find_duplicate_names",
     "get_alias",
     "get_context_name",
+    "get_type_name",
     "join_with_and",
     "join_with_or",
     "prepend_loc",
@@ -25,5 +26,6 @@ from tugboat.utils.operator import (
 )
 from tugboat.utils.pydantic import (
     bulk_translate_pydantic_errors,
+    get_type_name,
     translate_pydantic_error,
 )

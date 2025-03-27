@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import re
 import typing
@@ -18,12 +19,14 @@ from tugboat.utils import (
     check_model_fields_references,
     check_value_references,
     find_duplicate_names,
+    get_type_name,
     join_with_or,
     prepend_loc,
 )
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
+    from typing import Any
 
     from tugboat.references import Context
     from tugboat.schemas import Step, Template, Workflow, WorkflowTemplate
@@ -98,6 +101,37 @@ def _check_argument_parameter(
         fields=["value", "valueFrom"],
     )
 
+    if param.value:
+        if isinstance(param.value, (dict, list)):
+            input_type = get_type_name(param.value)
+            yield {
+                "type": "failure",
+                "code": "M103",
+                "loc": ("value",),
+                "summary": "Input type mismatch",
+                "msg": (
+                    f"""
+                    Expected string for value field, but received a {input_type}.
+                    If you want to pass an object, try serializing it to a JSON string.
+                    """
+                ),
+                "input": param.value,
+                "fix": _json_serialize(param.value),
+            }
+
+        elif not isinstance(param.value, (bool, int, str)):
+            input_type = get_type_name(param.value)
+            yield {
+                "type": "failure",
+                "code": "M103",
+                "loc": ("value",),
+                "summary": "Input type mismatch",
+                "msg": (
+                    f"Expected string for value field, but received a {input_type}."
+                ),
+                "input": param.value,
+            }
+
     if param.valueFrom:
         yield from require_exactly_one(
             model=param.valueFrom,
@@ -131,6 +165,13 @@ def _check_argument_parameter(
                     f"The parameter reference '{ref}' used in parameter '{param.name}' is invalid."
                 )
         yield diag
+
+
+def _json_serialize(value: Any) -> str | None:
+    try:
+        return json.dumps(value, indent=2)
+    except Exception:
+        return None
 
 
 @hookimpl(specname="analyze_step")

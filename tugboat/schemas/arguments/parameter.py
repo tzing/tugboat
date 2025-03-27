@@ -41,7 +41,6 @@ class RelaxedParameter(Parameter):
     """
 
     value: Any | None = None
-    raw: Any | None = None
 
 
 class ValueFrom(_BaseModel):
