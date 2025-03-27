@@ -7,28 +7,6 @@ These errors are likely to cause runtime issues when the workflow template is us
 .. _Workflow Template: https://argo-workflows.readthedocs.io/en/latest/workflow-templates/
 
 
-:bdg:`WT001` Invalid entrypoint
--------------------------------
-
-The specified entrypoint does not exist in the workflow template.
-
-For instance, the following workflow specifies an entrypoint that does not exist:
-
-.. code-block:: yaml
-   :emphasize-lines: 6
-
-   apiVersion: argoproj.io/v1alpha1
-   kind: WorkflowTemplate
-   metadata:
-     name: demo
-   spec:
-     entrypoint: non-existent
-     templates:
-       - name: hello
-         container:
-           image: alpine:latest
-
-
 
 
 :bdg:`WT004` Use strict name
@@ -95,3 +73,26 @@ This is because the workflow template will be referenced by its name in the work
               raw:
                  data: >-
                    Hello, Tugboat!
+
+
+.. WT2xx reference issues
+
+.. rule:: WT201 Invalid entrypoint
+
+   The specified entrypoint does not exist in the workflow template.
+
+   For instance, the following workflow specifies an entrypoint that does not exist:
+
+   .. code-block:: yaml
+      :emphasize-lines: 6
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: WorkflowTemplate
+      metadata:
+        name: demo
+      spec:
+        entrypoint: non-existent
+        templates:
+          - name: hello
+            container:
+              image: alpine:latest

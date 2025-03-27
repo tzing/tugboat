@@ -27,7 +27,7 @@ class TestRules:
     def test_check_entrypoint(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_ENTRYPOINT)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-        assert IsPartialDict({"code": "WT001"}) in diagnoses
+        assert IsPartialDict({"code": "WT201"}) in diagnoses
         assert IsPartialDict({"code": "TPL101"}) in diagnoses
 
     def test_check_arguments(self):
@@ -84,7 +84,7 @@ MANIFEST_NAME_TOO_LONG = """
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: a-very-long-name-that-is-definitely-too-long-for-argo-workflow-templates  # WT001
+  name: a-very-long-name-that-is-definitely-too-long-for-argo-workflow-templates  # WT201
 spec:
   templates: []
 """
@@ -94,7 +94,7 @@ MANIFEST_USE_GENERATE_NAME = """
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  generateName: test-workflow-  # WT001
+  generateName: test-workflow-  # WT201
 spec:
   templates: []
   workflowTemplateRef:  # M201
@@ -107,7 +107,7 @@ kind: WorkflowTemplate
 metadata:
   name: test
 spec:
-  entrypoint: main  # WT001
+  entrypoint: main  # WT201
   templates:
     - name: hello  # TPL101
       container:

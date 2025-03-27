@@ -266,7 +266,7 @@ kind: Workflow
 metadata:
   name: test
 spec:
-  entrypoint: main  # WT001
+  entrypoint: main  # WT201
   templates:
     - name: hello  # TPL101
       container:
