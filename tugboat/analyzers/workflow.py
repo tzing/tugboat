@@ -125,7 +125,7 @@ def check_entrypoint(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
         if result := extractOne(workflow.spec.entrypoint, entrypoints):
             suggestion, _, _ = result
         yield {
-            "code": "WF001",
+            "code": "WF201",
             "loc": ("spec", "entrypoint"),
             "summary": "Invalid entrypoint",
             "msg": f"""
@@ -145,7 +145,7 @@ def check_argument_parameters(workflow: WorkflowCompatible) -> Iterator[Diagnosi
     # report duplicate names
     for idx, name in find_duplicate_names(workflow.spec.arguments.parameters or ()):
         yield {
-            "code": "WF002",
+            "code": "WF101",
             "loc": ("spec", "arguments", "parameters", idx, "name"),
             "summary": "Duplicate parameter name",
             "msg": f"Parameter name '{name}' is duplicated.",
@@ -204,7 +204,7 @@ def check_argument_artifacts(workflow: WorkflowCompatible) -> Iterator[Diagnosis
     # report duplicate names
     for idx, name in find_duplicate_names(workflow.spec.arguments.artifacts or ()):
         yield {
-            "code": "WF003",
+            "code": "WF102",
             "loc": ("spec", "arguments", "artifacts", idx, "name"),
             "summary": "Duplicate artifact name",
             "msg": f"Artifact name '{name}' is duplicated.",

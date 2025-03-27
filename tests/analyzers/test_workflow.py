@@ -165,7 +165,7 @@ class TestRules:
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_ENTRYPOINT)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
-            IsPartialDict({"code": "WF001", "loc": ("spec", "entrypoint")}) in diagnoses
+            IsPartialDict({"code": "WF201", "loc": ("spec", "entrypoint")}) in diagnoses
         )
         assert (
             IsPartialDict({"code": "TPL101", "loc": ("spec", "templates", 0, "name")})
@@ -181,13 +181,13 @@ class TestRules:
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
-                {"code": "WF002", "loc": ("spec", "arguments", "parameters", 0, "name")}
+                {"code": "WF101", "loc": ("spec", "arguments", "parameters", 0, "name")}
             )
             in diagnoses
         )
         assert (
             IsPartialDict(
-                {"code": "WF002", "loc": ("spec", "arguments", "parameters", 1, "name")}
+                {"code": "WF101", "loc": ("spec", "arguments", "parameters", 1, "name")}
             )
             in diagnoses
         )
@@ -226,13 +226,13 @@ class TestRules:
 
         assert (
             IsPartialDict(
-                {"code": "WF003", "loc": ("spec", "arguments", "artifacts", 0, "name")}
+                {"code": "WF102", "loc": ("spec", "arguments", "artifacts", 0, "name")}
             )
             in diagnoses
         )
         assert (
             IsPartialDict(
-                {"code": "WF003", "loc": ("spec", "arguments", "artifacts", 1, "name")}
+                {"code": "WF102", "loc": ("spec", "arguments", "artifacts", 1, "name")}
             )
             in diagnoses
         )
@@ -266,7 +266,7 @@ kind: Workflow
 metadata:
   name: test
 spec:
-  entrypoint: main  # WT001
+  entrypoint: main  # WT201
   templates:
     - name: hello  # TPL101
       container:
@@ -288,18 +288,18 @@ metadata:
 spec:
   arguments:
     parameters:
-      - name: message  # WT002
+      - name: message  # WT101
         valueFrom:
           configMapKeyRef:
             name: my-config
             key: my-key
-      - name: message  # WT002
+      - name: message  # WT101
         default: foo
     artifacts:
-      - name: data  # WT003
+      - name: data  # WT102
         raw:
           data: hello
-      - name: data  # WT003
+      - name: data  # WT102
         raw:  # M201
           data: world
         s3:  # M201
