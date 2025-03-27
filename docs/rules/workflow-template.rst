@@ -7,25 +7,25 @@ These errors are likely to cause runtime issues when the workflow template is us
 .. _Workflow Template: https://argo-workflows.readthedocs.io/en/latest/workflow-templates/
 
 
+.. WT0xx general issues
 
+.. rule:: WT001 Use strict name
 
-:bdg:`WT004` Use strict name
-----------------------------
+   This error occurs when a workflow template uses the ``metadata.generateName`` field instead of the ``metadata.name`` field.
 
-This error occurs when a workflow template uses the ``metadata.generateName`` field instead of the ``metadata.name`` field.
+   While Argo Workflows does not strictly enforce this, it is recommended to use the ``metadata.name`` field for workflow templates.
+   This is because the workflow template will be referenced by its name in the workflow, and a randomly generated name can be difficult to remember.
 
-While Argo Workflows does not strictly enforce this, it is recommended to use the ``metadata.name`` field for workflow templates.
-This is because the workflow template will be referenced by its name in the workflow, and a randomly generated name can be difficult to remember.
+   .. code-block:: yaml
+      :emphasize-lines: 4
 
-.. code-block:: yaml
-   :emphasize-lines: 4
+      apiVersion: argoproj.io/v1alpha1
+      kind: WorkflowTemplate
+      metadata:
+        generateName: demo-
+      spec:
+        templates: []
 
-   apiVersion: argoproj.io/v1alpha1
-   kind: WorkflowTemplate
-   metadata:
-     generateName: demo-
-   spec:
-     templates: []
 
 .. WT1xx duplicated items
 

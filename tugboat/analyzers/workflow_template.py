@@ -32,7 +32,7 @@ def check_metadata(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
 
     if workflow_template.metadata.generateName:
         yield {
-            "code": "WT004",
+            "code": "WT001",
             "loc": ("metadata", "generateName"),
             "summary": "Use strict name",
             "msg": "Use a strict name instead of a generateName.",

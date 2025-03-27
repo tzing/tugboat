@@ -17,7 +17,7 @@ class TestRules:
     def test_check_metadata_2(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_USE_GENERATE_NAME)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-        assert IsPartialDict({"code": "WT004"}) in diagnoses
+        assert IsPartialDict({"code": "WT001"}) in diagnoses
 
     def test_check_spec(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_USE_GENERATE_NAME)
