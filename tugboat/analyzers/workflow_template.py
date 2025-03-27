@@ -54,7 +54,7 @@ def check_spec(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
 def check_entrypoint(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
     for diagnosis in tugboat.analyzers.workflow.check_entrypoint(workflow_template):
         match diagnosis["code"]:
-            case "WF001":
+            case "WF201":
                 diagnosis["code"] = "WT001"
         yield diagnosis
 
@@ -66,8 +66,8 @@ def check_arguments(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
         tugboat.analyzers.workflow.check_argument_artifacts(workflow_template),
     ):
         match diagnosis["code"]:
-            case "WF002":
+            case "WF101":
                 diagnosis["code"] = "WT002"
-            case "WF003":
+            case "WF102":
                 diagnosis["code"] = "WT003"
         yield diagnosis
