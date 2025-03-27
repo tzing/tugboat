@@ -117,7 +117,7 @@ def test_check_argument_artifacts():
         IsPartialDict({"code": "STP302", "loc": (*loc_prefix, 0, "from")}) in diagnoses
     )
     assert (
-        IsPartialDict({"code": "STP302", "loc": (*loc_prefix, 1, "raw", "data")})
+        IsPartialDict({"code": "STP303", "loc": (*loc_prefix, 1, "raw", "data")})
         in diagnoses
     )
     assert (
@@ -143,7 +143,7 @@ spec:
                   from: "{{ workflow.invalid }}" # STP302
                 - name: message # STP103
                   raw:
-                    data: "{{ workflow.invalid }}" # STP302
+                    data: "{{ workflow.invalid }}" # STP303
                 - name: another
                   from: workflow.invalid # STP302
 """

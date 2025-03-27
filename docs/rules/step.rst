@@ -159,6 +159,54 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
    This rule is a variation of :rule:`VAR002`.
    It is triggered when a step input artifact references an invalid objective.
 
+   .. code-block:: yaml
+      :emphasize-lines: 14
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: WorkflowTemplate
+      metadata:
+        name: demo
+      spec:
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  template: another-template
+                  arguments:
+                    artifacts:
+                      - name: data
+                        from: inputs.artifacts.invalid
+
+.. rule:: STP303 Improper use of raw artifact field
+
+   This rule is triggered when a raw artifact in the input arguments references something other than a parameter.
+   Raw artifacts are designed to accept only parameter references, but users often mistakenly try to reference artifacts in this field.
+
+   The purpose of this rule is to identify such cases where artifacts are incorrectly referenced.
+   However, it is important to note that this rule is not limited to detecting artifact references - it also flags other types of invalid references that do not conform to the expected parameter format.
+
+   For example, the following code demonstrates a scenario where this rule would be triggered:
+
+   .. code-block:: yaml
+      :emphasize-lines: 16
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: WorkflowTemplate
+      metadata:
+        name: demo
+      spec:
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  template: another-template
+                  arguments:
+                    artifacts:
+                      - name: data
+                        raw:
+                          data: |-
+                            {{ inputs.artifacts.any }}
+
 
 .. STP9xx deprecated items
 
