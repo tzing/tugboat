@@ -97,6 +97,7 @@ def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagn
             case "VAR002":
                 ctx = typing.cast(dict, diag.get("ctx"))
                 ref = ".".join(ctx["ref"])
+                diag["code"] = "TPL201"
                 diag["msg"] = (
                     f"The parameter reference '{ref}' used in parameter '{param.name}' is invalid."
                 )
@@ -173,6 +174,7 @@ def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diag
                 case "VAR002":
                     ctx = typing.cast(dict, diag.get("ctx"))
                     ref = ".".join(ctx["ref"])
+                    diag["code"] = "TPL203"
                     diag["msg"] = (
                         f"""
                         The parameter reference '{ref}' used in artifact '{artifact.name}' is invalid.

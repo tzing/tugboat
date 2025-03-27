@@ -208,7 +208,7 @@ class TestInputRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "VAR002",
+                    "code": "TPL201",
                     "loc": ("spec", "templates", 0, "inputs", "parameters", 2, "value"),
                     "msg": "The parameter reference 'workflow.invalid' used in parameter 'message-3' is invalid.",
                     "input": "{{ workflow.invalid}}",
@@ -241,7 +241,7 @@ class TestInputRules:
         assert (
             IsPartialDict(
                 {
-                    "code": "VAR002",
+                    "code": "TPL203",
                     "loc": (
                         "spec",
                         "templates",
@@ -296,7 +296,7 @@ spec:
           - name: message # TPL102
             value: "{{ workflow.name " # VAR001
           - name: message-3
-            value: "{{ workflow.invalid}}" # VAR002
+            value: "{{ workflow.invalid}}" # TPL201
 """
 
 MANIFEST_INVALID_INPUT_ARTIFACTS = """
@@ -313,9 +313,9 @@ spec:
           - name: data # TPL103
             raw:
               data:
-                This is a message from {{ workflow.namee }}. # VAR002
+                This is a message from {{ workflow.namee }}. # TPL203
           - name: data # TPL103
-            from: "{{ invalid }}" # VAR002
+            from: "{{ invalid }}" # TPL202
 """
 
 

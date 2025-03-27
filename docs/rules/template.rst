@@ -12,8 +12,8 @@ Argo Workflows offers various types of templates. However, Tugboat currently sup
     :header-rows: 1
 
     * - Template Type
-      - Schema check [#schm-chk]_ [#schm-chk-parentheses]_
-      - Static analysis [#sttc-chk]_ [#stttc-chk-disclaimer]_
+      - Schema Validation [#schm-chk]_
+      - Static Analysis [#sttc-chk]_
 
     * - Container template
       - :octicon:`alert` Partial (:py:class:`~tugboat.schemas.ContainerTemplate`)
@@ -51,10 +51,8 @@ Argo Workflows offers various types of templates. However, Tugboat currently sup
       - :octicon:`check` (:py:class:`~tugboat.schemas.template.SuspendTemplate`)
       - :octicon:`x`
 
-.. [#schm-chk] The schema check validates the manifest against the schema defined in the official `field reference`_ document. It identifies missing or extra fields, incorrect data types, and other basic errors. These errors will be reported as :doc:`manifest-errors`.
-.. [#schm-chk-parentheses] The parentheses indicate the data model that we used to validate the schema for such templates.
-.. [#sttc-chk] The static analysis examines the manifest's fields and values according to a set of rules. It detects unusual values, misused parameters, and potential runtime issues like duplicate names.
-.. [#stttc-chk-disclaimer] Even thought a category is marked as *checked*, it does not mean that all possible issues are covered. Feel free to `create an feature request <https://github.com/tzing/tugboat/issues>`_ or contribute to the project to improve the coverage.
+.. [#schm-chk] The schema validation phase checks the manifest against the schema defined in the official `field reference`_ document. It identifies missing or extra fields, incorrect data types, and other basic errors. These errors will be reported as :doc:`manifest-errors`.
+.. [#sttc-chk] The static analysis examines the manifest's fields and values according to a set of expert rules. It detects unusual values, misused parameters, and potential runtime issues like duplicate names.
 .. _Field Reference: https://argo-workflows.readthedocs.io/en/latest/fields/
 
 Rules
@@ -171,3 +169,55 @@ Rules
                    path: /data/foo
                  - name: data
                    path: /data/bar
+
+
+.. TPL2xx variable reference issues
+
+.. rule:: TPL201 Invalid parameter reference
+
+   Found invalid parameter reference in the template input parameter.
+
+   This rule is a variation of :rule:`VAR002`.
+   It is triggered when a template input parameter references an invalid objective:
+
+   .. code-block:: yaml
+      :emphasize-lines: 11
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: WorkflowTemplate
+      metadata:
+        name: demo
+      spec:
+        templates:
+          - name: main
+            inputs:
+              parameters:
+                - name: data
+                  value: "{{ inputs.parameters.invalid }}"
+
+.. rule:: TPL203 Improper use of raw artifact field
+
+   This rule is triggered when a raw artifact in the input arguments references something other than a parameter.
+   Raw artifacts are designed to accept only parameter references, but users often mistakenly try to reference artifacts in this field.
+
+   The purpose of this rule is to identify such cases where artifacts are incorrectly referenced.
+   However, it is important to note that this rule is not limited to detecting artifact references - it also flags other types of invalid references that do not conform to the expected parameter format.
+
+   For example, the following code demonstrates a scenario where this rule would be triggered:
+
+   .. code-block:: yaml
+      :emphasize-lines: 13
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: WorkflowTemplate
+      metadata:
+        name: demo
+      spec:
+        templates:
+          - name: main
+            inputs:
+              artifacts:
+                - name: data
+                  raw:
+                    data: |-
+                      {{ inputs.artifacts.any }}
