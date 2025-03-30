@@ -59,18 +59,41 @@ class ConsoleOutputBuilder(OutputBuilder):
         )
         self.writeline()
 
-        # PART/ code snippet
-        content_lines = content.splitlines()
-
         # calculate the width of the line numbers
         max_line_number = (
             diagnosis["line"] + settings.console_output.snippet_lines_behind
         )
         line_number_width = len(str(max_line_number - 1)) + 1
+
+        # PART/ code snippet
+        self._write_code_snippet(content, diagnosis, line_number_width, emphasis)
+        self.writeline()
+
+        # PART/ details
+        if details := diagnosis["msg"]:
+            self.writeline(textwrap.indent(details, " " * (line_number_width + 1)))
+            self.writeline()
+
+        # PART/ suggestion
+        if fix := diagnosis["fix"]:
+            self.writeline(
+                " " * (line_number_width + 1),
+                click.style("Do you mean:", fg="cyan", bold=True),
+                " ",
+                click.style(fix, underline=True),
+            )
+            self.writeline()
+
+    def _write_code_snippet(
+        self,
+        content: str,
+        diagnosis: AugmentedDiagnosis,
+        line_number_width: int,
+        emphasis_style: dict[str, Any],
+    ) -> None:
         line_number_delimiter = click.style(" | ", dim=True)
 
-        # print the code snippet
-        for line_no, line in get_lines_near(content_lines, diagnosis["line"]):
+        for line_no, line in get_lines_near(content.splitlines(), diagnosis["line"]):
             # general case: print the line number and the line
             self.writeline(
                 click.style(f"{line_no:{line_number_width}}", dim=True),
@@ -94,7 +117,7 @@ class ConsoleOutputBuilder(OutputBuilder):
 
                     self.writeline(
                         padding,
-                        click.style("^" * (col_end - col_start), **emphasis),
+                        click.style("^" * (col_end - col_start), **emphasis_style),
                     )
 
                 else:
@@ -103,29 +126,12 @@ class ConsoleOutputBuilder(OutputBuilder):
                 # print the caret
                 self.writeline(
                     padding,
-                    click.style(f"└ {diagnosis["code"]}", **emphasis),
+                    click.style(f"└ {diagnosis["code"]}", **emphasis_style),
                     click.style(" at ", dim=True),
                     click.style(format_loc(diagnosis["loc"]), fg="cyan"),
                     click.style(" in ", dim=True),
                     click.style(diagnosis["manifest"] or "<unknown>", fg="blue"),
                 )
-
-        self.writeline()
-
-        # PART/ details
-        if details := diagnosis["msg"]:
-            self.writeline(textwrap.indent(details, " " * (line_number_width + 1)))
-            self.writeline()
-
-        # PART/ suggestion
-        if fix := diagnosis["fix"]:
-            self.writeline(
-                " " * (line_number_width + 1),
-                click.style("Do you mean:", fg="cyan", bold=True),
-                " ",
-                click.style(fix, underline=True),
-            )
-            self.writeline()
 
     def dump(self, stream: TextIO) -> None:
         click.echo(
