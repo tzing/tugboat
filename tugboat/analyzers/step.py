@@ -17,6 +17,8 @@ from tugboat.references import get_step_context
 from tugboat.utils import (
     check_model_fields_references,
     check_value_references,
+    critique_relaxed_artifact,
+    critique_relaxed_parameter,
     find_duplicate_names,
     join_with_or,
     prepend_loc,
@@ -26,14 +28,8 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
     from tugboat.references import Context
-    from tugboat.schemas import (
-        Artifact,
-        Parameter,
-        Step,
-        Template,
-        Workflow,
-        WorkflowTemplate,
-    )
+    from tugboat.schemas import Step, Template, Workflow, WorkflowTemplate
+    from tugboat.schemas.arguments import RelaxedArtifact, RelaxedParameter
     from tugboat.types import Diagnosis
 
 logger = logging.getLogger(__name__)
@@ -91,7 +87,7 @@ def check_argument_parameters(
 
 
 def _check_argument_parameter(
-    param: Parameter, context: Context
+    param: RelaxedParameter, context: Context
 ) -> Iterable[Diagnosis]:
     yield from require_non_empty(
         model=param,
@@ -103,6 +99,7 @@ def _check_argument_parameter(
         loc=(),
         fields=["value", "valueFrom"],
     )
+    yield from critique_relaxed_parameter(param)
 
     if param.valueFrom:
         yield from require_exactly_one(
@@ -166,7 +163,7 @@ def check_argument_artifacts(
 
 
 def _check_argument_artifact(
-    artifact: Artifact, context: Context
+    artifact: RelaxedArtifact, context: Context
 ) -> Iterable[Diagnosis]:
     yield from require_non_empty(
         model=artifact,
@@ -201,6 +198,7 @@ def _check_argument_artifact(
             "globalName",
         ],
     )
+    yield from critique_relaxed_artifact(artifact)
 
     if artifact.from_:
         # `from` value can be either wrapped by the cruely brackets or not

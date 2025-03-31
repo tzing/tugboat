@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -31,6 +32,7 @@ if os.getenv("DOCUTILSCONFIG"):
         "OssArtifact",
         "OssLifecycleRule",
         "RawArtifact",
+        "RelaxedArtifact",
         "S3Artifact",
         "S3EncryptionOptions",
         "TarStrategy",
@@ -42,8 +44,11 @@ class _BaseModel(BaseModel):
 
 
 class Artifact(_BaseModel):
+    """
+    `Artifact`_ indicates an artifact to place at a specified path.
 
-    name: str
+    .. _Artifact: https://argo-workflows.readthedocs.io/en/latest/fields/#artifact
+    """
 
     archive: ArchiveStrategy | None = None
     archiveLogs: bool | None = None
@@ -59,6 +64,7 @@ class Artifact(_BaseModel):
     hdfs: HdfsArtifact | None = None
     http: HttpArtifact | None = None
     mode: int | None = None
+    name: str
     optional: bool = False
     oss: OssArtifact | None = None
     path: str | None = None
@@ -66,6 +72,17 @@ class Artifact(_BaseModel):
     recurseMode: bool | None = None
     s3: S3Artifact | None = None
     subPath: str | None = None
+
+
+class RelaxedArtifact(Artifact):
+    """
+    A relaxed version of :py:class:`Artifact` that allows some often misused fields.
+
+    Please refer to the original class for the full list of fields.
+    This class only shows the fields that are changed.
+    """
+
+    value: Any | None = None
 
 
 # ----------------------------------------------------------------------------

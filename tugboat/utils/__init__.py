@@ -2,6 +2,8 @@ __all__ = [
     "bulk_translate_pydantic_errors",
     "check_model_fields_references",
     "check_value_references",
+    "critique_relaxed_artifact",
+    "critique_relaxed_parameter",
     "find_duplicate_names",
     "get_alias",
     "get_context_name",
@@ -26,4 +28,8 @@ from tugboat.utils.operator import (
 from tugboat.utils.pydantic import (
     bulk_translate_pydantic_errors,
     translate_pydantic_error,
+)
+from tugboat.utils.relaxed_arguments import (
+    critique_relaxed_artifact,
+    critique_relaxed_parameter,
 )
