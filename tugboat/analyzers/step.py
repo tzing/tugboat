@@ -102,7 +102,7 @@ def _check_argument_parameter(
     )
 
     if param.value:
-        if isinstance(param.value, (dict, list)):
+        if isinstance(param.value, dict | list):
             input_type = get_type_name(param.value)
             yield {
                 "type": "failure",
@@ -119,7 +119,7 @@ def _check_argument_parameter(
                 "fix": _json_serialize(param.value),
             }
 
-        elif not isinstance(param.value, (bool, int, str)):
+        elif not isinstance(param.value, bool | int | str):
             input_type = get_type_name(param.value)
             yield {
                 "type": "failure",
