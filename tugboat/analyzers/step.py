@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import json
 import logging
 import re
-import textwrap
 import typing
 
 from rapidfuzz.process import extractOne
@@ -19,6 +17,7 @@ from tugboat.references import get_step_context
 from tugboat.utils import (
     check_model_fields_references,
     check_value_references,
+    critique_relaxed_artifact,
     critique_relaxed_parameter,
     find_duplicate_names,
     join_with_or,
@@ -27,7 +26,6 @@ from tugboat.utils import (
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing import Any
 
     from tugboat.references import Context
     from tugboat.schemas import Step, Template, Workflow, WorkflowTemplate
@@ -200,6 +198,7 @@ def _check_argument_artifact(
             "globalName",
         ],
     )
+    yield from critique_relaxed_artifact(artifact)
 
     if artifact.from_:
         # `from` value can be either wrapped by the cruely brackets or not
@@ -254,43 +253,6 @@ def _check_argument_artifact(
                         """
                     )
             yield diag
-
-    if artifact.value:
-        yield {
-            "type": "failure",
-            "code": "M102",
-            "loc": ("value",),
-            "summary": "Found redundant field",
-            "msg": (
-                """
-                Input 'value' is not a valid field for artifact.
-                If a literal value is intended, use raw artifact instead.
-                """
-            ),
-            "input": "value",
-            "fix": _raw_data_serialize(artifact.value),
-        }
-
-
-def _raw_data_serialize(value: Any) -> str | None:
-    # serialize value to string
-    if isinstance(value, bool | int | dict | list):
-        try:
-            value = json.dumps(value, indent=2)
-        except Exception:
-            ...
-    if not isinstance(value, str):
-        value = str(value)
-
-    # return raw artifact
-    if "\n" in value:
-        # multiple lines
-        data = textwrap.indent(value, "    ")
-        return f"raw:\n  data: |-\n{data}"
-    else:
-        # single line
-        data = json.dumps(value)
-        return f"raw:\n  data: {data}"
 
 
 @hookimpl(specname="analyze_step")
