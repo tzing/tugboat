@@ -13,6 +13,8 @@ from tugboat.references import get_workflow_context
 from tugboat.utils import (
     check_model_fields_references,
     check_value_references,
+    critique_relaxed_artifact,
+    critique_relaxed_parameter,
     find_duplicate_names,
     prepend_loc,
 )
@@ -21,13 +23,8 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
     from tugboat.references import Context
-    from tugboat.schemas import (
-        Artifact,
-        Parameter,
-        Template,
-        Workflow,
-        WorkflowTemplate,
-    )
+    from tugboat.schemas import Template, Workflow, WorkflowTemplate
+    from tugboat.schemas.arguments import RelaxedArtifact, RelaxedParameter
     from tugboat.types import Diagnosis
 
 
@@ -57,7 +54,9 @@ def check_input_parameters(
         )
 
 
-def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
+def _check_input_parameter(
+    param: RelaxedParameter, context: Context
+) -> Iterable[Diagnosis]:
     yield from require_non_empty(
         model=param,
         loc=(),
@@ -68,6 +67,7 @@ def _check_input_parameter(param: Parameter, context: Context) -> Iterable[Diagn
         loc=(),
         fields=["value", "valueFrom"],
     )
+    yield from critique_relaxed_parameter(param)
 
     if param.valueFrom:
         yield from require_all(
@@ -130,7 +130,9 @@ def check_input_artifacts(
         )
 
 
-def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
+def _check_input_artifact(
+    artifact: RelaxedArtifact, context: Context
+) -> Iterable[Diagnosis]:
     yield from require_non_empty(
         model=artifact,
         loc=(),
@@ -164,6 +166,7 @@ def _check_input_artifact(artifact: Artifact, context: Context) -> Iterable[Diag
             "globalName",
         ],
     )
+    yield from critique_relaxed_artifact(artifact)
 
     if artifact.raw:
         for diag in prepend_loc(
