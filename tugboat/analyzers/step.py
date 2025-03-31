@@ -291,6 +291,29 @@ def _check_argument_artifact(
                     )
             yield diag
 
+    if artifact.value:
+        yield {
+            "type": "failure",
+            "code": "M102",
+            "loc": ("value",),
+            "summary": "Found redundant field",
+            "msg": (
+                """
+                Input 'value' is not a valid field for artifact.
+                If a literal value is intended, use raw artifact instead.
+                """
+            ),
+            "input": "value",
+            "fix": json.dumps(
+                {
+                    "raw": {
+                        "data": artifact.value,
+                    }
+                },
+                indent=2,
+            ),
+        }
+
 
 @hookimpl(specname="analyze_step")
 def check_referenced_template(

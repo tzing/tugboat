@@ -132,6 +132,11 @@ def test_check_argument_artifacts():
         IsPartialDict({"code": "STP302", "loc": (*loc_prefix, 2, "from")}) in diagnoses
     )
 
+    # M102: Found redundant field
+    assert (
+        IsPartialDict({"code": "M102", "loc": (*loc_prefix, 3, "value")}) in diagnoses
+    )
+
 
 MANIFEST_INVALID_INPUT_ARTIFACTS = """
 apiVersion: argoproj.io/v1alpha1
@@ -152,8 +157,10 @@ spec:
                 - name: message # STP103
                   raw:
                     data: "{{ workflow.invalid }}" # STP303
-                - name: another
+                - name: artifact-2
                   from: workflow.invalid # STP302
+                - name: artifact-3
+                  value: foo # M102
 """
 
 
