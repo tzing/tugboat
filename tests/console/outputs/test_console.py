@@ -131,7 +131,7 @@ class TestConsoleOutputBuilder:
             "",
             "   Test failure message",
             "",
-            "   Do you mean: |",
+            "   Do you mean: |-",
             "     {",
             '       "hello": "world"',
             "     }",
