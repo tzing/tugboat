@@ -30,9 +30,6 @@ class ConsoleOutputBuilder(OutputBuilder):
         for diagnosis in diagnoses:
             self.write_diagnosis(path=path, content=content, diagnosis=diagnosis)
 
-    def _writeline(self, *values):
-        print(*values, sep="", file=self._buffer)
-
     def write_diagnosis(
         self, *, path: Path, content: str, diagnosis: AugmentedDiagnosis
     ):
@@ -48,25 +45,32 @@ class ConsoleOutputBuilder(OutputBuilder):
         max_line_number = (
             diagnosis["line"] + settings.console_output.snippet_lines_behind
         )
-        line_number_width = len(str(max_line_number - 1)) + 1
+        line_number_column_width = len(str(max_line_number - 1)) + 1
 
         # PART/ summary line
         self._write_summary(path, diagnosis, emphasis)
-        self._writeline()
+        self._write()
 
         # PART/ code snippet
-        self._write_code_snippet(content, diagnosis, line_number_width, emphasis)
-        self._writeline()
+        self._write_code_snippet(content, diagnosis, line_number_column_width, emphasis)
+        self._write()
 
         # PART/ details
         if details := diagnosis["msg"]:
-            self._writeline(textwrap.indent(details, " " * (line_number_width + 1)))
-            self._writeline()
+            self._write(details, n_padding=line_number_column_width + 1)
+            self._write()
 
         # PART/ suggestion
         if fix := diagnosis["fix"]:
-            self._write_suggestion(fix, line_number_width)
-            self._writeline()
+            self._write_suggestion(fix, line_number_column_width)
+            self._write()
+
+    def _write(self, *items: Any, n_padding: int = 0) -> None:
+        msg = "".join(map(str, items))
+        if n_padding:
+            msg = textwrap.indent(msg, " " * n_padding)
+        self._buffer.write(msg)
+        self._buffer.write("\n")
 
     def _write_summary(
         self,
@@ -74,7 +78,7 @@ class ConsoleOutputBuilder(OutputBuilder):
         diagnosis: AugmentedDiagnosis,
         emphasis_style: dict[str, Any],
     ) -> None:
-        self._writeline(
+        self._write(
             click.style(path, bold=True),
             click.style(":", fg="cyan"),
             click.style(diagnosis["line"]),
@@ -91,15 +95,15 @@ class ConsoleOutputBuilder(OutputBuilder):
         self,
         content: str,
         diagnosis: AugmentedDiagnosis,
-        line_number_width: int,
+        line_number_column_width: int,
         emphasis_style: dict[str, Any],
     ) -> None:
         line_number_delimiter = click.style(" | ", dim=True)
 
         for line_no, line in get_lines_near(content.splitlines(), diagnosis["line"]):
             # general case: print the line number and the line
-            self._writeline(
-                click.style(f"{line_no:{line_number_width}}", dim=True),
+            self._write(
+                click.style(f"{line_no:{line_number_column_width}}", dim=True),
                 line_number_delimiter,
                 line,
             )
@@ -107,7 +111,7 @@ class ConsoleOutputBuilder(OutputBuilder):
             # if this is the line with the error, print additional information
             if line_no == diagnosis["line"]:
                 # will still print the delimiter, but the line number will be empty
-                padding = " " * line_number_width + line_number_delimiter
+                indent_symbol = " " * line_number_column_width + line_number_delimiter
 
                 # if possible, calculate the range to highlight, and print the underline
                 if range_ := _calc_highlight_range(
@@ -116,19 +120,19 @@ class ConsoleOutputBuilder(OutputBuilder):
                     input_=diagnosis["input"],
                 ):
                     col_start, col_end = range_
-                    padding += " " * col_start
+                    indent_symbol += " " * col_start
 
-                    self._writeline(
-                        padding,
+                    self._write(
+                        indent_symbol,
                         click.style("^" * (col_end - col_start), **emphasis_style),
                     )
 
                 else:
-                    padding += " " * max(diagnosis["column"] - 1, 0)
+                    indent_symbol += " " * max(diagnosis["column"] - 1, 0)
 
                 # print the caret
-                self._writeline(
-                    padding,
+                self._write(
+                    indent_symbol,
                     click.style(f"└ {diagnosis["code"]}", **emphasis_style),
                     click.style(" at ", dim=True),
                     click.style(format_loc(diagnosis["loc"]), fg="cyan"),
@@ -141,7 +145,7 @@ class ConsoleOutputBuilder(OutputBuilder):
         suggestion: str,
         line_number_width: int,
     ) -> None:
-        self._writeline(
+        self._write(
             " " * (line_number_width + 1),
             click.style("Do you mean:", fg="cyan", bold=True),
             " ",
@@ -168,7 +172,9 @@ def get_lines_near(content: list[str], focus_line: int) -> Iterator[tuple[int, s
     yield from enumerate(content[line_starting : line_ending + 1], line_starting + 1)
 
 
-def _calc_highlight_range(line: str, offset: int, input_: Any):
+def _calc_highlight_range(
+    line: str, offset: int, input_: Any
+) -> tuple[int, int] | None:
     """
     Calculate the range to highlight in the line.
     """
