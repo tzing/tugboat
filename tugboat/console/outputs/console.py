@@ -62,7 +62,7 @@ class ConsoleOutputBuilder(OutputBuilder):
 
         # PART/ suggestion
         if fix := diagnosis["fix"]:
-            self._write_suggestion(fix, line_number_column_width)
+            self._write_suggestion(fix, line_number_column_width + 1)
             self._write()
 
     def _write(self, *items: Any, n_padding: int = 0) -> None:
@@ -143,14 +143,24 @@ class ConsoleOutputBuilder(OutputBuilder):
     def _write_suggestion(
         self,
         suggestion: str,
-        line_number_width: int,
+        n_padding: int,
     ) -> None:
-        self._write(
-            " " * (line_number_width + 1),
-            click.style("Do you mean:", fg="cyan", bold=True),
-            " ",
-            click.style(suggestion, underline=True),
-        )
+        prompt = click.style("Do you mean:", fg="cyan", bold=True)
+
+        if "\n" in suggestion:
+            self._write(prompt, click.style(" |-", dim=True), n_padding=n_padding)
+            for line in suggestion.splitlines():
+                self._write(
+                    click.style(line, underline=True),
+                    n_padding=n_padding + 2,
+                )
+        else:
+            self._write(
+                prompt,
+                " ",
+                click.style(suggestion, underline=True),
+                n_padding=n_padding,
+            )
 
     def dump(self, stream: TextIO) -> None:
         click.echo(
