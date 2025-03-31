@@ -47,7 +47,7 @@ class TestConsoleOutputBuilder:
             "",
         ]
 
-    def test_report_failure(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
+    def test_report_failure_1(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
         monkeypatch.chdir(fixture_dir)
 
         builder = ConsoleOutputBuilder()
@@ -88,6 +88,53 @@ class TestConsoleOutputBuilder:
             "   Test failure message",
             "",
             "   Do you mean: world",
+            "",
+        ]
+
+    def test_report_failure_2(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
+        monkeypatch.chdir(fixture_dir)
+
+        builder = ConsoleOutputBuilder()
+        builder.update(
+            path=Path("missing-script-source.yaml"),
+            content=Path("missing-script-source.yaml").read_text(),
+            diagnoses=[
+                {
+                    "type": "failure",
+                    "line": 6,
+                    "column": 15,
+                    "code": "T02",
+                    "manifest": "hello-",
+                    "loc": ("spec", "entrypoint"),
+                    "summary": "Test failure",
+                    "msg": "Test failure message",
+                    "input": "hello",
+                    "fix": '{\n  "hello": "world"\n}',
+                }
+            ],
+        )
+
+        with io.StringIO() as buffer:
+            builder.dump(buffer)
+            lines = buffer.getvalue().splitlines()
+
+        assert lines == [
+            "missing-script-source.yaml:6:15: T02 Test failure",
+            "",
+            " 4 |   generateName: hello-",
+            " 5 | spec:",
+            " 6 |   entrypoint: hello",
+            "   |               ^^^^^",
+            "   |               └ T02 at .spec.entrypoint in hello-",
+            " 7 |   templates:",
+            " 8 |     - name: hello",
+            "",
+            "   Test failure message",
+            "",
+            "   Do you mean: |-",
+            "     {",
+            '       "hello": "world"',
+            "     }",
             "",
         ]
 
