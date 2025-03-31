@@ -8,7 +8,13 @@ from rapidfuzz.process import extractOne
 from tugboat.analyzers.kubernetes import check_resource_name
 from tugboat.constraints import accept_none, require_exactly_one, require_non_empty
 from tugboat.core import get_plugin_manager, hookimpl
-from tugboat.utils import find_duplicate_names, join_with_and, prepend_loc
+from tugboat.utils import (
+    critique_relaxed_artifact,
+    critique_relaxed_parameter,
+    find_duplicate_names,
+    join_with_and,
+    prepend_loc,
+)
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
@@ -171,6 +177,7 @@ def check_argument_parameters(workflow: WorkflowCompatible) -> Iterator[Diagnosi
             loc=loc,
             fields=["default", "enum"],
         )
+        yield from prepend_loc(loc, critique_relaxed_parameter(param))
 
         if param.valueFrom:
             yield from require_exactly_one(
@@ -245,3 +252,4 @@ def check_argument_artifacts(workflow: WorkflowCompatible) -> Iterator[Diagnosis
                 "recurseMode",
             ],
         )
+        yield from prepend_loc(loc, critique_relaxed_artifact(artifact))

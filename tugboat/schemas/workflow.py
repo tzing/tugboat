@@ -6,7 +6,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from tugboat.schemas.arguments import Arguments
+from tugboat.schemas.arguments import RelaxedArguments
 from tugboat.schemas.basic import Array, Dict
 from tugboat.schemas.manifest import Manifest
 from tugboat.schemas.template import Template
@@ -29,7 +29,7 @@ class WorkflowSpec(BaseModel):
 
     activeDeadlineSeconds: int | None = None
     archiveLogs: bool | None = None
-    arguments: Arguments | None = None
+    arguments: RelaxedArguments | None = None
     automountServiceAccountToken: bool | None = None
     dnsPolicy: str | None = None
     entrypoint: str | None = None

@@ -216,6 +216,15 @@ class TestInputRules:
             )
             in diagnoses
         )
+        assert (
+            IsPartialDict(
+                {
+                    "code": "M103",
+                    "loc": ("spec", "templates", 0, "inputs", "parameters", 3, "value"),
+                }
+            )
+            in diagnoses
+        )
 
     def test_check_input_artifacts(self):
         diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_ARTIFACTS)
@@ -271,7 +280,7 @@ class TestInputRules:
                         "inputs",
                         "artifacts",
                         1,
-                        "from",
+                        "value",
                     ),
                 }
             )
@@ -296,7 +305,10 @@ spec:
           - name: message # TPL102
             value: "{{ workflow.name " # VAR001
           - name: message-3
-            value: "{{ workflow.invalid}}" # TPL201
+            value: "{{ workflow.invalid}}" #
+          - name: message-4
+            value:
+              foo: bar # M103
 """
 
 MANIFEST_INVALID_INPUT_ARTIFACTS = """
@@ -315,7 +327,7 @@ spec:
               data:
                 This is a message from {{ workflow.namee }}. # TPL202
           - name: data # TPL103
-            from: "{{ invalid }}" # M102
+            value: foo # M102
 """
 
 

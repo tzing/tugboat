@@ -51,7 +51,7 @@ class Template(_BaseModel):
     daemon: bool | None = None
     dag: DagTemplate | None = None
     failFast: bool | None = None
-    inputs: Arguments | None = None
+    inputs: RelaxedArguments | None = None
     name: str | None = None
     nodeSelector: Dict[str, str] | None = None
     outputs: Arguments | None = None
