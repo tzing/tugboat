@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import textwrap
 import typing
 
 from rapidfuzz.process import extractOne
@@ -304,15 +305,29 @@ def _check_argument_artifact(
                 """
             ),
             "input": "value",
-            "fix": json.dumps(
-                {
-                    "raw": {
-                        "data": artifact.value,
-                    }
-                },
-                indent=2,
-            ),
+            "fix": _raw_data_serialize(artifact.value),
         }
+
+
+def _raw_data_serialize(value: Any) -> str | None:
+    # serialize value to string
+    if isinstance(value, bool | int | dict | list):
+        try:
+            value = json.dumps(value, indent=2)
+        except Exception:
+            ...
+    if not isinstance(value, str):
+        value = str(value)
+
+    # return raw artifact
+    if "\n" in value:
+        # multiple lines
+        data = textwrap.indent(value, "    ")
+        return f"raw:\n  data: |-\n{data}"
+    else:
+        # single line
+        data = json.dumps(value)
+        return f"raw:\n  data: {data}"
 
 
 @hookimpl(specname="analyze_step")
