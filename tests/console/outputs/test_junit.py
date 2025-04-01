@@ -26,14 +26,14 @@ class TestJUnitOutputBuilder:
                     "fix": None,
                 },
                 {
-                    "type": "skipped",
+                    "type": "warning",
                     "line": 2,
                     "column": 1,
                     "code": "T03",
                     "manifest": "hello-world-",
                     "loc": ("kind",),
-                    "summary": "Test skipped",
-                    "msg": "Test skipped message",
+                    "summary": "Test warning",
+                    "msg": "Test warning message",
                     "input": None,
                     "fix": None,
                 },
@@ -49,7 +49,7 @@ class TestJUnitOutputBuilder:
             '<testcase name="T01" classname="." file="sample-workflow.yaml" line="1">',
             '<error message="Test error">Test error message</error>',
             '<testcase name="T03" classname=".kind" file="sample-workflow.yaml" line="2">',
-            '<skipped message="Test skipped">Test skipped message</skipped>',
+            '<skipped message="Test warning">Test warning message</skipped>',
         ):
             assert line in xml
 

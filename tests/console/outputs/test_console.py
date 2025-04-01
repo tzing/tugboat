@@ -138,7 +138,7 @@ class TestConsoleOutputBuilder:
             "",
         ]
 
-    def test_report_skipped(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
+    def test_report_warning(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
         monkeypatch.chdir(fixture_dir)
 
         builder = ConsoleOutputBuilder()
@@ -147,14 +147,14 @@ class TestConsoleOutputBuilder:
             content=Path("sample-workflow.yaml").read_text(),
             diagnoses=[
                 {
-                    "type": "skipped",
+                    "type": "warning",
                     "line": 2,
                     "column": 1,
                     "code": "T03",
                     "manifest": "hello-world-",
                     "loc": ("kind",),
-                    "summary": "Test skipped",
-                    "msg": "Test skipped message",
+                    "summary": "Test warning",
+                    "msg": "Test warning message",
                     "input": None,
                     "fix": None,
                 }
@@ -166,7 +166,7 @@ class TestConsoleOutputBuilder:
             lines = buffer.getvalue().splitlines()
 
         assert lines == [
-            "sample-workflow.yaml:2:1: T03 Test skipped",
+            "sample-workflow.yaml:2:1: T03 Test warning",
             "",
             " 1 | apiVersion: argoproj.io/v1alpha1",
             " 2 | kind: Workflow",
@@ -174,12 +174,12 @@ class TestConsoleOutputBuilder:
             " 3 | metadata:",
             " 4 |   generateName: hello-world-",
             "",
-            "   Test skipped message",
+            "   Test warning message",
             "",
         ]
 
     @pytest.mark.parametrize(
-        "diagnostic_type", ["failure", "error", "skipped", "INVALID"]
+        "diagnostic_type", ["failure", "error", "warning", "INVALID"]
     )
     def test_styled_output(
         self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path, diagnostic_type: str

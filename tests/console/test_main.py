@@ -186,9 +186,9 @@ class TestDiagnosesCounter:
         assert counter.summary() == "Found 1 failures"
         assert counter.has_any_error()
 
-    def test_skipped(self):
-        counter = DiagnosesCounter(["skipped"])
-        assert counter.summary() == "Found 1 skipped checks"
+    def test_warning(self):
+        counter = DiagnosesCounter(["warning"])
+        assert counter.summary() == "Found 1 warnings"
         assert not counter.has_any_error()
 
     def test_mixed(self):
@@ -196,6 +196,6 @@ class TestDiagnosesCounter:
         counter["error"] += 1
         counter["error"] += 1
         counter["failure"] += 1
-        counter["skipped"] += 1
-        assert counter.summary() == "Found 2 errors, 1 failures and 1 skipped checks"
+        counter["warning"] += 1
+        assert counter.summary() == "Found 2 errors, 1 failures and 1 warnings"
         assert counter.has_any_error()

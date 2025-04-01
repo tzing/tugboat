@@ -137,7 +137,7 @@ class TestSimpleReferenceTag:
         assert str(node) == "{{foo.bar  }}"
         assert node.reference == ("foo", "bar")
 
-    def test_skipped(self):
+    def test_warning(self):
         lexemes = [
             (-1, Punctuation, "{{="),
         ]

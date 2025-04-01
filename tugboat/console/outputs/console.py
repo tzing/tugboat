@@ -36,7 +36,7 @@ class ConsoleOutputBuilder(OutputBuilder):
         match diagnosis["type"]:
             case "error" | "failure":
                 emphasis = {"fg": "red", "bold": True}
-            case "skipped":
+            case "warning":
                 emphasis = {"fg": "yellow", "bold": True}
             case _:
                 emphasis = {"fg": "magenta", "bold": True}

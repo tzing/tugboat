@@ -331,7 +331,7 @@ class TestAnalyzeRaw:
         diagnoses = analyze_raw({"foo": "bar"})
         assert diagnoses == [
             {
-                "type": "skipped",
+                "type": "warning",
                 "code": "M001",
                 "loc": (),
                 "summary": "Not a Kubernetes manifest",
@@ -471,7 +471,7 @@ class TestArgoExamples:
             diagnoses = analyze_yaml(file_path.read_text())
 
             # skip warnings
-            diagnoses = list(filter(lambda d: d["type"] != "skipped", diagnoses))
+            diagnoses = list(filter(lambda d: d["type"] != "warning", diagnoses))
 
             # fail on errors
             if any(diagnoses):
