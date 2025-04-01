@@ -24,19 +24,27 @@ class Diagnosis(TypedDict):
     """
     A diagnosis reported by the analyzer.
 
-    This class serves as the fundamental structure for a diagnosis. It is used
-    to report issues identified by the analyzer. All analyzers must return a
-    diagnosis or a list of diagnoses when they are registered with the framework.
+    This class is a :py:class:`~typing.TypedDict` that defines the structure of
+    a diagnosis produced by the analyzer. It serves as the standard format for
+    reporting issues detected during analysis.
+
+    All analyzers return diagnoses in this format to ensure consistency across
+    different implementations.
     """
 
-    type: NotRequired[Literal["error", "failure", "skipped"]]
+    type: NotRequired[Literal["error", "failure", "warning"]]
     """
     The diagnosis type.
     When not provided, it defaults to "failure".
+
+    * ``error`` indicates a critical issue that prevents the analyzer from running.
+    * ``failure`` indicates an issue that the analyzer has detected.
+    * ``warning`` indicates a potential issue that the analyzer has detected.
+      This is not a critical issue, but it may require attention.
     """
 
     code: str
-    """Diagnosis code."""
+    """A unique identifier representing the violated rule."""
 
     loc: Sequence[str | int]
     """
@@ -66,10 +74,10 @@ class Diagnosis(TypedDict):
     """The input that caused the issue."""
 
     fix: NotRequired[str | None]
-    """The possible fix for the issue."""
+    """Possible fix for the issue."""
 
     ctx: NotRequired[Any]
-    """The additional context."""
+    """Additional context."""
 
 
 class AugmentedDiagnosis(TypedDict):
@@ -91,7 +99,7 @@ class AugmentedDiagnosis(TypedDict):
     Column number of the issue occurrence in the source file.
     """
 
-    type: Literal["error", "failure", "skipped"]
+    type: Literal["error", "failure", "warning"]
     """The type that describes the severity."""
 
     code: str
