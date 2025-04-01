@@ -273,8 +273,8 @@ class DiagnosesCounter(collections.Counter):
             parts.append(f"{count} errors")
         if count := self["failure"]:
             parts.append(f"{count} failures")
-        if count := self["skipped"]:
-            parts.append(f"{count} skipped checks")
+        if count := self["warning"]:
+            parts.append(f"{count} warnings")
 
         if parts:
             summary = join_with_and(parts, quote=False)

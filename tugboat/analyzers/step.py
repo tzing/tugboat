@@ -286,7 +286,7 @@ def _check_referenced_template(
 ) -> Iterable[Diagnosis]:
     if template_name == template.name:
         yield {
-            "type": "skipped",
+            "type": "warning",
             "code": "STP201",
             "loc": (),
             "summary": "Self-referencing",

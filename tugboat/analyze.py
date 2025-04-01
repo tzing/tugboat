@@ -278,7 +278,7 @@ def analyze_raw(manifest: dict) -> list[Diagnosis]:
     if not is_kubernetes_manifest(manifest):
         return [
             {
-                "type": "skipped",
+                "type": "warning",
                 "code": "M001",
                 "loc": (),
                 "summary": "Not a Kubernetes manifest",

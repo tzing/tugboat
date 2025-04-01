@@ -63,12 +63,14 @@ class JUnitOutputBuilder(OutputBuilder):
             )
 
             # the key in counts may be different from the key in the diagnosis
+            state_type = diagnosis["type"]
             match diagnosis["type"]:
                 case "error":
                     counts["errors"] += 1
                 case "failure":
                     counts["failures"] += 1
-                case "skipped":
+                case "warning":
+                    state_type = "skipped"
                     counts["skipped"] += 1
                 case _:
                     logger.warning(
@@ -78,7 +80,7 @@ class JUnitOutputBuilder(OutputBuilder):
 
             state = SubElement(
                 test_case,
-                diagnosis["type"],
+                state_type,
                 message=diagnosis["summary"],
             )
             state.text = diagnosis["msg"]
