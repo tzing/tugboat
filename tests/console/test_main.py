@@ -1,6 +1,5 @@
 import io
 import logging
-import logging.handlers
 import shutil
 from pathlib import Path
 
@@ -65,7 +64,7 @@ class TestMain:
         assert "All passed!" in result.output
 
     @pytest.mark.usefixtures("_reset_logging")
-    def test_stdin(self):
+    def test_stdin_1(self):
         runner = click.testing.CliRunner()
         result = runner.invoke(
             main,
@@ -87,7 +86,23 @@ class TestMain:
                 """
             ),
         )
-        assert result.exit_code == 0
+        assert not result.exception
+        assert "All passed!" in result.output
+
+    @pytest.mark.usefixtures("_reset_logging")
+    def test_stdin_2(self):
+        runner = click.testing.CliRunner()
+        result = runner.invoke(
+            main,
+            input="""
+                apiVersion: tugboat.example.com/v1
+                kind: Debug
+                metadata:
+                    generateName: test-
+                spec: {}
+                """,
+        )
+        assert not result.exception
         assert "All passed!" in result.output
 
     @pytest.mark.usefixtures("_reset_logging")
