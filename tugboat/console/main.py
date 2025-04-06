@@ -260,7 +260,14 @@ def update_settings(**kwargs):
             raise click.UsageError(f"{field}: {msg}") from None
 
     # special case: include (post-validation)
+    use_stdin = False
     if include == ("-",):
+        use_stdin = True
+    elif include == () and not sys.stdin.isatty():
+        logger.debug("Detected stdin. Using it as input.")
+        use_stdin = True
+
+    if use_stdin:
         path = typing.cast("FilePath", VirtualPath(sys.stdin.name, sys.stdin))
         settings.include = [path]
 
