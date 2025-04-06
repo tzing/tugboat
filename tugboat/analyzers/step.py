@@ -127,7 +127,7 @@ def _check_argument_parameter(
     for diag in check_model_fields_references(param, context.parameters):
         match diag["code"]:
             case "VAR002":
-                ctx = typing.cast(dict, diag.get("ctx"))
+                ctx = typing.cast("dict", diag.get("ctx"))
                 ref = ".".join(ctx["ref"])
                 diag["code"] = "STP301"
                 diag["msg"] = (
@@ -226,7 +226,7 @@ def _check_argument_artifact(
         ):
             match diag["code"]:
                 case "VAR002":
-                    ctx = typing.cast(dict, diag.get("ctx"))
+                    ctx = typing.cast("dict", diag.get("ctx"))
                     ref = ".".join(ctx["ref"])
                     diag["code"] = "STP302"
                     diag["msg"] = (
@@ -243,7 +243,7 @@ def _check_argument_artifact(
         ):
             match diag["code"]:
                 case "VAR002":
-                    ctx = typing.cast(dict, diag.get("ctx"))
+                    ctx = typing.cast("dict", diag.get("ctx"))
                     ref = ".".join(ctx["ref"])
                     diag["code"] = "STP303"
                     diag["msg"] = (
@@ -296,7 +296,7 @@ def _check_referenced_template(
 
     if template_name not in workflow.template_dict:
         templates = set(workflow.template_dict)
-        templates.remove(typing.cast(str, template.name))
+        templates.remove(typing.cast("str", template.name))
         templates = sorted(templates)
 
         suggestion = None

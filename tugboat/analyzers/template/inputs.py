@@ -95,7 +95,7 @@ def _check_input_parameter(
     for diag in check_model_fields_references(param, context.parameters):
         match diag["code"]:
             case "VAR002":
-                ctx = typing.cast(dict, diag.get("ctx"))
+                ctx = typing.cast("dict", diag.get("ctx"))
                 ref = ".".join(ctx["ref"])
                 diag["code"] = "TPL201"
                 diag["msg"] = (
@@ -175,7 +175,7 @@ def _check_input_artifact(
         ):
             match diag["code"]:
                 case "VAR002":
-                    ctx = typing.cast(dict, diag.get("ctx"))
+                    ctx = typing.cast("dict", diag.get("ctx"))
                     ref = ".".join(ctx["ref"])
                     diag["code"] = "TPL202"
                     diag["msg"] = (
