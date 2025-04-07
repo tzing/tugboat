@@ -208,13 +208,13 @@ class OAuth2Auth(_BaseModel):
 # oss
 # ----------------------------------------------------------------------------
 class OssArtifact(_BaseModel):
-    accessKeySecret: ConfigKeySelector
+    accessKeySecret: ConfigKeySelector | None = None
     bucket: str
     createBucketIfNotPresent: bool | None = None
-    endpoint: str
+    endpoint: str | None = None
     key: str
     lifecycleRule: OssLifecycleRule | None = None
-    secretKeySecret: ConfigKeySelector
+    secretKeySecret: ConfigKeySelector | None = None
     securityToken: str | None = None
     useSdkCreds: bool | None = Field(None, alias="useSDKCreds")
 
