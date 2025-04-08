@@ -73,31 +73,24 @@ class PathList:
         return False
 
 
-def _collect_file_paths(
-    paths_or_patterns: Iterable[Path | PathPattern], follow_symlinks: bool = False
-):
-    for item in paths_or_patterns:
-        if isinstance(item, PathPattern):
-            logger.debug("Include pattern '%s'", item)
-            if follow_symlinks:
-                warnings.warn(
-                    "Symlinks are not followed when using path patterns.",
-                    UserWarning,
-                    stacklevel=1,
-                )
-            yield from item.iglob(recursive=True, include_hidden=True)
+def yield_files(path: Path | GlobPath, follow_symlinks: bool = False) -> Iterator[Path]:
+    if isinstance(path, GlobPath):
+        logger.debug("Include glob pattern: %s", path)
+        if follow_symlinks:
+            warnings.warn(
+                "Symlinks are not followed when using path patterns.",
+                UserWarning,
+                stacklevel=1,
+            )
+        yield from path.iglob(recursive=True, include_hidden=True)
 
-        elif item.is_file():
-            logger.debug("Include file '%s'", item)
-            yield item
+    elif path.is_file():
+        logger.debug("Include file: %s", path)
+        yield path
 
-        elif item.is_dir():
-            logger.debug("Include directory '%s'", item)
-            yield from _list_yaml_in_dir(item, follow_symlinks)
-
-
-def _list_yaml_in_dir(dir_path: Path, follow_symlinks: bool) -> Iterator[Path]:
-    for root, _, files in dir_path.walk(follow_symlinks=follow_symlinks):
-        for file in map(root.joinpath, files):
-            if file.suffix in (".yaml", ".yml"):
-                yield file
+    elif path.is_dir():
+        logger.debug("Include directory: %s", path)
+        for root, _, files in path.walk(follow_symlinks=follow_symlinks):
+            for file in map(root.joinpath, files):
+                if file.suffix in (".yaml", ".yml"):
+                    yield file

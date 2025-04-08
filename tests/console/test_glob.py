@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from tugboat.console.glob import _collect_file_paths, gather_paths
-from tugboat.types import PathPattern
+from tugboat.console.glob import PathList, gather_paths, yield_files
+from tugboat.types import GlobPath
 
 
 class TestGatherPaths:
@@ -72,21 +72,19 @@ class TestPathList:
         assert (tmp_path / "dir2" / "foo.txt") not in pl
 
 
-class TestCollectFilePaths:
+class TestYieldFiles:
 
     def test_file(self):
-        paths = list(_collect_file_paths([Path(__file__)]))
+        paths = list(yield_files(Path(__file__)))
         assert len(paths) == 1
         assert Path(__file__) in paths
 
     def test_directory(self, fixture_dir: Path):
-        paths = list(_collect_file_paths([fixture_dir], follow_symlinks=False))
-        sample_workflow = fixture_dir / "sample-workflow.yaml"
-        assert sample_workflow in paths
+        paths = list(yield_files(fixture_dir, follow_symlinks=False))
+        assert (fixture_dir / "sample-workflow.yaml") in paths
 
     @pytest.mark.filterwarnings("ignore::UserWarning:tugboat.console.glob")
-    def test_pattern(self):
-        this_dir = Path(__file__).parent
-        pattern = PathPattern(this_dir / "**" / "*.py")
-        paths = list(_collect_file_paths([pattern], follow_symlinks=True))
-        assert Path(__file__) in paths
+    def test_pattern(self, fixture_dir: Path):
+        pattern = GlobPath(fixture_dir / "*.yaml")
+        paths = list(yield_files(pattern, follow_symlinks=True))
+        assert (fixture_dir / "sample-workflow.yaml") in paths
