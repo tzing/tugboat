@@ -135,7 +135,9 @@ def main(
 
     # determine the inputs
     manifest_paths = gather_paths(
-        settings.include, settings.exclude, settings.follow_symlinks  # type: ignore[reportArgumentType]; TODO
+        includes=settings.include,
+        excludes=settings.exclude,
+        follow_symlinks=settings.follow_symlinks,
     )
 
     if not manifest_paths:
