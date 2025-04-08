@@ -41,7 +41,7 @@ class TestGatherPaths:
 
     def test_exclude_pattern(self, tmp_manifest_path: Path):
         paths = gather_paths(
-            [tmp_manifest_path], [PathPattern(tmp_manifest_path / "dir?" / "*.yaml")]
+            [tmp_manifest_path], [GlobPath(tmp_manifest_path / "dir?" / "*.yaml")]
         )
         assert set(paths) == {
             tmp_manifest_path / "file1.yaml",

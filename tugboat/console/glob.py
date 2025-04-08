@@ -5,48 +5,31 @@ import typing
 import warnings
 from pathlib import Path
 
-from tugboat.types import PathPattern
+from tugboat.types import GlobPath
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
+    from os import PathLike
 
 
 logger = logging.getLogger(__name__)
 
 
 def gather_paths(
-    includes: Iterable[Path | PathPattern],
-    excludes: Iterable[Path | PathPattern],
+    includes: Iterable[Path | GlobPath],
+    excludes: Iterable[Path | GlobPath],
     follow_symlinks: bool = False,
 ) -> list[Path]:
     """
     Gather paths from the given include patterns and exclude patterns.
     """
-    # collate all the paths to exclude
-    exclude_files = {
-        path for path in excludes if isinstance(path, Path) and path.is_file()
-    }
-    exclude_dirs = [
-        path for path in excludes if isinstance(path, Path) and path.is_dir()
-    ]
-    exclude_patterns = [path for path in excludes if isinstance(path, PathPattern)]
+    exclude_list = PathList(excludes)
 
-    def _is_excluded(path: Path) -> bool:
-        if path in exclude_files:
-            return True
-        if path in exclude_patterns:
-            return True
-        for exclude_dir in exclude_dirs:
-            if exclude_dir in path.parents:
-                return True
-        return False
-
-    # returns all the paths that are not excluded
     output = set()
-
-    for path in _collect_file_paths(includes, follow_symlinks):
-        if not _is_excluded(path):
-            output.add(path)
+    for item in includes:
+        for file in yield_files(item, follow_symlinks=follow_symlinks):
+            if file not in exclude_list:
+                output.add(file)
 
     return list(output)
 
