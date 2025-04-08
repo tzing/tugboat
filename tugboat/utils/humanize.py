@@ -71,5 +71,5 @@ def _get_context_name(loc: tuple[str | int, ...]) -> str:
 
 def get_alias(model: BaseModel, name: str) -> str:
     """Get the alias of a field in a model."""
-    field = model.model_fields[name]
+    field = type(model).model_fields[name]
     return field.alias or name
