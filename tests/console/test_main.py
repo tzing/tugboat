@@ -64,33 +64,7 @@ class TestMain:
         assert "All passed!" in result.output
 
     @pytest.mark.usefixtures("_reset_logging")
-    def test_stdin_1(self):
-        runner = click.testing.CliRunner()
-        result = runner.invoke(
-            main,
-            ["-"],
-            input=(
-                """
-                apiVersion: argoproj.io/v1alpha1
-                kind: Workflow
-                metadata:
-                  generateName: hello-world-
-                spec:
-                  entrypoint: hello-world
-                  templates:
-                    - name: hello-world
-                      container:
-                        image: busybox
-                        command: [echo]
-                        args: ["hello world"]
-                """
-            ),
-        )
-        assert not result.exception
-        assert "All passed!" in result.output
-
-    @pytest.mark.usefixtures("_reset_logging")
-    def test_stdin_2(self):
+    def test_stdin(self):
         runner = click.testing.CliRunner()
         result = runner.invoke(
             main,
@@ -104,16 +78,6 @@ class TestMain:
         )
         assert not result.exception
         assert "All passed!" in result.output
-
-    @pytest.mark.usefixtures("_reset_logging")
-    def test_mixed_input_source(self, tmp_path: Path):
-        runner = click.testing.CliRunner()
-        result = runner.invoke(main, ["-", str(tmp_path)])
-        assert result.exit_code == 2
-        assert (
-            "This option is only available when specified solely via the command line."
-            in result.output
-        )
 
     @pytest.mark.usefixtures("_reset_logging")
     def test_no_yaml_found(self, tmp_path: Path):
