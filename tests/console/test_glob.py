@@ -48,6 +48,30 @@ class TestGatherPaths:
         }
 
 
+class TestPathList:
+
+    def test(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "file1.yaml").touch()
+        (tmp_path / "dir1").mkdir()
+
+        pl = PathList(
+            [
+                tmp_path / "file1.yaml",
+                tmp_path / "dir1",
+                GlobPath(tmp_path / "*.yaml"),
+            ]
+        )
+
+        assert (tmp_path / "file1.yaml") in pl
+        assert (tmp_path / "dir1" / "foo.yaml") in pl
+        assert (tmp_path / "dir1" / "foo.txt") in pl
+        assert (tmp_path / "file2.yaml") in pl
+
+        assert (tmp_path / "file1.py") not in pl
+        assert (tmp_path / "dir2" / "foo.txt") not in pl
+
+
 class TestCollectFilePaths:
 
     def test_file(self):

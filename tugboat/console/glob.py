@@ -51,6 +51,28 @@ def gather_paths(
     return list(output)
 
 
+class PathList:
+
+    def __init__(self, paths: Iterable[Path | GlobPath]):
+        self.files = {
+            path for path in paths if isinstance(path, Path) and path.is_file()
+        }
+        self.dirs = {path for path in paths if isinstance(path, Path) and path.is_dir()}
+
+        # note - must be a list, need to run __eq__ on each item
+        self.patterns = [path for path in paths if isinstance(path, GlobPath)]
+
+    def __contains__(self, p: PathLike) -> bool:
+        path = Path(p).resolve()
+        if path in self.files:
+            return True
+        if any(path.is_relative_to(dir_) for dir_ in self.dirs):
+            return True
+        if path in self.patterns:
+            return True
+        return False
+
+
 def _collect_file_paths(
     paths_or_patterns: Iterable[Path | PathPattern], follow_symlinks: bool = False
 ):
