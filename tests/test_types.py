@@ -31,7 +31,7 @@ class TestPathLike:
 
 class TestGlobPath:
 
-    def test_match_1(self):
+    def test_eq_1(self):
         pp = GlobPath("foo*")
 
         assert pp == "foo"
@@ -41,7 +41,7 @@ class TestGlobPath:
         assert pp != "bar"
         assert pp != GlobPath("foo/*bar")
 
-    def test_match_2(self):
+    def test_eq_2(self):
         pp = GlobPath("**/*.yaml")
         assert pp == "foo.yaml"
         assert pp == Path("bar/foo.yaml")

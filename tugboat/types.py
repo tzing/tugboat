@@ -186,14 +186,8 @@ class GlobPath(PathLike):
     def __eq__(self, value) -> bool:
         if isinstance(value, GlobPath):
             value = str(value)
-        return self.match(value)
-
-    def match(self, value: str | os.PathLike) -> bool:
-        """
-        Match the pattern against the given value.
-        """
-        value = os.path.realpath(value)
-        return self._regex_pattern.match(value) is not None
+        path = os.path.realpath(value)
+        return self._regex_pattern.match(path) is not None
 
     def iglob(
         self,
