@@ -167,6 +167,49 @@ class PathLike:
         return self._representation
 
 
+class GlobPath(PathLike):
+    """Wraps a glob pattern for path matching."""
+
+    def __init__(self, pattern: str | os.PathLike):
+        pattern = str(pattern)
+        if "*" not in pattern and "?" not in pattern:
+            raise ValueError(f"Pattern '{pattern}' is not a glob pattern")
+
+        pattern = os.path.realpath(pattern)
+        super().__init__(pattern)
+
+        regex_pattern = tugboat._vendor.glob.translate(
+            pattern, recursive=True, include_hidden=True
+        )
+        self._regex_pattern = re.compile(regex_pattern)
+
+    def __eq__(self, value) -> bool:
+        if isinstance(value, GlobPath):
+            value = str(value)
+        return self.match(value)
+
+    def match(self, value: str | os.PathLike) -> bool:
+        """
+        Match the pattern against the given value.
+        """
+        value = os.path.realpath(value)
+        return self._regex_pattern.match(value) is not None
+
+    def iglob(
+        self,
+        *,
+        recursive: bool = False,
+        include_hidden: bool = False,
+    ) -> Iterator[Path]:
+        """Iterate over the files that match the pattern."""
+        for item in glob.iglob(
+            self._representation,
+            recursive=recursive,
+            include_hidden=include_hidden,
+        ):
+            yield Path(item)
+
+
 class PathPattern:
     """Wraps a glob pattern for path matching."""
 
