@@ -13,7 +13,6 @@ import tugboat._vendor.glob
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
-    from os import PathLike
     from typing import Any, Literal, NotRequired
 
     from pydantic import GetCoreSchemaHandler
@@ -127,6 +126,47 @@ class AugmentedDiagnosis(TypedDict):
     """The possible fix for the issue."""
 
 
+class PathLike:
+    """
+    A base class that implements the :py:class:`os.PathLike` interface and works
+    with :py:mod:`pydantic` for serialization and deserialization.
+    """
+
+    def __init__(self, representation: str):
+        self._representation = representation
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+
+        def _validator(v: Any):
+            if isinstance(v, str):
+                v = cls(v)
+            return v
+
+        python_schema = pydantic_core.core_schema.no_info_before_validator_function(
+            _validator, pydantic_core.core_schema.is_instance_schema(cls)
+        )
+        json_schema = pydantic_core.core_schema.no_info_after_validator_function(
+            str, pydantic_core.core_schema.str_schema()
+        )
+        return pydantic_core.core_schema.json_or_python_schema(
+            python_schema=python_schema,
+            json_schema=json_schema,
+            serialization=pydantic_core.core_schema.to_string_ser_schema(),
+        )
+
+    def __fspath__(self) -> str:
+        return self._representation
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self._representation!r})"
+
+    def __str__(self) -> str:
+        return self._representation
+
+
 class PathPattern:
     """Wraps a glob pattern for path matching."""
 
@@ -143,7 +183,7 @@ class PathPattern:
             ]
         )
 
-    def __init__(self, pattern: str | PathLike):
+    def __init__(self, pattern: str | os.PathLike):
         self.pattern = os.path.realpath(pattern)
         self._compiled_pattern = re.compile(
             tugboat._vendor.glob.translate(

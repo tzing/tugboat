@@ -1,9 +1,31 @@
 import os
 from pathlib import Path
 
-from pydantic import TypeAdapter
+from dirty_equals import IsInstance
+from pydantic import BaseModel, TypeAdapter
 
-from tugboat.types import PathPattern
+from tugboat.types import PathLike, PathPattern
+
+
+class TestPathLike:
+
+    def test_python_compatability(self):
+        path = PathLike("foo")
+        assert os.fspath(path) == "foo"
+        assert isinstance(path, os.PathLike)
+        assert repr(path) == "PathLike('foo')"
+        assert str(path) == "foo"
+
+    def test_pydantic_compatability(self):
+        class Model(BaseModel):
+            x: PathLike
+
+        model = Model.model_validate({"x": "foo"})
+        assert isinstance(model.x, PathLike)
+        assert isinstance(model.x, os.PathLike)
+
+        assert model.model_dump() == {"x": IsInstance(PathLike)}
+        assert model.model_dump_json() == '{"x":"foo"}'
 
 
 class TestPathPattern:
