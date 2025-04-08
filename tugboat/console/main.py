@@ -116,7 +116,7 @@ def main(
 
     \b
       # Read from stdin
-      cat my-workflow.yaml | tugboat -
+      cat my-workflow.yaml | tugboat
     """
     # setup logging
     setup_logging(verbose)
@@ -135,7 +135,7 @@ def main(
 
     # determine the inputs
     manifest_paths = gather_paths(
-        settings.include, settings.exclude, settings.follow_symlinks
+        settings.include, settings.exclude, settings.follow_symlinks  # type: ignore[reportArgumentType]; TODO
     )
 
     if not manifest_paths:
@@ -227,23 +227,13 @@ def update_settings(**kwargs):
 
     # general settings
     for key in (
+        "include",
         "exclude",
         "follow_symlinks",
         "output_format",
     ):
         if value := kwargs.get(key):
             update_args[key] = value
-
-    # special case: include
-    #
-    # Value `-` is a special symbol that stands for stdin.
-    # We want to keep it as a valid command line option, but not allowing it
-    # in the configuration file.
-    # The `Settings` object will reject this value during validation, so we
-    # handle it separately here.
-    if include := kwargs.get("include"):
-        if include != ("-",):
-            update_args["include"] = include
 
     # special case: color
     if (color := kwargs.get("color")) is not None:
@@ -259,15 +249,9 @@ def update_settings(**kwargs):
             msg = err["msg"]
             raise click.UsageError(f"{field}: {msg}") from None
 
-    # special case: include (post-validation)
-    use_stdin = False
-    if include == ("-",):
-        use_stdin = True
-    elif include == () and not sys.stdin.isatty():
+    # special case: stdin
+    if kwargs["include"] == () and not sys.stdin.isatty() and not sys.stdin.closed:
         logger.debug("Detected stdin. Using it as input.")
-        use_stdin = True
-
-    if use_stdin:
         path = typing.cast("FilePath", VirtualPath(sys.stdin.name, sys.stdin))
         settings.include = [path]
 

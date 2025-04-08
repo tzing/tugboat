@@ -3,62 +3,29 @@ from __future__ import annotations
 import itertools
 import typing
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Literal
 
-import pydantic_core.core_schema
 import pydantic_settings
-from pydantic import DirectoryPath, Field, FilePath, field_validator
+from pydantic import (
+    DirectoryPath,
+    Field,
+    FilePath,
+    ValidationError,
+    ValidationInfo,
+    ValidatorFunctionWrapHandler,
+    field_validator,
+)
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from tugboat.types import PathPattern
+from tugboat.types import GlobPath
 
 if typing.TYPE_CHECKING:
     from typing import Any
 
-    from pydantic import GetCoreSchemaHandler
-    from pydantic_core import CoreSchema
-    from pydantic_core.core_schema import ValidatorFunctionWrapHandler
     from pydantic_settings import PydanticBaseSettingsSource
 
 
-class _PathSpecAnnotation:
-    """
-    Control the type resolution of a path spec.
-
-    This annotation provides a solution to address a type resolution limitation
-    in Pydantic 2.10.
-
-    The intended implementation would utilize built-in annotated types for
-    ``PathSpec`` without the need for this class:
-
-    .. code-block:: python
-
-       type PathSpec = FilePath | DirectoryPath | PathPattern
-
-    However, Pydantic type resolution mechanism defaults string inputs to
-    :py:class:`PathPattern`. This class forces the resolution to the desired
-    type.
-    """
-
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> CoreSchema:
-        return pydantic_core.core_schema.no_info_wrap_validator_function(
-            cls.validate, handler(source_type)
-        )
-
-    @classmethod
-    def validate(cls, value: Any, validator: ValidatorFunctionWrapHandler) -> Any:
-        if isinstance(value, str):
-            try:
-                return validator(Path(value))
-            except ValueError:
-                ...
-        return validator(value)
-
-
-type PathSpec = Annotated[FilePath | DirectoryPath | PathPattern, _PathSpecAnnotation]
+type _PathSpec = FilePath | DirectoryPath | GlobPath
 
 
 class ConsoleOutputSettings(BaseSettings):
@@ -107,10 +74,10 @@ class Settings(BaseSettings):
     console_output: ConsoleOutputSettings = Field(default_factory=ConsoleOutputSettings)
     """Settings for the console output."""
 
-    exclude: list[PathSpec] = Field(default_factory=list)
+    exclude: list[_PathSpec] = Field(default_factory=list)
     """List of paths or patterns to exclude from the check."""
 
-    include: list[PathSpec] = Field(default=[Path.cwd()])
+    include: list[_PathSpec] = Field(default=[Path.cwd()])
     """List of paths or patterns to include in the check."""
 
     follow_symlinks: bool = False
@@ -119,15 +86,35 @@ class Settings(BaseSettings):
     output_format: Literal["console", "junit"] = "console"
     """Output serialization format."""
 
-    @field_validator("include", "exclude", mode="after")
+    @field_validator("include", "exclude", mode="wrap")
     @classmethod
-    def _reject_dash(cls, values: list[PathSpec]):
-        if "-" in values:
-            raise ValueError(
-                "The value '-' is reserved for stdin. "
-                "This option is only available when specified solely via the command line."
-            )
-        return values
+    def _wrap_path_validator(
+        cls, value: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo
+    ):
+        try:
+            return handler(value)
+        except ValidationError as exc:
+            error_items = {}
+            for error in exc.errors():
+                # the second item is the annotation from type validator
+                idx, _ = error["loc"]
+                error_items[idx] = error["input"]
+
+            line_errors = []
+            for idx, input_ in error_items.items():
+                line_errors.append(
+                    {
+                        "type": "value_error",
+                        "loc": (idx,),
+                        "input": input_,
+                        "ctx": {"error": ValueError("input is not a valid path spec.")},
+                    }
+                )
+
+            raise ValidationError.from_exception_data(
+                typing.cast("str", info.field_name),
+                line_errors,
+            ) from exc
 
 
 def _find_config(name: str) -> Path | None:
