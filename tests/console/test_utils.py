@@ -1,7 +1,9 @@
 import io
 import os
 
-from tugboat.console.utils import VirtualPath, format_loc
+import pytest
+
+from tugboat.console.utils import CachedStdin, format_loc
 
 
 class TestFormatLoc:
@@ -10,15 +12,20 @@ class TestFormatLoc:
         assert format_loc(()) == "."
 
 
-class TestVirtualPath:
-    def test(self):
-        stream = io.StringIO("content")
+class TestStdinPath:
 
-        path = VirtualPath("foo", stream)
+    def test(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr("sys.stdin", io.StringIO("foo"))
+
+        path = CachedStdin()
         assert isinstance(path, os.PathLike)
 
-        assert path.name == "foo"
-        with path.open() as fd:
-            assert fd.read() == "content"
+        assert path.name == "<stdin>"
 
-        assert repr(path) == "VirtualPath('foo')"
+        with path.open() as fd:
+            assert fd.read() == "foo"
+        with path.open() as fd:
+            assert fd.read() == "foo"  # should be cached
+
+        assert path.is_file()
+        assert not path.is_dir()

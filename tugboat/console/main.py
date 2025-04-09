@@ -15,7 +15,7 @@ from pydantic import ValidationError
 from tugboat.analyze import analyze_yaml
 from tugboat.console.glob import gather_paths
 from tugboat.console.outputs import get_output_builder
-from tugboat.console.utils import VirtualPath
+from tugboat.console.utils import CachedStdin
 from tugboat.settings import Settings, settings
 from tugboat.utils import join_with_and
 from tugboat.version import __version__
@@ -254,7 +254,7 @@ def update_settings(**kwargs):
     # special case: stdin
     if kwargs["include"] == () and not sys.stdin.isatty() and not sys.stdin.closed:
         logger.debug("Detected stdin. Using it as input.")
-        path = typing.cast("FilePath", VirtualPath(sys.stdin.name, sys.stdin))
+        path = typing.cast("FilePath", CachedStdin())
         settings.include = [path]
 
 
