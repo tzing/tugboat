@@ -52,7 +52,7 @@ class TestCritiqueRelaxedParameter:
                     "If you want to pass an object, try serializing it to a JSON string.",
                 ),
                 "input": [],
-                "fix": "[]",
+                "fix": '"[]"',
             }
         ]
 

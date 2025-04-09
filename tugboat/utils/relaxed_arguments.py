@@ -44,6 +44,8 @@ def critique_relaxed_parameter(param: RelaxedParameter) -> Iterator[Diagnosis]:
 
             try:
                 alternative = json.dumps(param.value, indent=2)
+                if "\n" not in alternative:
+                    alternative = json.dumps(alternative)
             except Exception:
                 alternative = None
 
