@@ -159,7 +159,7 @@ class TestRequireExactlyOne:
         assert diagnoses == []
 
     def test_missing(self):
-        model = SampleModel(foo=None, baz="")
+        model = SampleModel()
         diagnoses = list(
             require_exactly_one(model=model, loc=["spec"], fields=["foo", "bar"])
         )

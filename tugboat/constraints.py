@@ -162,7 +162,7 @@ def require_exactly_one(
     any_field_set = False
     for field_name in fields:
         value = getattr(model, field_name, None)
-        if value or value is False:
+        if value is not None:
             any_field_set = True
             break
 
