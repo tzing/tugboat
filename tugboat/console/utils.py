@@ -32,7 +32,7 @@ class CachedStdin(PathLike):
     def is_dir(self) -> bool:
         return False
 
-    @functools.cache
+    @functools.cache  # noqa: B019; this class should be singleton
     def read_text(self) -> str:
         return sys.stdin.read()
 
