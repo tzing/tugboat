@@ -454,17 +454,18 @@ class TestArgoExamples:
     """
 
     def test(self, argo_example_dir: Path):
+        workflow_binding_dir = argo_example_dir / "workflow-event-binding"
+
+        EXCLUDES = {
+            # invalid reference
+            workflow_binding_dir / "event-consumer-workflowtemplate.yaml",
+            # param value is an object, expected a string
+            workflow_binding_dir / "github-path-filter-workflowtemplate.yaml",
+        }
+
         for file_path in argo_example_dir.glob("**/*.yaml"):
             # skip known false positives
-            if file_path.name in (
-                # contains deprecated field
-                "exit-handler-step-level.yaml",
-                "template-on-exit.yaml",
-                # invalid reference
-                "event-consumer-workflowtemplate.yaml",
-                # name too long
-                "global-parameters-from-configmap-referenced-as-local-variable.yaml",
-            ):
+            if file_path in EXCLUDES:
                 continue
 
             # analyze

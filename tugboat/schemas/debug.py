@@ -2,16 +2,17 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import Field
 
+from tugboat.schemas.basic import Empty
 from tugboat.schemas.manifest import Manifest
 
 
-class Spec(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
+class Spec(Empty):
+    """This class is preserved for debugging purposes."""
 
 
-class DebugManifest(Manifest[Spec]):
+class DebugManifest(Manifest):
     """
     Internal class for debugging purposes.
 
@@ -31,3 +32,4 @@ class DebugManifest(Manifest[Spec]):
 
     apiVersion: Literal["tugboat.example.com/v1"]  # type: ignore[reportIncompatibleVariableOverride]
     kind: Literal["Debug"]  # type: ignore[reportIncompatibleVariableOverride]
+    spec: Spec | None = Field(default_factory=Spec)
