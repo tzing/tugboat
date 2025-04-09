@@ -68,4 +68,6 @@ def parse_manifest(manifest: dict):
                     return WorkflowTemplate.model_validate(manifest)
 
         case "tugboat.example.com/v1":
-            return DebugManifest.model_validate(manifest)
+            match manifest.get("kind"):
+                case "Debug":
+                    return DebugManifest.model_validate(manifest)
