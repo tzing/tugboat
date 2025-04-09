@@ -42,6 +42,9 @@ class RelaxedParameter(Parameter):
 
     value: Any | None = None
 
+    def __hash__(self):
+        return hash((repr(self.value), self.valueFrom))
+
 
 class ValueFrom(_BaseModel):
     configMapKeyRef: ConfigKeySelector | None = None

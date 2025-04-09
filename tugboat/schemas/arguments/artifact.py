@@ -84,6 +84,21 @@ class RelaxedArtifact(Artifact):
 
     value: Any | None = None
 
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.artifactory,
+                self.azure,
+                self.gcs,
+                self.git,
+                self.hdfs,
+                self.http,
+                self.oss,
+                self.raw,
+                self.s3,
+            )
+        )
+
 
 # ----------------------------------------------------------------------------
 # archive
