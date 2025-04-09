@@ -20,6 +20,7 @@ def _reset_logging():
 
 
 class TestMain:
+
     @pytest.mark.usefixtures("_reset_logging")
     def test_file_passed(self, fixture_dir: Path):
         target = fixture_dir / "sample-workflow.yaml"
@@ -27,6 +28,7 @@ class TestMain:
         runner = click.testing.CliRunner()
         result = runner.invoke(main, [str(target), "--color", "1"])
 
+        assert not result.exception
         assert result.exit_code == 0
         assert "All passed!" in result.output
 
@@ -37,6 +39,7 @@ class TestMain:
         runner = click.testing.CliRunner()
         result = runner.invoke(main, [str(target)])
 
+        assert isinstance(result.exception, SystemExit)
         assert result.exit_code == 2
         assert "Found 1 failures" in result.output
 
@@ -60,6 +63,7 @@ class TestMain:
             ],
         )
 
+        assert not result.exception
         assert result.exit_code == 0
         assert "All passed!" in result.output
 
@@ -76,7 +80,9 @@ class TestMain:
                 spec: {}
                 """,
         )
+
         assert not result.exception
+        assert result.exit_code == 0
         assert "All passed!" in result.output
 
     @pytest.mark.usefixtures("_reset_logging")
@@ -84,6 +90,7 @@ class TestMain:
         runner = click.testing.CliRunner()
         result = runner.invoke(main, [str(tmp_path)])
 
+        assert isinstance(result.exception, SystemExit)
         assert result.exit_code == 2
         assert "No manifest found." in result.output
 
@@ -95,6 +102,7 @@ class TestMain:
         runner = click.testing.CliRunner()
         result = runner.invoke(main, [str(target)])
 
+        assert isinstance(result.exception, SystemExit)
         assert result.exit_code == 1
         assert "Failed to read file" in result.output
 
