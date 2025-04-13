@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict
 
 from tugboat.schemas.arguments import Arguments, RelaxedArguments
 from tugboat.schemas.basic import Array, Dict
+from tugboat.schemas.metrics import Metrics
 from tugboat.schemas.template.container import (
     ContainerNode,
     ContainerSetTemplate,
@@ -52,6 +53,7 @@ class Template(_BaseModel):
     dag: DagTemplate | None = None
     failFast: bool | None = None
     inputs: RelaxedArguments | None = None
+    metrics: Metrics | None = None
     name: str | None = None
     nodeSelector: Dict[str, str] | None = None
     outputs: Arguments | None = None
@@ -75,7 +77,6 @@ class Template(_BaseModel):
     initContainers: Array[Any] | None = None
     memoize: Any | None = None
     metadata: Any | None = None
-    metrics: Any | None = None
     plugins: Any | None = None
     resource: Any | None = None
     retryStrategy: Any | None = None
