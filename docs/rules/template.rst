@@ -221,3 +221,94 @@ Rules
                   raw:
                     data: |-
                       {{ inputs.artifacts.any }}
+
+.. TPL3xx field value issues
+
+.. rule:: TPL301 Invalid metric name
+
+   This rule is triggered when a metric name in a template is invalid.
+
+   The metric name is used as the identifier for the metric in the `Prometheus`_ server.
+   As a result, it must follow the naming conventions for Prometheus metrics.
+
+   A valid metric name must start with an alphabetic character and can only include alphanumeric characters, underscores (``_``), and colons (``:``). For more details, refer to the `Prometheus documentation`_.
+
+   .. code-block:: yaml
+      :emphasize-lines: 13
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: WorkflowTemplate
+      metadata:
+        name: demo
+      spec:
+        templates:
+          - name: main
+            container:
+              image: alpine:latest
+              command: ["true"]
+            metrics:
+              prometheus:
+                - name: invalid-metric-name
+                  help: This is an invalid metric name
+                  counter:
+                    value: "1"
+
+   .. _Prometheus: https://prometheus.io/
+   .. _Prometheus documentation: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
+
+.. rule:: TPL302 Invalid metric label name
+
+   This rule is triggered when a metric label name in a template is invalid.
+
+   Prometheus label names must start with an alphabetic character and can only contain alphanumeric characters and underscores (``_``). See `Prometheus documentation`_ for more details.
+
+   .. code-block:: yaml
+      :emphasize-lines: 16
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: WorkflowTemplate
+      metadata:
+        name: demo
+      spec:
+        templates:
+          - name: main
+            container:
+              image: alpine:latest
+              command: ["true"]
+            metrics:
+              prometheus:
+                - name: demo_count
+                  help: This is an invalid metric name
+                  labels:
+                    - key: invalid-label-name
+                      value: demo_value
+                  counter:
+                    value: "1"
+
+.. rule:: TPL303 Redundant metric label
+
+   Prometheus metric labels with an empty value are treated the same as labels that are not defined.
+   This rule is triggered when a metric label in a template has an empty value.
+
+   .. code-block:: yaml
+      :emphasize-lines: 17
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: WorkflowTemplate
+      metadata:
+        name: demo
+      spec:
+        templates:
+          - name: main
+            container:
+              image: alpine:latest
+              command: ["true"]
+            metrics:
+              prometheus:
+                - name: demo_count
+                  help: This is an invalid metric name
+                  labels:
+                    - key: demo_label
+                      value: ""
+                  counter:
+                    value: "1"

@@ -3,13 +3,16 @@ from __future__ import annotations
 import collections
 import typing
 
+from tugboat.analyzers.metrics import check_prometheus
 from tugboat.constraints import require_exactly_one, require_non_empty
 from tugboat.core import hookimpl
+from tugboat.references import get_template_context
+from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from tugboat.schemas import Template
+    from tugboat.schemas import Template, Workflow, WorkflowTemplate
     from tugboat.types import Diagnosis
 
 
@@ -38,7 +41,7 @@ def analyze_template(template: Template) -> Iterable[Diagnosis]:
 
 
 @hookimpl(specname="analyze_template")
-def check_step_names(template: Template):
+def check_step_names(template: Template) -> Iterable[Diagnosis]:
     if not template.steps:
         return
 
@@ -58,3 +61,26 @@ def check_step_names(template: Template):
                     "msg": f"Step name '{name}' is duplicated.",
                     "input": name,
                 }
+
+
+@hookimpl(specname="analyze_template")
+def check_metrics(
+    template: Template, workflow: Workflow | WorkflowTemplate
+) -> Iterable[Diagnosis]:
+    if not template.metrics:
+        return
+
+    ctx = get_template_context(workflow, template, include_outputs=True)
+
+    for idx, prom in enumerate(template.metrics.prometheus or ()):
+        for diagnosis in prepend_loc(
+            ("metrics", "prometheus", idx), check_prometheus(prom, ctx)
+        ):
+            match diagnosis["code"]:
+                case "internal:invalid-metric-name":
+                    diagnosis["code"] = "TPL301"
+                case "internal:invalid-metric-label-name":
+                    diagnosis["code"] = "TPL302"
+                case "internal:invalid-metric-label-value":
+                    diagnosis["code"] = "TPL303"
+            yield diagnosis
