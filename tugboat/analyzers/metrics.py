@@ -54,7 +54,7 @@ def check_prometheus(prometheus: Prometheus, context: Context) -> Iterator[Diagn
                 "code": "internal:invalid-metric-name",
                 "loc": ("name",),
                 "summary": "Invalid metric name",
-                "msg": f"""
+                "msg": """
                     Metric name is too long.
                     Metric names must be less than 256 characters.
                     """,
