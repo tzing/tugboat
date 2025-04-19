@@ -70,8 +70,27 @@ def check_metrics(
     if not template.metrics:
         return
 
-    ctx = get_template_context(workflow, template, include_outputs=True)
+    # build context
+    # some additional variables are available when emitting metrics in a template
+    # https://argo-workflows.readthedocs.io/en/latest/variables/#metrics
+    ctx = get_template_context(workflow, template)
+    ctx.parameters |= {
+        ("duration",),
+        ("exitCode",),
+        ("outputs", "result"),
+        ("resourcesDuration", "cpu"),
+        ("resourcesDuration", "memory"),
+        ("retries",),
+        ("status",),
+    }
+    if template.inputs:
+        for param in template.inputs.parameters or ():
+            ctx.parameters |= {("inputs", "parameters", param.name)}
+    if template.outputs:
+        for param in template.outputs.parameters or ():
+            ctx.parameters |= {("outputs", "parameters", param.name)}
 
+    # check metrics
     for idx, prom in enumerate(template.metrics.prometheus or ()):
         for diagnosis in prepend_loc(
             ("metrics", "prometheus", idx), check_prometheus(prom, ctx)

@@ -484,18 +484,26 @@ def test_check_metrics():
         metadata:
           generateName: test-
         spec:
-            entrypoint: main
-            templates:
-                - name: main
-                  metrics:
-                    prometheus:
-                      - name: metric-1 # TPL301
-                        help: this is a demo
-                        labels:
-                          - key: invalid-label
-                            value: ""
-                        counter:
-                          value: "1"
+          templates:
+            - name: template-1
+              inputs:
+                parameters:
+                  - name: in-param
+                    value: "value-1"
+              outputs:
+                parameters:
+                  - name: out-param
+                    valueFrom:
+                      path: /tmp/param-2
+              metrics:
+               prometheus:
+                - name: metric-1 # TPL301
+                  help: this is a demo
+                  labels:
+                    - key: invalid-label
+                      value: ""
+                  counter:
+                    value: "{{ outputs.parameters.no-param }}" # VAR002
         """
     )
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
@@ -525,6 +533,25 @@ def test_check_metrics():
             {
                 "code": "TPL303",
                 "loc": (*loc_labels, 0, "value"),
+            }
+        )
+        in diagnoses
+    )
+
+    assert (
+        IsPartialDict(
+            {
+                "code": "VAR002",
+                "loc": (
+                    "spec",
+                    "templates",
+                    0,
+                    "metrics",
+                    "prometheus",
+                    0,
+                    "counter",
+                    "value",
+                ),
             }
         )
         in diagnoses
