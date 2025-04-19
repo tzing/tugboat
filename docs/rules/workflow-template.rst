@@ -103,10 +103,9 @@ These errors are likely to cause runtime issues when the workflow template is us
 
    This rule is triggered when a metric name in a template is invalid.
 
-   The metric name is used as the identifier for the metric in the `Prometheus`_ server.
-   As a result, it must follow the naming conventions for Prometheus metrics.
-
-   A valid metric name must start with an alphabetic character and can only include alphanumeric characters, underscores (``_``), and colons (``:``). For more details, refer to the `Prometheus documentation`_.
+   Argo Workflows provides metrics in both `Prometheus`_ and `OpenTelemetry`_ formats.
+   As a result, it must comply with the naming rules of both formats.
+   This means metric names must begin with a letter and can only contain letters, numbers, and underscores (``_``).
 
    .. code-block:: yaml
       :emphasize-lines: 8
@@ -124,13 +123,13 @@ These errors are likely to cause runtime issues when the workflow template is us
                 value: "1"
 
    .. _Prometheus: https://prometheus.io/
-   .. _Prometheus documentation: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
+   .. _OpenTelemetry: https://opentelemetry.io/
 
 .. rule:: WT302 Invalid metric label name
 
    This rule is triggered when a metric label name in a template is invalid.
 
-   Prometheus label names must start with an alphabetic character and can only contain alphanumeric characters and underscores (``_``). See `Prometheus documentation`_ for more details.
+   Prometheus label names must start with an alphabetic character and can only contain alphanumeric characters and underscores (``_``).
 
    .. code-block:: yaml
       :emphasize-lines: 11
