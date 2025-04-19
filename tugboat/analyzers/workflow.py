@@ -262,8 +262,15 @@ def check_metrics(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
     if not workflow.spec.metrics:
         return
 
+    # build context
+    # some additional variables should be available in the context
     ctx = get_workflow_context(workflow)
+    ctx.parameters |= {
+        ("workflow", "duration"),
+        ("workflow", "status"),
+    }
 
+    # check metrics
     for idx, prom in enumerate(workflow.spec.metrics.prometheus or ()):
         for diagnosis in prepend_loc(
             ("spec", "metrics", "prometheus", idx), check_prometheus(prom, ctx)
