@@ -6,8 +6,10 @@ import typing
 from rapidfuzz.process import extractOne
 
 from tugboat.analyzers.kubernetes import check_resource_name
+from tugboat.analyzers.metrics import check_prometheus
 from tugboat.constraints import accept_none, require_exactly_one, require_non_empty
 from tugboat.core import get_plugin_manager, hookimpl
+from tugboat.references import get_workflow_context
 from tugboat.utils import (
     critique_relaxed_artifact,
     critique_relaxed_parameter,
@@ -253,3 +255,24 @@ def check_argument_artifacts(workflow: WorkflowCompatible) -> Iterator[Diagnosis
             ],
         )
         yield from prepend_loc(loc, critique_relaxed_artifact(artifact))
+
+
+@hookimpl(specname="analyze_workflow")
+def check_metrics(workflow: WorkflowCompatible) -> Iterator[Diagnosis]:
+    if not workflow.spec.metrics:
+        return
+
+    ctx = get_workflow_context(workflow)
+
+    for idx, prom in enumerate(workflow.spec.metrics.prometheus or ()):
+        for diagnosis in prepend_loc(
+            ("spec", "metrics", "prometheus", idx), check_prometheus(prom, ctx)
+        ):
+            match diagnosis["code"]:
+                case "internal:invalid-metric-name":
+                    diagnosis["code"] = "WF301"
+                case "internal:invalid-metric-label-name":
+                    diagnosis["code"] = "WF302"
+                case "internal:invalid-metric-label-value":
+                    diagnosis["code"] = "WF303"
+            yield diagnosis
