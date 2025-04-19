@@ -474,3 +474,85 @@ spec:
           - name: data # TPL105
             from: '{{ invalid }}'
 """
+
+
+def test_check_metrics():
+    diagnoses = tugboat.analyze.analyze_yaml(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: test-
+        spec:
+          templates:
+            - name: template-1
+              inputs:
+                parameters:
+                  - name: in-param
+                    value: "value-1"
+              outputs:
+                parameters:
+                  - name: out-param
+                    valueFrom:
+                      path: /tmp/param-2
+              metrics:
+               prometheus:
+                - name: metric-1 # TPL301
+                  help: this is a demo
+                  labels:
+                    - key: invalid-label
+                      value: ""
+                  counter:
+                    value: "{{ outputs.parameters.no-param }}" # VAR002
+        """
+    )
+    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+
+    assert (
+        IsPartialDict(
+            {
+                "code": "TPL301",
+                "loc": ("spec", "templates", 0, "metrics", "prometheus", 0, "name"),
+            }
+        )
+        in diagnoses
+    )
+
+    loc_labels = ("spec", "templates", 0, "metrics", "prometheus", 0, "labels")
+    assert (
+        IsPartialDict(
+            {
+                "code": "TPL302",
+                "loc": (*loc_labels, 0, "key"),
+            }
+        )
+        in diagnoses
+    )
+    assert (
+        IsPartialDict(
+            {
+                "code": "TPL303",
+                "loc": (*loc_labels, 0, "value"),
+            }
+        )
+        in diagnoses
+    )
+
+    assert (
+        IsPartialDict(
+            {
+                "code": "VAR002",
+                "loc": (
+                    "spec",
+                    "templates",
+                    0,
+                    "metrics",
+                    "prometheus",
+                    0,
+                    "counter",
+                    "value",
+                ),
+            }
+        )
+        in diagnoses
+    )

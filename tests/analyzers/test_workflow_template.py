@@ -189,3 +189,55 @@ spec:
       - name: artifact-3
         value: foo  # M102
 """
+
+
+def test_check_metrics():
+    diagnoses = tugboat.analyze.analyze_yaml(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: WorkflowTemplate
+        metadata:
+          name: test
+        spec:
+          metrics:
+            prometheus:
+              - name: metric-1 # WT301
+                help: this is a demo
+                labels:
+                  - key: invalid-label # WT302
+                    value: "" # WT303
+                counter:
+                  value: "1"
+        """
+    )
+    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+
+    assert (
+        IsPartialDict(
+            {
+                "code": "WT301",
+                "loc": ("spec", "metrics", "prometheus", 0, "name"),
+            }
+        )
+        in diagnoses
+    )
+
+    loc_labels = ("spec", "metrics", "prometheus", 0, "labels")
+    assert (
+        IsPartialDict(
+            {
+                "code": "WT302",
+                "loc": (*loc_labels, 0, "key"),
+            }
+        )
+        in diagnoses
+    )
+    assert (
+        IsPartialDict(
+            {
+                "code": "WT303",
+                "loc": (*loc_labels, 0, "value"),
+            }
+        )
+        in diagnoses
+    )

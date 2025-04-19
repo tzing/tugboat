@@ -87,6 +87,13 @@ tugboat.schemas.template.probe module
    :members:
    :undoc-members:
 
+tugboat.schemas.metrics module
+-------------------------------
+
+.. automodule:: tugboat.schemas.metrics
+   :members:
+   :undoc-members:
+
 tugboat.schemas.workflow module
 -------------------------------
 

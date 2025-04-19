@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from tugboat.schemas.arguments import RelaxedArguments
 from tugboat.schemas.basic import Array, Dict
 from tugboat.schemas.manifest import Manifest
+from tugboat.schemas.metrics import Metrics
 from tugboat.schemas.template import Template
 
 if os.getenv("DOCUTILSCONFIG"):
@@ -34,6 +35,7 @@ class WorkflowSpec(BaseModel):
     dnsPolicy: str | None = None
     entrypoint: str | None = None
     hostNetwork: bool | None = None
+    metrics: Metrics | None = None
     nodeSelector: Dict[str, str] | None = None
     onExit: str | None = None
     parallelism: int | None = None
@@ -56,7 +58,6 @@ class WorkflowSpec(BaseModel):
     hooks: Any | None = None
     hostAliases: Array[Any] | None = None
     imagePullSecrets: Array[Any] | None = None
-    metrics: Any | None = None
     podDisruptionBudget: Any | None = None
     podGc: Any | None = Field(None, alias="podGC")
     podMetadata: Any | None = None

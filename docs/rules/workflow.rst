@@ -76,3 +76,78 @@ These issues are likely to cause runtime errors when the workflow is executed.
           - name: hello
             container:
               image: alpine:latest
+
+.. WF3xx field value issues
+
+.. rule:: WF301 Invalid metric name
+
+   This rule is triggered when a metric name in a template is invalid.
+
+   Argo Workflows provides metrics in both `Prometheus`_ and `OpenTelemetry`_ formats.
+   As a result, it must comply with the naming rules of both formats.
+   This means metric names must begin with a letter and can only contain letters, numbers, and underscores (``_``).
+
+   .. code-block:: yaml
+      :emphasize-lines: 8
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: demo-
+      spec:
+        metrics:
+          prometheus:
+            - name: invalid-metric-name
+              help: This is an invalid metric name
+              counter:
+                value: "1"
+
+   .. _Prometheus: https://prometheus.io/
+   .. _OpenTelemetry: https://opentelemetry.io/
+
+.. rule:: WF302 Invalid metric label name
+
+   This rule is triggered when a metric label name in a template is invalid.
+
+   Prometheus label names must start with an alphabetic character and can only contain alphanumeric characters and underscores (``_``).
+
+   .. code-block:: yaml
+      :emphasize-lines: 11
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: demo-
+      spec:
+        metrics:
+          prometheus:
+            - name: demo_count
+              help: This is an invalid metric name
+              labels:
+                - key: invalid-label-name
+                  value: demo_value
+              counter:
+                value: "1"
+
+.. rule:: WF303 Redundant metric label
+
+   Prometheus metric labels with an empty value are treated the same as labels that are not defined.
+   This rule is triggered when a metric label in a template has an empty value.
+
+   .. code-block:: yaml
+      :emphasize-lines: 12
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: demo-
+      spec:
+        metrics:
+          prometheus:
+            - name: demo_count
+              help: This is an invalid metric name
+              labels:
+                - key: demo_label
+                  value: ""
+              counter:
+                value: "1"
