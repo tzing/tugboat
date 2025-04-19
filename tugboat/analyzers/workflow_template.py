@@ -71,3 +71,16 @@ def check_arguments(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
             case "WF102":
                 diagnosis["code"] = "WT102"
         yield diagnosis
+
+
+@hookimpl(specname="analyze_workflow_template")
+def check_metrics(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
+    for diagnosis in tugboat.analyzers.workflow.check_metrics(workflow_template):
+        match diagnosis["code"]:
+            case "WF301":
+                diagnosis["code"] = "WT301"
+            case "WF302":
+                diagnosis["code"] = "WT302"
+            case "WF303":
+                diagnosis["code"] = "WT303"
+        yield diagnosis
