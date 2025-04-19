@@ -29,7 +29,7 @@ class TestCheckPrometheus:
             IsPartialDict({"code": "M201", "loc": ("gauge",)}),
         ]
 
-    def test_invalid_metric_name(self):
+    def test_invalid_metric_name_1(self):
         prom = Prometheus.model_validate(
             {
                 "name": "test/metric",
@@ -48,6 +48,30 @@ class TestCheckPrometheus:
                     "loc": ("name",),
                     "msg": ContainsSubStrings("Metric name 'test/metric' is invalid."),
                     "input": "test/metric",
+                }
+            ),
+        ]
+
+    def test_invalid_metric_name_2(self):
+        NAME = "longname" * 32
+        prom = Prometheus.model_validate(
+            {
+                "name": NAME,
+                "help": "some help",
+                "counter": {
+                    "value": "1",
+                },
+            }
+        )
+
+        diagnoses = list(check_prometheus(prom, Context()))
+        assert diagnoses == [
+            IsPartialDict(
+                {
+                    "code": "internal:invalid-metric-name",
+                    "loc": ("name",),
+                    "msg": ContainsSubStrings("Metric name is too long."),
+                    "input": NAME,
                 }
             ),
         ]

@@ -35,7 +35,7 @@ def check_prometheus(prometheus: Prometheus, context: Context) -> Iterator[Diagn
     )
 
     if prometheus.name:
-        if not re.fullmatch(r"[a-zA-Z_:][a-zA-Z0-9_:]*", prometheus.name):
+        if not re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", prometheus.name):
             yield {
                 "type": "failure",
                 "code": "internal:invalid-metric-name",
@@ -43,7 +43,20 @@ def check_prometheus(prometheus: Prometheus, context: Context) -> Iterator[Diagn
                 "summary": "Invalid metric name",
                 "msg": f"""
                     Metric name '{prometheus.name}' is invalid.
-                    Prometheus metric names must start with an alphabetic character and can only include alphanumeric characters, underscores (_), and colons (:).
+                    Argo Workflows metric names must start with an alphabetic character and can only include alphanumeric characters and underscores (_).
+                    """,
+                "input": prometheus.name,
+            }
+
+        if len(prometheus.name) > 255:
+            yield {
+                "type": "failure",
+                "code": "internal:invalid-metric-name",
+                "loc": ("name",),
+                "summary": "Invalid metric name",
+                "msg": f"""
+                    Metric name is too long.
+                    Metric names must be less than 256 characters.
                     """,
                 "input": prometheus.name,
             }
