@@ -12,6 +12,7 @@ from tugboat.utils.operator import (
 
 
 class TestPrependLoc:
+
     @pytest.fixture
     def diagnoses(self):
         return [
@@ -27,11 +28,24 @@ class TestPrependLoc:
             {"loc": ("baz", "foo", "bar"), "code": "T03"},
         ]
 
-    def test_empty(self, diagnoses):
+    def test_empty_items(self):
+        assert list(prepend_loc(["foo"], [])) == []
+
+    def test_empty_prefix(self, diagnoses):
         assert list(prepend_loc([], diagnoses)) == [
             {"loc": (), "code": "T01"},
             {"loc": ("foo",), "code": "T02"},
             {"loc": ("foo", "bar"), "code": "T03"},
+        ]
+
+    def test_from_iterables(self, diagnoses):
+        def _generator():
+            yield diagnoses
+
+        assert list(prepend_loc.from_iterables(["baz"], _generator())) == [
+            {"loc": ("baz",), "code": "T01"},
+            {"loc": ("baz", "foo"), "code": "T02"},
+            {"loc": ("baz", "foo", "bar"), "code": "T03"},
         ]
 
 

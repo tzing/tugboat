@@ -47,12 +47,9 @@ def analyze(manifest: WorkflowCompatible) -> Iterator[Diagnosis]:
     yield from itertools.chain.from_iterable(manifest_diagnoses_generators)
 
     for idx_tmpl, template in enumerate(manifest.spec.templates or []):
-        template_diagnoses_generators = pm.hook.analyze_template(
-            template=template, workflow=manifest
-        )
-        yield from prepend_loc(
+        yield from prepend_loc.from_iterables(
             ["spec", "templates", idx_tmpl],
-            itertools.chain.from_iterable(template_diagnoses_generators),
+            pm.hook.analyze_template(template=template, workflow=manifest),
         )
 
 
