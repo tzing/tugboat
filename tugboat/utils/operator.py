@@ -5,24 +5,26 @@ Operators that could be used to check or report errors in the data model.
 from __future__ import annotations
 
 import collections
+import itertools
 import typing
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 
 from pydantic import BaseModel
 
 from tugboat.parsers import parse_template, report_syntax_errors
+from tugboat.types import Diagnosis
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Container, Iterable, Iterator
+    from collections.abc import Container, Iterator
+    from typing import Self
 
     from tugboat.references.context import ReferenceCollection
     from tugboat.schemas import Artifact, Parameter, Template
-    from tugboat.types import Diagnosis
 
     type NamedModel = Artifact | Parameter | Template
 
 
-class prepend_loc:
+class prepend_loc(Iterable[Diagnosis]):
     """Prepend path to the location of each diagnosis in an iterable."""
 
     def __init__(self, prefix: Sequence[str | int], items: Iterable[Diagnosis] = ()):
@@ -35,6 +37,12 @@ class prepend_loc:
 
     def __iter__(self) -> Iterator[Diagnosis]:
         return map(self, self.items)
+
+    @classmethod
+    def from_iterables(
+        cls, prefix: Sequence[str | int], iterables: Iterable[Iterable[Diagnosis]]
+    ) -> Self:
+        return cls(prefix, itertools.chain.from_iterable(iterables))
 
 
 def find_duplicate_names(items: Sequence[NamedModel]) -> Iterator[tuple[int, str]]:
