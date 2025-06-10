@@ -32,12 +32,14 @@ if typing.TYPE_CHECKING:
     from tugboat.schemas.arguments import RelaxedArtifact, RelaxedParameter
     from tugboat.types import Diagnosis
 
+    type WorkflowCompatible = Workflow | WorkflowTemplate
+
 logger = logging.getLogger(__name__)
 
 
 @hookimpl
 def analyze_step(
-    step: Step, template: Template, workflow: Workflow | WorkflowTemplate
+    step: Step, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     yield from require_exactly_one(
         model=step,
@@ -62,7 +64,7 @@ def analyze_step(
 
 @hookimpl(specname="analyze_step")
 def check_argument_parameters(
-    step: Step, template: Template, workflow: Workflow | WorkflowTemplate
+    step: Step, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     if not step.arguments:
         return
@@ -138,7 +140,7 @@ def _check_argument_parameter(
 
 @hookimpl(specname="analyze_step")
 def check_argument_artifacts(
-    step: Step, template: Template, workflow: Workflow | WorkflowTemplate
+    step: Step, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     if not step.arguments:
         return
@@ -257,7 +259,7 @@ def _check_argument_artifact(
 
 @hookimpl(specname="analyze_step")
 def check_referenced_template(
-    step: Step, template: Template, workflow: Workflow | WorkflowTemplate
+    step: Step, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     if step.template:
         yield from prepend_loc(
@@ -283,7 +285,7 @@ def check_referenced_template(
 
 
 def _check_referenced_template(
-    target_template_name: str, template: Template, workflow: Workflow | WorkflowTemplate
+    target_template_name: str, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     if target_template_name == template.name:
         yield {
@@ -319,7 +321,7 @@ def _check_referenced_template(
 
 @hookimpl(specname="analyze_step")
 def check_fields_references(
-    step: Step, template: Template, workflow: Workflow | WorkflowTemplate
+    step: Step, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     ctx = get_step_context(workflow, template, step)
     yield from check_model_fields_references(
