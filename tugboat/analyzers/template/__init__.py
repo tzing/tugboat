@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import collections
+import itertools
 import typing
 
 from tugboat.analyzers.metrics import check_prometheus
 from tugboat.constraints import require_exactly_one, require_non_empty
-from tugboat.core import hookimpl
+from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_template_context
 from tugboat.utils import prepend_loc
 
@@ -43,7 +44,9 @@ def analyze_template(template: Template) -> Iterable[Diagnosis]:
 
 
 @hookimpl(specname="analyze_template")
-def check_steps(template: Template) -> Iterable[Diagnosis]:
+def check_steps(
+    template: Template, workflow: WorkflowCompatible
+) -> Iterable[Diagnosis]:
     if not template.steps:
         return
 
@@ -64,6 +67,19 @@ def check_steps(template: Template) -> Iterable[Diagnosis]:
                     "msg": f"Step name '{name}' is duplicated.",
                     "input": name,
                 }
+
+    # check for step definitions
+    pm = get_plugin_manager()
+
+    for idx_stage, stage in enumerate(template.steps or ()):
+        for idx_step, step in enumerate(stage):
+            step_diagnoses_generators = pm.hook.analyze_step(
+                step=step, template=template, workflow=workflow
+            )
+            yield from prepend_loc(
+                ["steps", idx_stage, idx_step],
+                itertools.chain.from_iterable(step_diagnoses_generators),
+            )
 
 
 @hookimpl(specname="analyze_template")
