@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import collections
+import itertools
 import typing
 
 from tugboat.analyzers.metrics import check_prometheus
 from tugboat.constraints import require_exactly_one, require_non_empty
-from tugboat.core import hookimpl
+from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_template_context
 from tugboat.utils import prepend_loc
 
@@ -14,6 +15,8 @@ if typing.TYPE_CHECKING:
 
     from tugboat.schemas import Template, Workflow, WorkflowTemplate
     from tugboat.types import Diagnosis
+
+    type WorkflowCompatible = Workflow | WorkflowTemplate
 
 
 @hookimpl
@@ -41,17 +44,20 @@ def analyze_template(template: Template) -> Iterable[Diagnosis]:
 
 
 @hookimpl(specname="analyze_template")
-def check_step_names(template: Template) -> Iterable[Diagnosis]:
+def check_steps(
+    template: Template, workflow: WorkflowCompatible
+) -> Iterable[Diagnosis]:
     if not template.steps:
         return
 
-    steps = collections.defaultdict(list)
+    # check for duplicate step names
+    step_names = collections.defaultdict(list)
     for idx_stage, stage in enumerate(template.steps or []):
         for idx_step, step in enumerate(stage):
             if step.name:
-                steps[step.name].append(("steps", idx_stage, idx_step, "name"))
+                step_names[step.name].append(("steps", idx_stage, idx_step, "name"))
 
-    for name, locs in steps.items():
+    for name, locs in step_names.items():
         if len(locs) > 1:
             for loc in locs:
                 yield {
@@ -62,10 +68,23 @@ def check_step_names(template: Template) -> Iterable[Diagnosis]:
                     "input": name,
                 }
 
+    # check for step definitions
+    pm = get_plugin_manager()
+
+    for idx_stage, stage in enumerate(template.steps or ()):
+        for idx_step, step in enumerate(stage):
+            step_diagnoses_generators = pm.hook.analyze_step(
+                step=step, template=template, workflow=workflow
+            )
+            yield from prepend_loc(
+                ["steps", idx_stage, idx_step],
+                itertools.chain.from_iterable(step_diagnoses_generators),
+            )
+
 
 @hookimpl(specname="analyze_template")
 def check_metrics(
-    template: Template, workflow: Workflow | WorkflowTemplate
+    template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     if not template.metrics:
         return

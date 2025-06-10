@@ -55,16 +55,6 @@ def analyze(manifest: WorkflowCompatible) -> Iterator[Diagnosis]:
             itertools.chain.from_iterable(template_diagnoses_generators),
         )
 
-        for idx_stage, stage in enumerate(template.steps or []):
-            for idx_step, step in enumerate(stage):
-                step_diagnoses_generators = pm.hook.analyze_step(
-                    step=step, template=template, workflow=manifest
-                )
-                yield from prepend_loc(
-                    ["spec", "templates", idx_tmpl, "steps", idx_stage, idx_step],
-                    itertools.chain.from_iterable(step_diagnoses_generators),
-                )
-
 
 # ----------------------------------------------------------------------------
 # Workflow analyzers
