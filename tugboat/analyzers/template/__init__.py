@@ -15,6 +15,8 @@ if typing.TYPE_CHECKING:
     from tugboat.schemas import Template, Workflow, WorkflowTemplate
     from tugboat.types import Diagnosis
 
+    type WorkflowCompatible = Workflow | WorkflowTemplate
+
 
 @hookimpl
 def analyze_template(template: Template) -> Iterable[Diagnosis]:
@@ -66,7 +68,7 @@ def check_steps(template: Template) -> Iterable[Diagnosis]:
 
 @hookimpl(specname="analyze_template")
 def check_metrics(
-    template: Template, workflow: Workflow | WorkflowTemplate
+    template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     if not template.metrics:
         return
