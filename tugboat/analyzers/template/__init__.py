@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import collections
-import itertools
 import typing
 
 from tugboat.analyzers.metrics import check_prometheus
@@ -73,12 +72,9 @@ def check_steps(
 
     for idx_stage, stage in enumerate(template.steps or ()):
         for idx_step, step in enumerate(stage):
-            step_diagnoses_generators = pm.hook.analyze_step(
-                step=step, template=template, workflow=workflow
-            )
-            yield from prepend_loc(
+            yield from prepend_loc.from_iterables(
                 ["steps", idx_stage, idx_step],
-                itertools.chain.from_iterable(step_diagnoses_generators),
+                pm.hook.analyze_step(step=step, template=template, workflow=workflow),
             )
 
 
