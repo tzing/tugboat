@@ -22,16 +22,19 @@ if typing.TYPE_CHECKING:
     type NamedModel = Artifact | Parameter | Template
 
 
-def prepend_loc(
-    prefix: Sequence[str | int], iterable: Iterable[Diagnosis]
-) -> Iterator[Diagnosis]:
-    """Prepend the path to the location of each diagnosis in the iterable."""
+class prepend_loc:
+    """Prepend path to the location of each diagnosis in an iterable."""
 
-    def _prepend(diagnoses: Diagnosis) -> Diagnosis:
-        diagnoses["loc"] = (*prefix, *diagnoses.get("loc", []))
-        return diagnoses
+    def __init__(self, prefix: Sequence[str | int], items: Iterable[Diagnosis] = ()):
+        self.prefix = prefix
+        self.items = items
 
-    return map(_prepend, iterable)
+    def __call__(self, diagnosis: Diagnosis) -> Diagnosis:
+        diagnosis["loc"] = (*self.prefix, *diagnosis.get("loc", []))
+        return diagnosis
+
+    def __iter__(self) -> Iterator[Diagnosis]:
+        return map(self, self.items)
 
 
 def find_duplicate_names(items: Sequence[NamedModel]) -> Iterator[tuple[int, str]]:

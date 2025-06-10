@@ -12,6 +12,7 @@ from tugboat.utils.operator import (
 
 
 class TestPrependLoc:
+
     @pytest.fixture
     def diagnoses(self):
         return [
@@ -33,6 +34,7 @@ class TestPrependLoc:
             {"loc": ("foo",), "code": "T02"},
             {"loc": ("foo", "bar"), "code": "T03"},
         ]
+        assert list(prepend_loc(["foo"], [])) == []
 
 
 class TestFindDuplicateNames:
