@@ -12,7 +12,7 @@ from tugboat.constraints import (
     require_exactly_one,
     require_non_empty,
 )
-from tugboat.core import hookimpl
+from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_step_context
 from tugboat.utils import (
     check_model_fields_references,
