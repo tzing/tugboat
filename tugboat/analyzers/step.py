@@ -329,3 +329,43 @@ def check_fields_references(
         ctx.parameters,
         exclude=["arguments", "inline", "withItems", "withSequence"],
     )
+
+
+@hookimpl(specname="analyze_step")
+def check_inline_template(
+    step: Step, workflow: WorkflowCompatible
+) -> Iterable[Diagnosis]:
+    if not step.inline:
+        return
+
+    # check inline template type
+    for diagnosis in accept_none(
+        model=step.inline,
+        loc=("inline",),
+        fields=("dag", "steps"),
+    ):
+        diagnosis["code"] = "STP401"
+        diagnosis["summary"] = "Invalid inline template type"
+        diagnosis["msg"] = (
+            """
+            Nested steps or DAGs will result in an invalid step.
+            Please use simple steps or a DAG at the top level of the template.
+            """
+        )
+        yield diagnosis
+
+    # check inline template definitions
+    pm = get_plugin_manager()
+
+    for diagnosis in prepend_loc.from_iterables(
+        ("inline",),
+        pm.hook.analyze_template(template=step.inline, workflow=workflow),
+    ):
+        if diagnosis["loc"] == ("inline", "name"):
+            # template name is not required
+            continue
+        if diagnosis["loc"][:2] in {("inline", "steps"), ("inline", "dag")}:
+            # step templates or dag templates are not allowed
+            continue
+
+        yield diagnosis
