@@ -12,7 +12,7 @@ from tugboat.constraints import (
     require_exactly_one,
     require_non_empty,
 )
-from tugboat.core import hookimpl
+from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_step_context
 from tugboat.utils import (
     check_model_fields_references,
@@ -32,12 +32,14 @@ if typing.TYPE_CHECKING:
     from tugboat.schemas.arguments import RelaxedArtifact, RelaxedParameter
     from tugboat.types import Diagnosis
 
+    type WorkflowCompatible = Workflow | WorkflowTemplate
+
 logger = logging.getLogger(__name__)
 
 
 @hookimpl
 def analyze_step(
-    step: Step, template: Template, workflow: Workflow | WorkflowTemplate
+    step: Step, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     yield from require_exactly_one(
         model=step,
@@ -62,7 +64,7 @@ def analyze_step(
 
 @hookimpl(specname="analyze_step")
 def check_argument_parameters(
-    step: Step, template: Template, workflow: Workflow | WorkflowTemplate
+    step: Step, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     if not step.arguments:
         return
@@ -138,7 +140,7 @@ def _check_argument_parameter(
 
 @hookimpl(specname="analyze_step")
 def check_argument_artifacts(
-    step: Step, template: Template, workflow: Workflow | WorkflowTemplate
+    step: Step, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     if not step.arguments:
         return
@@ -257,7 +259,7 @@ def _check_argument_artifact(
 
 @hookimpl(specname="analyze_step")
 def check_referenced_template(
-    step: Step, template: Template, workflow: Workflow | WorkflowTemplate
+    step: Step, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     if step.template:
         yield from prepend_loc(
@@ -283,7 +285,7 @@ def check_referenced_template(
 
 
 def _check_referenced_template(
-    target_template_name: str, template: Template, workflow: Workflow | WorkflowTemplate
+    target_template_name: str, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     if target_template_name == template.name:
         yield {
@@ -319,7 +321,7 @@ def _check_referenced_template(
 
 @hookimpl(specname="analyze_step")
 def check_fields_references(
-    step: Step, template: Template, workflow: Workflow | WorkflowTemplate
+    step: Step, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     ctx = get_step_context(workflow, template, step)
     yield from check_model_fields_references(
@@ -327,3 +329,43 @@ def check_fields_references(
         ctx.parameters,
         exclude=["arguments", "inline", "withItems", "withSequence"],
     )
+
+
+@hookimpl(specname="analyze_step")
+def check_inline_template(
+    step: Step, workflow: WorkflowCompatible
+) -> Iterable[Diagnosis]:
+    if not step.inline:
+        return
+
+    # check inline template type
+    for diagnosis in accept_none(
+        model=step.inline,
+        loc=("inline",),
+        fields=("dag", "steps"),
+    ):
+        diagnosis["code"] = "STP401"
+        diagnosis["summary"] = "Invalid inline template type"
+        diagnosis["msg"] = (
+            """
+            Nested steps or DAGs will result in an invalid step.
+            Please use simple steps or a DAG at the top level of the template.
+            """
+        )
+        yield diagnosis
+
+    # check inline template definitions
+    pm = get_plugin_manager()
+
+    for diagnosis in prepend_loc.from_iterables(
+        ("inline",),
+        pm.hook.analyze_template(template=step.inline, workflow=workflow),
+    ):
+        if diagnosis["loc"] == ("inline", "name"):
+            # template name is not required
+            continue
+        if diagnosis["loc"][:2] in {("inline", "steps"), ("inline", "dag")}:
+            # step templates or dag templates are not allowed
+            continue
+
+        yield diagnosis

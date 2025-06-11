@@ -262,3 +262,50 @@ spec:
             when: "{{ count }} > 0"
             template: print-message
 """
+
+
+def test_check_inline_template():
+    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INLINE_TEMPLATE)
+    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+
+    assert (
+        IsPartialDict(
+            {
+                "code": "STP401",
+                "loc": ("spec", "templates", 0, "steps", 0, 0, "inline", "steps"),
+            }
+        )
+        in diagnoses
+    )
+    assert (
+        IsPartialDict(
+            {
+                "code": "M101",
+                "loc": ("spec", "templates", 0, "steps", 0, 1, "inline"),
+            }
+        )
+        in diagnoses
+    )
+
+
+MANIFEST_INLINE_TEMPLATE = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  entrypoint: main
+  templates:
+    - name: main
+      steps:
+        - - name: foo
+            inline:
+              steps:
+                - - name: nested-step
+                    template: not-exist-template
+          - name: bar
+            inline:
+              inputs:
+                parameters:
+                  - name: message
+"""

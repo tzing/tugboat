@@ -208,6 +208,34 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
                             {{ inputs.artifacts.any }}
 
 
+.. STP4xx definition issues
+
+.. rule:: STP401 Invalid step definition
+
+   The step definition is invalid.
+
+   This rule is triggered when the step definition does not conform to the expected structure.
+   For example, it may occur if a step is nested within another step, which will result in error.
+
+   .. code-block:: yaml
+      :emphasize-lines: 12
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: test-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  inline:
+                    steps:
+                      - - name: nested-step
+                          template: print-message
+
+
 .. STP9xx deprecated items
 
 .. rule:: STP901 Deprecated Field: ``onExit``
