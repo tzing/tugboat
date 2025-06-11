@@ -261,7 +261,8 @@ def check_referenced_template(
 ) -> Iterable[Diagnosis]:
     if step.template:
         yield from prepend_loc(
-            ("template",), _check_referenced_template(step.template, template, workflow)
+            ("template",),
+            _check_referenced_template(step.template, template, workflow),
         )
 
     elif step.templateRef:
@@ -282,25 +283,25 @@ def check_referenced_template(
 
 
 def _check_referenced_template(
-    template_name: str, template: Template, workflow: Workflow | WorkflowTemplate
+    target_template_name: str, template: Template, workflow: Workflow | WorkflowTemplate
 ) -> Iterable[Diagnosis]:
-    if template_name == template.name:
+    if target_template_name == template.name:
         yield {
             "type": "warning",
             "code": "STP201",
             "loc": (),
             "summary": "Self-referencing",
             "msg": "Self-referencing may cause infinite recursion.",
-            "input": template_name,
+            "input": target_template_name,
         }
 
-    if template_name not in workflow.template_dict:
+    if target_template_name not in workflow.template_dict:
         templates = set(workflow.template_dict)
-        templates.remove(typing.cast("str", template.name))
+        templates -= {template.name}
         templates = sorted(templates)
 
         suggestion = None
-        if result := extractOne(template_name, templates):
+        if result := extractOne(target_template_name, templates):
             suggestion, _, _ = result
 
         yield {
@@ -308,10 +309,10 @@ def _check_referenced_template(
             "loc": (),
             "summary": "Template not found",
             "msg": f"""
-                Template '{template_name}' does not exist in the workflow.
+                Template '{target_template_name}' does not exist in the workflow.
                 Available templates: {join_with_or(templates)}
                 """,
-            "input": template_name,
+            "input": target_template_name,
             "fix": suggestion,
         }
 
