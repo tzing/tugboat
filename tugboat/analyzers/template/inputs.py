@@ -21,6 +21,7 @@ from tugboat.utils import (
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
+    from typing import Literal
 
     from tugboat.references import Context
     from tugboat.schemas import Template, Workflow, WorkflowTemplate
@@ -50,47 +51,29 @@ def check_input_parameters(
 
     for idx, param in enumerate(template.inputs.parameters or ()):
         yield from prepend_loc(
-            ("inputs", "parameters", idx), _check_input_parameter(param, ctx)
+            ("inputs", "parameters", idx),
+            _check_input_parameter(workflow.kind, param, ctx),
         )
 
 
 def _check_input_parameter(
-    param: RelaxedParameter, context: Context
+    kind: Literal["Workflow", "WorkflowTemplate"],
+    param: RelaxedParameter,
+    context: Context,
 ) -> Iterable[Diagnosis]:
+    # generic checks for all parameters
     yield from require_non_empty(
         model=param,
         loc=(),
         fields=["name"],
     )
-    yield from mutually_exclusive(
+    yield from accept_none(
         model=param,
         loc=(),
-        fields=["value", "valueFrom"],
+        fields=["globalName"],
     )
-    yield from critique_relaxed_parameter(param)
 
-    if param.valueFrom:
-        yield from require_all(
-            model=param.valueFrom,
-            loc=("valueFrom",),
-            fields=[
-                "configMapKeyRef",
-            ],
-        )
-        yield from accept_none(
-            model=param.valueFrom,
-            loc=("valueFrom",),
-            fields=[
-                "event",
-                "expression",
-                "globalName",
-                "jqFilter",
-                "jsonPath",
-                "parameter",
-                "path",
-                "supplied",
-            ],
-        )
+    yield from critique_relaxed_parameter(param)
 
     for diag in check_model_fields_references(param, context.parameters):
         match diag["code"]:
@@ -102,6 +85,58 @@ def _check_input_parameter(
                     f"The parameter reference '{ref}' used in parameter '{param.name}' is invalid."
                 )
         yield diag
+
+    # kind-specific checks
+    if kind == "Workflow":
+        yield from mutually_exclusive(
+            model=param,
+            loc=(),
+            fields=["value", "valueFrom"],
+        )
+
+    elif kind == "WorkflowTemplate":
+        yield from mutually_exclusive(
+            model=param,
+            loc=(),
+            fields=["value", "valueFrom", "default"],
+        )
+
+        if param.value:
+            yield {
+                "type": "failure",
+                "code": "M102",
+                "loc": ("value",),
+                "summary": "Found redundant field 'value'",
+                "msg": (
+                    """
+                    The 'value' field in a WorkflowTemplate input parameter may cause issues.
+                    Use 'default' instead to set a default value for the parameter.
+                    """
+                ),
+                "input": "value",
+                "fix": "default",
+            }
+
+    # field-specific checks
+    if param.valueFrom:
+        yield from require_all(
+            model=param.valueFrom,
+            loc=("valueFrom",),
+            fields=["configMapKeyRef"],
+        )
+        yield from accept_none(
+            model=param.valueFrom,
+            loc=("valueFrom",),
+            fields=[
+                "event",
+                "expression",
+                "jqFilter",
+                "jsonPath",
+                "parameter",
+                "path",
+                "supplied",
+            ],
+        )
 
 
 @hookimpl(specname="analyze_template")
