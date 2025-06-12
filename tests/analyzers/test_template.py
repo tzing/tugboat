@@ -155,7 +155,7 @@ spec:
 """
 
 
-def test_check_input_parameters():
+def test_check_input_parameters_1():
     diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_PARAMETERS)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
     assert (
@@ -247,6 +247,34 @@ spec:
             value:
               foo: bar # M103
 """
+
+
+def test_check_input_parameters_2():
+    diagnoses = tugboat.analyze.analyze_yaml(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: WorkflowTemplate
+        metadata:
+          name: test
+        spec:
+          templates:
+            - name: main
+              inputs:
+                parameters:
+                  - name: message
+                    value: foobar  # M102
+        """
+    )
+    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    assert (
+        IsPartialDict(
+            {
+                "code": "M102",
+                "loc": ("spec", "templates", 0, "inputs", "parameters", 0, "value"),
+            }
+        )
+        in diagnoses
+    )
 
 
 def test_check_input_artifacts():
