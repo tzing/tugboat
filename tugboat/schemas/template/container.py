@@ -26,6 +26,9 @@ if os.getenv("DOCUTILSCONFIG"):
         "ContainerSetRetryStrategy",
         "ContainerSetTemplate",
         "Quantity",
+        "ResourceClaim",
+        "ResourceQuantities",
+        "ResourceRequirements",
     ]
 
 
@@ -43,6 +46,7 @@ class _ContainerEntry(_BaseModel):
     livenessProbe: Probe | None = None
     name: str | None = None
     readinessProbe: Probe | None = None
+    resources: ResourceRequirements | None = None
     restartPolicy: Literal["Always"] | None = None
     startupProbe: Probe | None = None
     stdin: bool | None = None
@@ -56,7 +60,6 @@ class _ContainerEntry(_BaseModel):
     lifecycle: Any | None = None
     ports: Array[Any] | None = None
     resizePolicy: Array[Any] | None = None
-    resources: Any | None = None
     securityContext: Any | None = None
     volumeDevices: Array[Any] | None = None
 
@@ -120,6 +123,41 @@ class ContainerSetTemplate(_BaseModel):
 class ContainerSetRetryStrategy(_BaseModel):
     duration: str | None = Field(None, pattern=r"\d+(ns|us|µs|ms|s|m|h)")
     retries: int | str
+
+
+class ResourceRequirements(_BaseModel):
+    """
+    `ResourceRequirements`_ describes the compute resource requirements.
+
+    .. _ResourceRequirements:
+       https://argo-workflows.readthedocs.io/en/latest/fields/#resourcerequirements
+    """
+
+    claims: Array[ResourceClaim] | None = None
+    limits: ResourceQuantities | None = None
+    requests: ResourceQuantities | None = None
+
+
+class ResourceClaim(_BaseModel):
+    """
+    `ResourceClaim`_ references one entry in PodSpec.ResourceClaims.
+
+    .. _ResourceClaim: https://argo-workflows.readthedocs.io/en/latest/fields/#resourceclaim
+    """
+
+    name: str
+    request: str | None = None
+
+
+class ResourceQuantities(_BaseModel):
+    """
+    `ResourceQuantity`_ is a class to represent resource quantities in Kubernetes.
+
+    .. _Quantity: https://kubernetes.io/docs/concepts/overview/working-with-objects/quantity/
+    """
+
+    cpu: Quantity | None = None
+    memory: Quantity | None = None
 
 
 class Quantity:
