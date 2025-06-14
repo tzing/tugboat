@@ -1,3 +1,4 @@
+import decimal
 import logging
 from collections.abc import Sequence
 from pathlib import Path
@@ -20,6 +21,7 @@ from tugboat.schemas import (
 from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Dict
 from tugboat.schemas.debug import DebugManifest
+from tugboat.schemas.template.container import Quantity
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +82,44 @@ class TestDict:
         ta = TypeAdapter(Dict[str, str])
         with pytest.raises(ValidationError):
             ta.validate_python({"a": 1})
+
+
+class TestQuantity:
+
+    def test_validate(self):
+        ta = TypeAdapter(Quantity)
+
+        assert ta.validate_python("128").value == 128
+        assert ta.validate_python("128Ki").value == 131072
+        assert ta.validate_python("100Mi").value == 104857600
+        assert ta.validate_python("1.5Gi").value == 1610612736
+        assert ta.validate_python("1Ti").value == 1099511627776
+        assert ta.validate_python("1Pi").value == 1125899906842624
+        assert ta.validate_python("1Ei").value == 1152921504606846976
+
+        assert ta.validate_python("1E2").value == 100
+        assert ta.validate_python("1e-1").value == decimal.Decimal("0.1")
+
+        with pytest.raises(ValidationError):
+            ta.validate_python("foo")
+        with pytest.raises(ValidationError):
+            ta.validate_python("-1Gi")
+
+    def test_dunder(self):
+        assert repr(Quantity("100Mi")) == "Quantity(100Mi)"
+        assert str(Quantity("1.5Gi")) == "1.5Gi"
+        assert isinstance(hash(Quantity("100Mi")), int)
+
+    def test_compare(self):
+        assert Quantity("100Mi") < Quantity("1Gi")
+        assert Quantity("1500Mi") > Quantity("1Gi")
+        assert Quantity("1024") == Quantity("1Ki")
+
+        assert Quantity("1E2") >= Quantity("100")
+        assert Quantity("1e-1") <= Quantity("0.1")
+
+        with pytest.raises(TypeError):
+            assert Quantity("1500Mi") != "1500Mi"
 
 
 class TestTemplate:
