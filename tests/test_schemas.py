@@ -89,6 +89,7 @@ class TestQuantity:
     def test_validate(self):
         ta = TypeAdapter(Quantity)
 
+        assert ta.validate_python("100m").value == decimal.Decimal("0.1")
         assert ta.validate_python("128").value == 128
         assert ta.validate_python("128Ki").value == 131072
         assert ta.validate_python("100Mi").value == 104857600
