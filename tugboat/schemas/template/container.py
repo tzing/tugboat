@@ -221,6 +221,8 @@ class Quantity:
     ) -> CoreSchema:
 
         def _validator(v: Any):
+            if isinstance(v, int | float):
+                v = str(v)
             if isinstance(v, str):
                 v = cls(v)
             return v
