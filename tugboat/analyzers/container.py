@@ -110,6 +110,7 @@ def check_shared_fields(
     context: Context,
     node: ContainerNode | ContainerTemplate | ScriptTemplate,
 ) -> Iterable[Diagnosis]:
+    # field `env`
     for i, envvar in enumerate(node.env or ()):
         yield from require_non_empty(
             model=envvar,
@@ -133,6 +134,7 @@ def check_shared_fields(
                 ],
             )
 
+    # field `envFrom`
     for i, env_from in enumerate(node.envFrom or ()):
         yield from require_exactly_one(
             model=env_from,
@@ -140,6 +142,48 @@ def check_shared_fields(
             fields=["configMapRef", "secretRef"],
         )
 
+    # field `resources`
+    if (
+        True
+        and node.resources
+        and node.resources.limits
+        and node.resources.requests
+        and (request_cpu := node.resources.requests.cpu)
+        and (limit_cpu := node.resources.limits.cpu)
+        and request_cpu > limit_cpu
+    ):
+        yield {
+            "code": "TPL304",
+            "loc": ("resources", "requests", "cpu"),
+            "summary": "CPU request exceeds CPU limit",
+            "msg": (
+                f"The CPU request ({request_cpu}) must be greater than or equal to "
+                f"the CPU limit ({limit_cpu}) in template '{template.name}'."
+            ),
+            "input": str(request_cpu),
+        }
+
+    if (
+        True
+        and node.resources
+        and node.resources.limits
+        and node.resources.requests
+        and (request_memory := node.resources.requests.memory)
+        and (limit_memory := node.resources.limits.memory)
+        and request_memory > limit_memory
+    ):
+        yield {
+            "code": "TPL304",
+            "loc": ("resources", "requests", "memory"),
+            "summary": "Memory request exceeds memory limit",
+            "msg": (
+                f"The memory request ({request_memory}) must be greater than or equal to "
+                f"the memory limit ({limit_memory}) in template '{template.name}'."
+            ),
+            "input": str(request_memory),
+        }
+
+    # check model fields references
     for diag in check_model_fields_references(node, context.parameters):
         match diag["code"]:
             case "VAR002":
