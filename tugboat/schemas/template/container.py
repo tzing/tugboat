@@ -151,9 +151,7 @@ class ResourceClaim(_BaseModel):
 
 class ResourceQuantities(_BaseModel):
     """
-    `ResourceQuantity`_ is a class to represent resource quantities in Kubernetes.
-
-    .. _Quantity: https://kubernetes.io/docs/concepts/overview/working-with-objects/quantity/
+    ResourceQuantity is a class to represent resource quantities in Kubernetes.
     """
 
     cpu: Quantity | None = None
