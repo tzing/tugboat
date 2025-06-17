@@ -155,137 +155,74 @@ spec:
 """
 
 
-class TestInputRules:
-
-    def test_check_input_parameters(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_PARAMETERS)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-        assert (
-            IsPartialDict(
-                {
-                    "code": "TPL102",
-                    "loc": ("spec", "templates", 0, "inputs", "parameters", 0, "name"),
-                }
-            )
-            in diagnoses
+def test_check_input_parameters_1():
+    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_PARAMETERS)
+    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    assert (
+        IsPartialDict(
+            {
+                "code": "TPL102",
+                "loc": ("spec", "templates", 0, "inputs", "parameters", 0, "name"),
+            }
         )
-        assert (
-            IsPartialDict(
-                {
-                    "code": "TPL102",
-                    "loc": ("spec", "templates", 0, "inputs", "parameters", 1, "name"),
-                }
-            )
-            in diagnoses
+        in diagnoses
+    )
+    assert (
+        IsPartialDict(
+            {
+                "code": "TPL102",
+                "loc": ("spec", "templates", 0, "inputs", "parameters", 1, "name"),
+            }
         )
-        assert (
-            IsPartialDict(
-                {
-                    "code": "M102",
-                    "loc": (
-                        "spec",
-                        "templates",
-                        0,
-                        "inputs",
-                        "parameters",
-                        0,
-                        "valueFrom",
-                        "path",
-                    ),
-                }
-            )
-            in diagnoses
+        in diagnoses
+    )
+    assert (
+        IsPartialDict(
+            {
+                "code": "M102",
+                "loc": (
+                    "spec",
+                    "templates",
+                    0,
+                    "inputs",
+                    "parameters",
+                    0,
+                    "valueFrom",
+                    "path",
+                ),
+            }
         )
-        assert (
-            IsPartialDict(
-                {
-                    "code": "VAR001",
-                    "loc": ("spec", "templates", 0, "inputs", "parameters", 1, "value"),
-                }
-            )
-            in diagnoses
+        in diagnoses
+    )
+    assert (
+        IsPartialDict(
+            {
+                "code": "VAR001",
+                "loc": ("spec", "templates", 0, "inputs", "parameters", 1, "value"),
+            }
         )
-        assert (
-            IsPartialDict(
-                {
-                    "code": "TPL201",
-                    "loc": ("spec", "templates", 0, "inputs", "parameters", 2, "value"),
-                    "msg": "The parameter reference 'workflow.invalid' used in parameter 'message-3' is invalid.",
-                    "input": "{{ workflow.invalid}}",
-                }
-            )
-            in diagnoses
+        in diagnoses
+    )
+    assert (
+        IsPartialDict(
+            {
+                "code": "TPL201",
+                "loc": ("spec", "templates", 0, "inputs", "parameters", 2, "value"),
+                "msg": "The parameter reference 'workflow.invalid' used in parameter 'message-3' is invalid.",
+                "input": "{{ workflow.invalid}}",
+            }
         )
-        assert (
-            IsPartialDict(
-                {
-                    "code": "M103",
-                    "loc": ("spec", "templates", 0, "inputs", "parameters", 3, "value"),
-                }
-            )
-            in diagnoses
+        in diagnoses
+    )
+    assert (
+        IsPartialDict(
+            {
+                "code": "M103",
+                "loc": ("spec", "templates", 0, "inputs", "parameters", 3, "value"),
+            }
         )
-
-    def test_check_input_artifacts(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_ARTIFACTS)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-        assert (
-            IsPartialDict(
-                {
-                    "code": "TPL103",
-                    "loc": ("spec", "templates", 0, "inputs", "artifacts", 0, "name"),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialDict(
-                {
-                    "code": "TPL103",
-                    "loc": ("spec", "templates", 0, "inputs", "artifacts", 1, "name"),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialDict(
-                {
-                    "code": "TPL202",
-                    "loc": (
-                        "spec",
-                        "templates",
-                        0,
-                        "inputs",
-                        "artifacts",
-                        0,
-                        "raw",
-                        "data",
-                    ),
-                    "msg": ContainsSubStrings(
-                        "The parameter reference 'workflow.namee' used in artifact 'data' is invalid.",
-                    ),
-                    "fix": "{{ workflow.name }}",
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialDict(
-                {
-                    "code": "M102",
-                    "loc": (
-                        "spec",
-                        "templates",
-                        0,
-                        "inputs",
-                        "artifacts",
-                        1,
-                        "value",
-                    ),
-                }
-            )
-            in diagnoses
-        )
+        in diagnoses
+    )
 
 
 MANIFEST_INVALID_INPUT_PARAMETERS = """
@@ -310,6 +247,97 @@ spec:
             value:
               foo: bar # M103
 """
+
+
+def test_check_input_parameters_2():
+    diagnoses = tugboat.analyze.analyze_yaml(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: WorkflowTemplate
+        metadata:
+          name: test
+        spec:
+          templates:
+            - name: main
+              inputs:
+                parameters:
+                  - name: message
+                    value: foobar  # M102
+        """
+    )
+    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    assert (
+        IsPartialDict(
+            {
+                "code": "M102",
+                "loc": ("spec", "templates", 0, "inputs", "parameters", 0, "value"),
+            }
+        )
+        in diagnoses
+    )
+
+
+def test_check_input_artifacts():
+    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_ARTIFACTS)
+    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    assert (
+        IsPartialDict(
+            {
+                "code": "TPL103",
+                "loc": ("spec", "templates", 0, "inputs", "artifacts", 0, "name"),
+            }
+        )
+        in diagnoses
+    )
+    assert (
+        IsPartialDict(
+            {
+                "code": "TPL103",
+                "loc": ("spec", "templates", 0, "inputs", "artifacts", 1, "name"),
+            }
+        )
+        in diagnoses
+    )
+    assert (
+        IsPartialDict(
+            {
+                "code": "TPL202",
+                "loc": (
+                    "spec",
+                    "templates",
+                    0,
+                    "inputs",
+                    "artifacts",
+                    0,
+                    "raw",
+                    "data",
+                ),
+                "msg": ContainsSubStrings(
+                    "The parameter reference 'workflow.namee' used in artifact 'data' is invalid.",
+                ),
+                "fix": "{{ workflow.name }}",
+            }
+        )
+        in diagnoses
+    )
+    assert (
+        IsPartialDict(
+            {
+                "code": "M102",
+                "loc": (
+                    "spec",
+                    "templates",
+                    0,
+                    "inputs",
+                    "artifacts",
+                    1,
+                    "value",
+                ),
+            }
+        )
+        in diagnoses
+    )
+
 
 MANIFEST_INVALID_INPUT_ARTIFACTS = """
 apiVersion: argoproj.io/v1alpha1
