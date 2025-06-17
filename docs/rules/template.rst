@@ -311,3 +311,30 @@ Rules
                       value: ""
                   counter:
                     value: "1"
+
+.. rule:: TPL304 Request resource exceeds the limit
+
+    This rule is triggered when a template's requests for resources (e.g., memory or CPU) are greater than the corresponding resource limits.
+
+    The rule checks the resource ``requests`` in the template and compares them against the value from ``limits`` defined in the same template.
+    If the requested resources exceed the defined limits, this rule is triggered.
+
+    .. code-block:: yaml
+        :emphasize-lines: 12-13
+
+        apiVersion: argoproj.io/v1alpha1
+        kind: WorkflowTemplate
+        metadata:
+          name: demo
+        spec:
+          templates:
+            - name: main
+              container:
+                image: alpine:latest
+                resources:
+                  requests:
+                    memory: 100Gi
+                    cpu: "1.5"
+                  limits:
+                    memory: 10Gi
+                    cpu: 1000m
