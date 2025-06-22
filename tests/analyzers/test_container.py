@@ -22,6 +22,42 @@ def test_analyze_template():
         )
         in diagnoses
     )
+    assert (
+        IsPartialDict(
+            {
+                "code": "TPL304",
+                "loc": (
+                    "spec",
+                    "templates",
+                    0,
+                    "script",
+                    "resources",
+                    "requests",
+                    "cpu",
+                ),
+                "input": "1.5",
+            }
+        )
+        in diagnoses
+    )
+    assert (
+        IsPartialDict(
+            {
+                "code": "TPL304",
+                "loc": (
+                    "spec",
+                    "templates",
+                    0,
+                    "script",
+                    "resources",
+                    "requests",
+                    "memory",
+                ),
+                "input": "100Gi",
+            }
+        )
+        in diagnoses
+    )
 
 
 MANIFEST_INVALID_REFERENCE = """
@@ -37,6 +73,13 @@ spec:
         image: busybox
         source: |
           echo "{{ inputs.parameters.foo }}"
+        resources:
+          requests:
+            memory: 100Gi
+            cpu: "1.5"
+          limits:
+            memory: 10Gi
+            cpu: 1000m
 """
 
 
