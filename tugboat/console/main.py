@@ -13,6 +13,7 @@ import colorlog
 from pydantic import ValidationError
 
 from tugboat.analyze import analyze_yaml
+from tugboat.console.anchor import print_anchor
 from tugboat.console.glob import gather_paths
 from tugboat.console.outputs import get_output_builder
 from tugboat.console.utils import CachedStdin
@@ -84,6 +85,11 @@ logger = logging.getLogger(__name__)
         help="Print more information.",
     ),
 )
+@cloup.option(
+    "--anchor",
+    is_flag=True,
+    help="Drop an anchor.",
+)
 @cloup.version_option(__version__)
 def main(
     manifest: Sequence[str],
@@ -93,6 +99,7 @@ def main(
     output_format: str | None,
     output_file: Path | None,
     verbose: int,
+    anchor: bool,
 ):
     """
     Linter to streamline your Argo Workflows with precision and confidence.
@@ -121,6 +128,10 @@ def main(
     # setup logging
     setup_logging(verbose)
     logger.debug("Tugboat sets sail!")
+
+    # easter egg: drop an anchor
+    if anchor:
+        print_anchor()
 
     # update and validate settings
     update_settings(

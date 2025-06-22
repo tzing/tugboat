@@ -10,15 +10,6 @@ import pytest
 from tugboat.console.main import DiagnosesCounter, main, setup_logging
 
 
-@pytest.fixture
-def _reset_logging():
-    yield
-    for logger in (logging.root, logging.getLogger("tugboat")):
-        logger.setLevel(logging.NOTSET)
-        logger.propagate = True
-        logger.handlers.clear()
-
-
 class TestMain:
 
     @pytest.mark.usefixtures("_reset_logging")
