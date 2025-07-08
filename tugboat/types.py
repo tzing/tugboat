@@ -202,3 +202,12 @@ class GlobPath(PathLike):
             include_hidden=include_hidden,
         ):
             yield Path(item)
+
+
+class Field(str):
+    """
+    Representing a field in a YAML document.
+
+    This class is tended to be used as :py:attr:`Diagnosis.input` to indicate
+    that the diagnosis is related to a specific field in the YAML document.
+    """
