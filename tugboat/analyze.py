@@ -1,25 +1,20 @@
 from __future__ import annotations
 
-import itertools
 import logging
 import re
-import textwrap
 import typing
 
 import ruamel.yaml
-from pydantic import ValidationError
 from ruamel.yaml.comments import CommentedBase, CommentedMap
 from ruamel.yaml.error import MarkedYAMLError
 from ruamel.yaml.tokens import CommentToken
 
-from tugboat.core import get_plugin_manager
-from tugboat.schemas import Manifest
-from tugboat.utils import bulk_translate_pydantic_errors
+from tugboat.engine.mainfest import analyze_manifest
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
 
-    from tugboat.types import AugmentedDiagnosis, Diagnosis
+    from tugboat.types import AugmentedDiagnosis
 
     type CommentTokenSeq = Sequence[CommentToken | str]
 
@@ -42,7 +37,8 @@ def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
     """
     Analyze a YAML manifest and report diagnoses.
 
-    This function internally uses :py:func:`analyze_raw` to analyze the manifest.
+    This function internally uses :py:func:`~tugboat.engine.mainfest.analyze_manifest`
+    to analyze the manifest.
     The manifest is first parsed into a Python dictionary before being analyzed.
 
     Parameters
@@ -125,7 +121,7 @@ def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
                 }
             ]
 
-        for diag in analyze_raw(document):
+        for diag in analyze_manifest(document):
             code = diag["code"]
             loc = diag.get("loc", ())
             line, column = _get_line_column(document, loc)
@@ -254,135 +250,9 @@ def _get_summary(msg: str) -> str:
     return (msg or "").strip().splitlines()[0].split(". ")[0]
 
 
-def analyze_raw(manifest: dict) -> list[Diagnosis]:
-    """
-    Analyze a raw manifest and report diagnoses.
-
-    This function underlyingly uses the plugin manager to run the analyzers
-    registered with the system. The diagnoses are collected and returned
-    as a list of Diagnosis objects.
-
-    Parameters
-    ----------
-    manifest : dict
-        The manifest to analyze.
-
-    Returns
-    -------
-    list[Diagnosis]
-        The diagnoses reported by the analyzers.
-    """
-    pm = get_plugin_manager()
-
-    # early exit if the manifest is not a Kubernetes manifest
-    if not is_kubernetes_manifest(manifest):
-        return [
-            {
-                "type": "warning",
-                "code": "M001",
-                "loc": (),
-                "summary": "Not a Kubernetes manifest",
-                "msg": "The input does not look like a Kubernetes manifest",
-            }
-        ]
-
-    # get the manifest name
-    kind = _get_manifest_kind(manifest)
-    name = _get_manifest_name(manifest)
-    logger.debug("Starting analysis of manifest '%s' (Kind %s)", name, kind)
-
-    # parse the manifest
-    try:
-        manifest_obj = pm.hook.parse_manifest(manifest=manifest)
-    except ValidationError as e:
-        return bulk_translate_pydantic_errors(e.errors())
-    except Exception as e:
-        logger.exception("Error during execution of parse_manifest hook")
-        return [
-            {
-                "type": "error",
-                "code": "F001",
-                "loc": (),
-                "summary": "Internal error while analyzing manifest",
-                "msg": f"An error occurred while parsing the manifest: {e}",
-            }
-        ]
-
-    logger.debug("Parsed manifest '%s' as %s object", name, type(manifest_obj))
-
-    if not manifest_obj:
-        logger.debug("Kind %s is not supported. Skipping manigest %s.", kind, name)
-        return []
-
-    if not isinstance(manifest_obj, Manifest):
-        return [
-            {
-                "type": "error",
-                "code": "F001",
-                "loc": (),
-                "summary": "Internal error while analyzing manifest",
-                "msg": f"Expected a Manifest object, got {type(manifest_obj)}",
-            }
-        ]
-
-    # examine the manifest
-    analyzers_diagnoses: Iterable[Iterator[Diagnosis]]
-    analyzers_diagnoses = pm.hook.analyze(manifest=manifest_obj)
-
-    try:  # force evaluation
-        diagnoses = list(itertools.chain.from_iterable(analyzers_diagnoses))
-    except Exception as e:
-        logger.exception("Error during execution of analyze hook")
-        return [
-            {
-                "type": "error",
-                "code": "F001",
-                "loc": (),
-                "summary": "Internal error while analyzing manifest",
-                "msg": f"An error occurred while analyzing the manifest: {e}",
-            }
-        ]
-
-    logger.debug("Got %d diagnoses for manifest '%s'", len(diagnoses), name)
-
-    # sort the diagnoses
-    def _sort_key(diagnosis: Diagnosis) -> tuple:
-        return (
-            # 1. position of the occurrence
-            tuple(diagnosis.get("loc", [])),
-            # 2. diagnosis code
-            diagnosis.get("code") or "",
-        )
-
-    diagnoses = map(_sanitize_diagnosis, diagnoses)
-    diagnoses = sorted(diagnoses, key=_sort_key)
-
-    return diagnoses
-
-
 def _get_manifest_name(manifest: dict) -> str | None:
     metadata = manifest.get("metadata") or {}
     if name := metadata.get("name"):
         return name
     if name := metadata.get("generateName"):
         return name
-
-
-def _get_manifest_kind(manifest: dict) -> str | None:
-    if api_version := manifest.get("apiVersion"):
-        group, *_ = api_version.split("/", 1)
-    else:
-        group = "unknown"
-    kind = manifest.get("kind") or "Unknown"
-    return f"{group}/{kind}"
-
-
-def _sanitize_diagnosis(diagnosis: Diagnosis) -> Diagnosis:
-    diagnosis.setdefault("code", "UNKNOWN")
-    diagnosis["msg"] = textwrap.dedent(diagnosis["msg"]).strip()
-    return diagnosis
-
-
-def is_kubernetes_manifest(d: dict) -> bool:
-    """Returns True if the dictionary *looks like* a Kubernetes manifest."""
-    return "apiVersion" in d and "kind" in d

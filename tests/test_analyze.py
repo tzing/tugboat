@@ -5,18 +5,14 @@ from pathlib import Path
 
 import pytest
 import ruamel.yaml
-from pydantic import BaseModel
 
 from tests.dirty_equals import ContainsSubStrings
 from tugboat.analyze import (
     _find_related_comments,
     _get_line_column,
     _should_ignore_code,
-    analyze_raw,
     analyze_yaml,
 )
-from tugboat.core import hookimpl
-from tugboat.schemas import Manifest
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +20,7 @@ logger = logging.getLogger(__name__)
 class TestAnalyzeYaml:
     def test_standard(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setattr(
-            "tugboat.analyze.analyze_raw",
+            "tugboat.analyze.analyze_manifest",
             lambda _: [
                 {
                     "code": "T01",
@@ -63,7 +59,7 @@ class TestAnalyzeYaml:
         self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
     ):
         monkeypatch.setattr(
-            "tugboat.analyze.analyze_raw",
+            "tugboat.analyze.analyze_manifest",
             lambda _: [
                 {
                     "code": "T01",
@@ -253,199 +249,6 @@ class TestShouldIgnoreCode:
         assert (
             _should_ignore_code("T003", ["#noqa: T001; T003 is not for here"]) is False
         )
-
-
-class TestAnalyzeRaw:
-
-    @hookimpl(tryfirst=True)
-    def parse_manifest(self, manifest: dict):
-        if manifest.get("kind") == "Unrecognized":
-            return
-        if manifest.get("kind") == "NotManifest":
-            return "Not a manifest object"
-        if manifest.get("kind") == "ParseError":
-            raise RuntimeError("Test exception")
-
-        class Spec(BaseModel):
-            foo: str
-
-        class MockManifest(Manifest[Spec]): ...
-
-        return MockManifest.model_validate(manifest)
-
-    @hookimpl(tryfirst=True)
-    def analyze(self, manifest):
-        if manifest.kind == "AnalysisError":
-            raise RuntimeError("Test exception")
-
-        yield {"code": "T01", "loc": (), "msg": "Test 1"}
-        yield {"code": "T04", "loc": ("spec", "foo"), "msg": "Test 2"}
-        yield {"code": "T02", "loc": ("spec", "foo"), "msg": "Test 3"}
-        yield {
-            "code": "T03",
-            "loc": ("spec"),
-            "msg": """
-                Test 4. This is a long message that should be wrapped across
-                multiple lines to test the formatting.
-                """,
-        }
-
-    def test_standard(self, plugin_manager):
-        plugin_manager.register(self)
-
-        diagnoses = analyze_raw(
-            {
-                "apiVersion": "v1",
-                "kind": "Test",
-                "metadata": {"name": "test"},
-                "spec": {"foo": "bar"},
-            }
-        )
-        assert diagnoses == [
-            {
-                "code": "T01",
-                "loc": (),
-                "msg": "Test 1",
-            },
-            {
-                "code": "T03",
-                "loc": ("spec"),
-                "msg": "Test 4. This is a long message that should be wrapped across\n"
-                "multiple lines to test the formatting.",
-            },
-            {
-                "code": "T02",
-                "loc": ("spec", "foo"),
-                "msg": "Test 3",
-            },
-            {
-                "code": "T04",
-                "loc": ("spec", "foo"),
-                "msg": "Test 2",
-            },
-        ]
-
-    def test_not_kubernetes_manifest(self, plugin_manager):
-        plugin_manager.register(self)
-
-        diagnoses = analyze_raw({"foo": "bar"})
-        assert diagnoses == [
-            {
-                "type": "warning",
-                "code": "M001",
-                "loc": (),
-                "summary": "Not a Kubernetes manifest",
-                "msg": "The input does not look like a Kubernetes manifest",
-            }
-        ]
-
-    def test_parse_manifest_validation_error(self, plugin_manager):
-        plugin_manager.register(self)
-
-        diagnoses = analyze_raw(
-            {
-                "apiVersion": "v1",
-                "kind": "Test",
-                "metadata": {"name": "test"},
-            }
-        )
-        assert diagnoses == [
-            {
-                "type": "failure",
-                "code": "M101",
-                "loc": ("spec",),
-                "summary": "Missing required field",
-                "msg": "Field 'spec' is required but missing",
-            }
-        ]
-
-    def test_parse_manifest_exception(self, plugin_manager):
-        plugin_manager.register(self)
-
-        diagnoses = analyze_raw(
-            {
-                "apiVersion": "v1",
-                "kind": "ParseError",
-            }
-        )
-        assert diagnoses == [
-            {
-                "type": "error",
-                "code": "F001",
-                "loc": (),
-                "summary": "Internal error while analyzing manifest",
-                "msg": "An error occurred while parsing the manifest: Test exception",
-            }
-        ]
-
-    def test_unrecognized_kind_1(
-        self, caplog: pytest.LogCaptureFixture, plugin_manager
-    ):
-        plugin_manager.register(self)
-
-        with caplog.at_level(logging.DEBUG):
-            diagnoses = analyze_raw(
-                {
-                    "apiVersion": "v1",
-                    "kind": "Unrecognized",
-                }
-            )
-
-        assert diagnoses == []
-        assert "Kind v1/Unrecognized is not supported" in caplog.text
-
-    def test_unrecognized_kind_2(self, caplog: pytest.LogCaptureFixture):
-        with caplog.at_level(logging.DEBUG):
-            diagnoses = analyze_raw(
-                {
-                    "apiVersion": "",
-                    "kind": "",
-                    "foo": "bar",
-                }
-            )
-
-        assert diagnoses == []
-        assert "Kind unknown/Unknown is not supported" in caplog.text
-
-    def test_not_manifest_obj(self, plugin_manager):
-        plugin_manager.register(self)
-
-        diagnoses = analyze_raw(
-            {
-                "apiVersion": "v1",
-                "kind": "NotManifest",
-            }
-        )
-        assert diagnoses == [
-            {
-                "type": "error",
-                "code": "F001",
-                "loc": (),
-                "summary": "Internal error while analyzing manifest",
-                "msg": "Expected a Manifest object, got <class 'str'>",
-            }
-        ]
-
-    def test_analyze_error(self, plugin_manager):
-        plugin_manager.register(self)
-
-        diagnoses = analyze_raw(
-            {
-                "apiVersion": "v1",
-                "kind": "AnalysisError",
-                "metadata": {"generateName": "test-"},
-                "spec": {"foo": "bar"},
-            }
-        )
-        assert diagnoses == [
-            {
-                "type": "error",
-                "code": "F001",
-                "loc": (),
-                "summary": "Internal error while analyzing manifest",
-                "msg": "An error occurred while analyzing the manifest: Test exception",
-            }
-        ]
 
 
 class TestArgoExamples:
