@@ -14,7 +14,7 @@ from tugboat.engine.mainfest import analyze_manifest
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
 
-    from tugboat.types import AugmentedDiagnosis
+    from tugboat.engine import AugmentedDiagnosis
 
     type CommentTokenSeq = Sequence[CommentToken | str]
 
