@@ -17,10 +17,11 @@ the user.
 
 __all__ = [
     "Diagnosis",
+    "Field",
     "__version__",
     "hookimpl",
 ]
 
 from tugboat.core import hookimpl
-from tugboat.types import Diagnosis
+from tugboat.types import Diagnosis, Field
 from tugboat.version import __version__
