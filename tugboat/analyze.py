@@ -9,6 +9,7 @@ from ruamel.yaml.comments import CommentedBase, CommentedMap
 from ruamel.yaml.error import MarkedYAMLError
 from ruamel.yaml.tokens import CommentToken
 
+from tugboat.engine.helpers import get_line_column
 from tugboat.engine.mainfest import analyze_manifest
 
 if typing.TYPE_CHECKING:
@@ -124,7 +125,7 @@ def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
         for diag in analyze_manifest(document):
             code = diag["code"]
             loc = diag.get("loc", ())
-            line, column = _get_line_column(document, loc)
+            line, column = get_line_column(document, loc, None)
             manifest_name = _get_manifest_name(document)
             summary = diag.get("summary") or _get_summary(diag.get("msg"))
 
@@ -158,26 +159,6 @@ def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
             )
 
     return diagnoses
-
-
-def _get_line_column(node: CommentedBase, loc: Sequence[int | str]) -> tuple[int, int]:
-    last_known_pos = node.lc.line, node.lc.col
-    for part in loc:
-        try:
-            if pos := node.lc.key(part):
-                last_known_pos = pos
-        except KeyError:
-            break
-
-        try:
-            node = node[part]  # type: ignore[reportIndexIssue]
-        except (KeyError, IndexError):
-            break
-
-        if not isinstance(node, CommentedBase):
-            break
-
-    return last_known_pos
 
 
 def _find_related_comments(

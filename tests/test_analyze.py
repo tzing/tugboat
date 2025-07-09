@@ -7,12 +7,7 @@ import pytest
 import ruamel.yaml
 
 from tests.dirty_equals import ContainsSubStrings
-from tugboat.analyze import (
-    _find_related_comments,
-    _get_line_column,
-    _should_ignore_code,
-    analyze_yaml,
-)
+from tugboat.analyze import _find_related_comments, _should_ignore_code, analyze_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +38,7 @@ class TestAnalyzeYaml:
         assert diagnoses == [
             {
                 "line": 7,
-                "column": 15,
+                "column": 20,
                 "type": "failure",
                 "code": "T01",
                 "manifest": "test-",
@@ -83,7 +78,7 @@ class TestAnalyzeYaml:
 
         assert diagnoses == []
         assert (
-            "Suppressed diagnosis T01 (Test diagnosis) in manifest test- at line 7, column 19"
+            "Suppressed diagnosis T01 (Test diagnosis) in manifest test- at line 7, column 24"
             in caplog.text
         )
 
@@ -150,40 +145,6 @@ class TestAnalyzeYaml:
                 "fix": None,
             }
         ]
-
-
-class TestGetLineColumn:
-    @pytest.fixture
-    def document(self):
-        yaml = ruamel.yaml.YAML()
-        return yaml.load(
-            textwrap.dedent(
-                """
-                spec:
-                  name: sample
-
-                  steps:
-                    - - name: baz
-                        data: 123
-                    - name: qux
-                      var: {}
-                """
-            )
-        )
-
-    @pytest.mark.parametrize(
-        ("loc", "expected"),
-        [
-            (("spec",), (1, 0)),
-            (("spec", "name"), (2, 2)),
-            (("spec", "steps"), (4, 2)),
-            (("spec", "steps", 0, 0, "data"), (6, 8)),
-            (("spec", "foo"), (1, 0)),
-            (("spec", "steps", 1, "var", "foo"), (8, 6)),
-        ],
-    )
-    def test(self, document, loc, expected):
-        assert _get_line_column(document, loc) == expected
 
 
 class TestGetRelatedComments:
