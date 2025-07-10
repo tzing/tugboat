@@ -188,7 +188,7 @@ def _calculate_substring_position(
 
 def is_alias_node(parent_node: CommentedMap | None, key: int | str | None) -> bool:
     """
-    Check if the node is an alias (*anchor).
+    Check if a child node is an alias (*anchor).
 
     Parameters
     ----------
@@ -212,7 +212,16 @@ def is_alias_node(parent_node: CommentedMap | None, key: int | str | None) -> bo
 
     if lc_data:
         key_line, key_col, value_line, value_col = lc_data
-        return key_line != value_line
+
+        if key_line != value_line:
+            # heuristic: check if the value appears to be a multi-line string
+            # if the value contains patterns that suggest multi-line content
+            # and the value_line is adjacent to key_line, it's likely multi-line content, not alias
+            value = parent_node[key]
+            if isinstance(value, str) and value_line == key_line + 1:
+                return False
+
+            return True
 
     return False
 
