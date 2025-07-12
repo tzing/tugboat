@@ -301,7 +301,7 @@ def get_suppression_codes(doc: CommentedMap, loc: Sequence[int | str]) -> Iterat
         # navigate to the next level
         try:
             current_node = current_node[part]  # type: ignore[reportIndexIssue]
-        except (KeyError, IndexError):
+        except (KeyError, IndexError, TypeError):
             break
 
         # check if the node itself has a noqa comment
@@ -339,9 +339,12 @@ def _extract_noqa_codes_from_node(
         and node.ca.items
         and (key_comment_info := node.ca.items.get(key))
     ):
-        _, _, post_value_comment, pre_value_comment = key_comment_info
+        _, _, post_value_comment, pre_value_comments = key_comment_info
+
         if post_value_comment:
             yield from parse_noqa_codes(post_value_comment.value)
+        for comment in pre_value_comments or ():
+            yield from parse_noqa_codes(comment.lstrip())
 
     # then, try to find an end-of-line comment on the node itself
     if node.ca.comment:
