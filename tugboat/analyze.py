@@ -7,17 +7,12 @@ import typing
 import ruamel.yaml
 from ruamel.yaml.comments import CommentedBase, CommentedMap
 from ruamel.yaml.error import MarkedYAMLError
-from ruamel.yaml.tokens import CommentToken
 
 from tugboat.engine.helpers import get_line_column, get_suppression_codes
 from tugboat.engine.mainfest import analyze_manifest
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from tugboat.engine import AugmentedDiagnosis
-
-    type CommentTokenSeq = Sequence[CommentToken | str]
 
 logger = logging.getLogger(__name__)
 
