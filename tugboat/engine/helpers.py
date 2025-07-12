@@ -299,11 +299,10 @@ def get_suppression_codes(doc: CommentedMap, loc: Sequence[int | str]) -> Iterat
         if isinstance(current_node, CommentedMap):
             yield from _extract_noqa_codes_from_node(current_node, part)
 
+        # navigate to the next level
         try:
-            # navigate to the next level
             current_node = current_node[part]  # type: ignore[reportIndexIssue]
-        except (KeyError, IndexError, TypeError):
-            # if we can't navigate further, stop checking
+        except (KeyError, IndexError):
             break
 
         # check if the node itself has a noqa comment
@@ -341,23 +340,15 @@ def _extract_noqa_codes_from_node(
         and node.ca.items
         and (key_comment_info := node.ca.items.get(key))
     ):
-        # ruamel.yaml stores key comment info as a tuple: (before, after, end_of_line)
-        # we want the end_of_line comment which is at index 2
-        EOL_COMMENT_INDEX = 2
-        eol_comment = key_comment_info[EOL_COMMENT_INDEX]
-
-        if eol_comment and isinstance(eol_comment, CommentToken):
-            yield from parse_noqa_codes(eol_comment.value)
+        _, _, post_value_comment, pre_value_comment = key_comment_info
+        if post_value_comment:
+            yield from parse_noqa_codes(post_value_comment.value)
 
     # then, try to find an end-of-line comment on the node itself
     if node.ca.comment:
-        # ruamel.yaml stores comment info as a tuple: (before, after)
-        # we want the 'after' comments (end-of-line) which is at index 1
-        EOL_COMMENT_INDEX = 1
-        eol_comment = node.ca.comment[EOL_COMMENT_INDEX]
-
-        if eol_comment and isinstance(eol_comment, CommentToken):
-            yield from parse_noqa_codes(eol_comment.value)
+        post_comment, pre_comments = node.ca.comment
+        if post_comment:
+            yield from parse_noqa_codes(post_comment.value)
 
 
 def parse_noqa_codes(text: str) -> Iterator[str]:

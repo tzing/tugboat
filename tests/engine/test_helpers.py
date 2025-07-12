@@ -234,7 +234,7 @@ class TestGetSuppressionCodes:
             spec:
               name: sample # noqa: T01
               task: some task # noqa: T03
-              items:
+              items: # should not parsed noqa: T999
                 - foo
                 - name: bar # noqa: T04
                   type: string
@@ -259,6 +259,17 @@ class TestGetSuppressionCodes:
             """
         )
         assert "ANYTHING" in get_suppression_codes(document, ("spec", "name"))
+
+    def test_fallback(self):
+        yaml = ruamel.yaml.YAML()
+        document = yaml.load(
+            """
+            spec: # noqa: T01
+              name: sample
+            """
+        )
+        codes = get_suppression_codes(document, ("spec", "no-this-field"))
+        assert set(codes) == {"T01"}
 
 
 class TestParseNoqaCodes:
