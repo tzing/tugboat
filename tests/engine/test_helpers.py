@@ -12,7 +12,7 @@ from tugboat.engine.helpers import (
 from tugboat.types import Field
 
 
-@pytest.fixture()
+@pytest.fixture
 def parser() -> ruamel.yaml.YAML:
     yaml = ruamel.yaml.YAML()
     yaml.preserve_quotes = True
@@ -21,7 +21,7 @@ def parser() -> ruamel.yaml.YAML:
 
 class TestGetLineColumn:
 
-    @pytest.fixture()
+    @pytest.fixture
     def document(self, parser: ruamel.yaml.YAML) -> CommentedBase:
         return parser.load(
             textwrap.dedent(
