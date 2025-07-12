@@ -12,15 +12,16 @@ from tugboat.engine.helpers import (
 from tugboat.types import Field
 
 
+@pytest.fixture
+def parser() -> ruamel.yaml.YAML:
+    yaml = ruamel.yaml.YAML()
+    yaml.preserve_quotes = True
+    return yaml
+
+
 class TestGetLineColumn:
 
-    @pytest.fixture(scope="class")
-    def parser(self) -> ruamel.yaml.YAML:
-        yaml = ruamel.yaml.YAML()
-        yaml.preserve_quotes = True
-        return yaml
-
-    @pytest.fixture(scope="class")
+    @pytest.fixture
     def document(self, parser: ruamel.yaml.YAML) -> CommentedBase:
         return parser.load(
             textwrap.dedent(
@@ -227,9 +228,8 @@ class TestGetLineColumn:
 
 class TestGetSuppressionCodes:
 
-    def test_1(self):
-        yaml = ruamel.yaml.YAML()
-        document = yaml.load(
+    def test_1(self, parser: ruamel.yaml.YAML):
+        doc = parser.load(
             """
             spec:
               name: sample # noqa: T01
@@ -241,18 +241,15 @@ class TestGetSuppressionCodes:
             """
         )
 
-        assert set(get_suppression_codes(document, ("spec", "name"))) == {"T01"}
-        assert set(get_suppression_codes(document, ("spec", "task"))) == {"T03"}
-        assert set(get_suppression_codes(document, ("spec", "items", 1, "name"))) == {
-            "T04"
-        }
+        assert set(get_suppression_codes(doc, ("spec", "name"))) == {"T01"}
+        assert set(get_suppression_codes(doc, ("spec", "task"))) == {"T03"}
+        assert set(get_suppression_codes(doc, ("spec", "items", 1, "name"))) == {"T04"}
 
-        assert not any(get_suppression_codes(document, ("spec",)))
-        assert not any(get_suppression_codes(document, ("spec", "items", 0)))
+        assert not any(get_suppression_codes(doc, ("spec",)))
+        assert not any(get_suppression_codes(doc, ("spec", "items", 0)))
 
-    def test_2(self):
-        yaml = ruamel.yaml.YAML()
-        document = yaml.load(
+    def test_2(self, parser: ruamel.yaml.YAML):
+        document = parser.load(
             """
             spec: # noqa
               name: sample
@@ -260,9 +257,24 @@ class TestGetSuppressionCodes:
         )
         assert "ANYTHING" in get_suppression_codes(document, ("spec", "name"))
 
-    def test_fallback(self):
-        yaml = ruamel.yaml.YAML()
-        document = yaml.load(
+    def test_3(self, parser: ruamel.yaml.YAML):
+        document = parser.load(
+            """
+            spec:
+              name:
+                # noqa: T01
+                test case
+
+              desc: | # noqa: T02
+                Lorem ipsum dolor sit amet,
+                consectetur adipiscing elit.
+            """
+        )
+        assert set(get_suppression_codes(document, ("spec", "name"))) == {"T01"}
+        assert set(get_suppression_codes(document, ("spec", "desc"))) == {"T02"}
+
+    def test_fallback(self, parser: ruamel.yaml.YAML):
+        document = parser.load(
             """
             spec: # noqa: T01
               name: sample
