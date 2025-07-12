@@ -268,7 +268,6 @@ class TestGetSuppressionCodes:
               desc: | # noqa: T02
                 Lorem ipsum dolor sit amet,
                 consectetur adipiscing elit.
-
             """
         )
         assert set(get_suppression_codes(document, ("spec", "name"))) == {"T01"}
