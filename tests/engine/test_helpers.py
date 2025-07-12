@@ -146,6 +146,41 @@ class TestGetLineColumn:
         assert get_line_column(document, loc, Field("qux")) == (8, 0)
         assert get_line_column(document, loc, "ipsum") == (8, 5)
 
+    def test_literal(self, parser: ruamel.yaml.YAML):
+        document = parser.load(
+            textwrap.dedent(
+                """
+                foo: &foo |-
+                  Lorem ipsum dolor sit amet,
+                  consectetur adipiscing elit.
+
+                bar: |-
+                  Lorem ipsum dolor sit amet,
+                  consectetur adipiscing elit.
+
+                nested:
+                    baz: |-
+                        Lorem ipsum dolor sit amet,
+                        consectetur adipiscing elit.
+                """
+            )
+        )
+
+        loc = ("foo",)
+        assert get_line_column(document, loc, Field("foo")) == (1, 0)
+        assert get_line_column(document, loc, "ipsum") == (2, 8)
+        assert get_line_column(document, loc, "adipiscing") == (3, 14)
+
+        loc = ("bar",)
+        assert get_line_column(document, loc, Field("bar")) == (5, 0)
+        assert get_line_column(document, loc, "ipsum") == (6, 8)
+        assert get_line_column(document, loc, "adipiscing") == (7, 14)
+
+        loc = ("nested", "baz")
+        assert get_line_column(document, loc, Field("baz")) == (10, 4)
+        assert get_line_column(document, loc, "ipsum") == (11, 14)
+        assert get_line_column(document, loc, "adipiscing") == (12, 20)
+
     def test_folded(self, parser: ruamel.yaml.YAML):
         document = parser.load(
             textwrap.dedent(
