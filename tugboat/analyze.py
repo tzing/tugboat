@@ -7,17 +7,12 @@ import typing
 import ruamel.yaml
 from ruamel.yaml.comments import CommentedBase, CommentedMap
 from ruamel.yaml.error import MarkedYAMLError
-from ruamel.yaml.tokens import CommentToken
 
-from tugboat.engine.helpers import get_line_column
+from tugboat.engine.helpers import get_line_column, get_suppression_codes
 from tugboat.engine.mainfest import analyze_manifest
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Sequence
-
     from tugboat.engine import AugmentedDiagnosis
-
-    type CommentTokenSeq = Sequence[CommentToken | str]
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +127,7 @@ def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
             line += 1
             column += 1
 
-            if _should_ignore_code(code, _find_related_comments(document, loc)):
+            if code in get_suppression_codes(document, loc):
                 logger.debug(
                     "Suppressed diagnosis %s (%s) in manifest %s at line %d, column %d",
                     code,
@@ -159,72 +154,6 @@ def analyze_yaml(manifest: str) -> list[AugmentedDiagnosis]:
             )
 
     return diagnoses
-
-
-def _find_related_comments(
-    node: CommentedBase, loc: Sequence[int | str]
-) -> Iterator[str]:
-    for part in loc:
-        if ca := node.ca.items.get(part):
-            pre, post = _extract_comment_tokens(ca)
-            if pre:
-                yield _extract_comment_text(pre)
-            if post:
-                yield _extract_comment_text(post)
-
-        try:
-            node = node[part]  # type: ignore[reportIndexIssue]
-        except (KeyError, IndexError):
-            break
-
-        if not isinstance(node, CommentedBase):
-            break
-
-
-def _extract_comment_tokens(comment_items) -> Iterator[CommentTokenSeq]:
-    if len(comment_items) == 2:  # node is a list
-        pre, post = comment_items
-    elif len(comment_items) == 4:  # node is a mapping
-        _, _, post, pre = comment_items
-    else:
-        raise RuntimeError(f"Unexpected comment item: {comment_items:!r}")
-
-    pre: list[CommentToken | str] | None
-    post: CommentToken | None
-
-    yield pre or ()
-    yield [post] if post else ()
-
-
-def _extract_comment_text(seq: CommentTokenSeq) -> str:
-    def _normalize(token: CommentToken | str) -> str:
-        if isinstance(token, CommentToken):
-            return token.value
-        return str(token)
-
-    return "".join(map(_normalize, seq)).strip()
-
-
-def _should_ignore_code(code: str, comments: Iterable[str]) -> bool:
-    """Returns True if the code should be suppressed."""
-    for ignore_code in _extract_noqa_codes(comments):
-        if ignore_code == "ALL":
-            return True
-        if ignore_code == code:
-            return True
-    return False
-
-
-def _extract_noqa_codes(comments: Iterable[str]) -> Iterable[str]:
-    """Extracts the noqa codes from the comments."""
-    for comment in comments:
-        if pattern_noqa_all.match(comment):
-            yield "ALL"
-            return  # pragma: no cover; the caller may breaks the loop
-
-        if m := pattern_noqa_line.match(comment):
-            for code in m.group(1).split(","):
-                yield code.strip().upper()
 
 
 def _get_summary(msg: str) -> str:

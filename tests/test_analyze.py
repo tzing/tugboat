@@ -1,13 +1,11 @@
 import json
 import logging
-import textwrap
 from pathlib import Path
 
 import pytest
-import ruamel.yaml
 
 from tests.dirty_equals import ContainsSubStrings
-from tugboat.analyze import _find_related_comments, _should_ignore_code, analyze_yaml
+from tugboat.analyze import analyze_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -145,71 +143,6 @@ class TestAnalyzeYaml:
                 "fix": None,
             }
         ]
-
-
-class TestGetRelatedComments:
-
-    @pytest.fixture
-    def document(self):
-        yaml = ruamel.yaml.YAML()
-        return yaml.load(
-            textwrap.dedent(
-                """
-                spec:
-                  # lorem ipsum dolor
-                  # sit amet
-                  name: sample # consectetur adipiscing
-
-                  steps:
-                    # tempor incididunt
-                    - - name: baz # sed do
-                        data: 123 # et dolore
-                    - # ut enim ad minim
-                      name: qux
-                      var: {} # ullamco laboris nisi
-
-                    - data: |- # ut aliquip ex ea
-                        bla bla bla
-                """
-            )
-        )
-
-    @pytest.mark.parametrize(
-        ("loc", "expected"),
-        [
-            (("spec", "name"), "consectetur adipiscing"),
-            (("spec", "steps", 0, 0, "name"), "tempor incididunt"),
-            (("spec", "steps", 0, 0, "name"), "sed do"),
-            (("spec", "steps", 0, 0, "data"), "et dolore"),
-            (("spec", "steps", 1), "tempor incididunt"),
-            (("spec", "steps", 1, "var"), "ullamco laboris nisi"),
-            (("spec", "steps", 2, "data"), "ut aliquip ex ea"),
-        ],
-    )
-    def test_commented(self, document, loc, expected):
-        comments = list(_find_related_comments(document, loc))
-        logger.critical("related comments: %s", json.dumps(comments, indent=2))
-        assert ContainsSubStrings(expected) in comments
-
-
-class TestShouldIgnoreCode:
-
-    def test_all(self):
-        assert _should_ignore_code("T001", ["#NoQA; This is a comment"]) is True
-        assert _should_ignore_code("T001", ["#noqa"]) is True
-
-        assert _should_ignore_code("T001", ["#noqa: ALL"]) is False
-
-    def test_specific(self):
-        assert (
-            _should_ignore_code("T001", ["#noqa: T001, T002; This is a comment"])
-            is True
-        )
-        assert _should_ignore_code("T002", ["#noqa: t001, t002"]) is True
-
-        assert (
-            _should_ignore_code("T003", ["#noqa: T001; T003 is not for here"]) is False
-        )
 
 
 class TestArgoExamples:
