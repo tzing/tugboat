@@ -21,7 +21,7 @@ def parser() -> ruamel.yaml.YAML:
 
 class TestGetLineColumn:
 
-    @pytest.fixture(scope="class")
+    @pytest.fixture()
     def document(self, parser: ruamel.yaml.YAML) -> CommentedBase:
         return parser.load(
             textwrap.dedent(
