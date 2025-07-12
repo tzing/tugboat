@@ -46,6 +46,7 @@ def get_line_column(
     parent_node = None
     key = None
     fallback_position = (0, 0)
+    assume_indent_size = 2
 
     for key in loc:
         parent_node = current_node
@@ -60,6 +61,7 @@ def get_line_column(
 
         if isinstance(current_node, CommentedBase) and current_node.lc:
             fallback_position = (current_node.lc.line, current_node.lc.col)
+            assume_indent_size = current_node.lc.col - parent_node.lc.col
 
     # if the value is 'Field' type, return the position of the key
     if isinstance(value, Field):
@@ -91,7 +93,7 @@ def get_line_column(
         key=key,
         current_node=current_node,
         substring=value,
-        fallback_position=fallback_position,
+        assume_indent_size=assume_indent_size,
     ):
         return pos
 
@@ -104,7 +106,7 @@ def _calculate_substring_position(
     key: int | str | None,
     current_node: Any,
     substring: Any,
-    fallback_position: tuple[int, int],
+    assume_indent_size: int,
 ) -> tuple[int, int] | None:
     """
     Calculate the line and column position of a substring within a scalar value.
@@ -119,8 +121,8 @@ def _calculate_substring_position(
         The current node containing the text.
     substring: str
         The substring to find within the text.
-    fallback_position : tuple[int, int]
-        The fallback position if precise calculation fails.
+    assume_indent_size: int
+        The assumed indentation size for the current node.
 
     Returns
     -------
@@ -131,59 +133,101 @@ def _calculate_substring_position(
         return None
 
     text = str(current_node)
-    substring_index = text.find(substring)
-    if substring_index == -1:
+    substring_idx = text.find(substring)
+    if substring_idx == -1:
         return None
 
-    # check if this is an alias - if so, return None to fall back to fallback position
+    # early exit if this is an anchor or alias node
     if is_alias_node(parent_node, key):
         return None
 
-    lines_before = text[:substring_index].count("\n")
-
     # calculate base line position
-    if lines_before > 0:
-        last_newline_pos = text.rfind("\n", 0, substring_index)
-        column_offset = substring_index - last_newline_pos - 1
-        line_pos = fallback_position[0] + lines_before
-    else:
-        column_offset = substring_index
-        line_pos = fallback_position[0]
+    key_line = key_col = value_line = value_col = None
+    if parent_node:
+        try:
+            key_line, key_col, value_line, value_col = parent_node.lc.data.get(key)
+        except (KeyError, IndexError):
+            ...
 
     # determine column position based on scalar string type
-    if isinstance(current_node, LiteralScalarString | FoldedScalarString):
-        # block scalars (| and >): account for block indentation
-        col_pos = column_offset + 4
-        # block scalars content starts on the next line after the indicator
-        line_pos = fallback_position[0] + 1 + lines_before
-        return (line_pos, col_pos)
+    additional_offset = 0
+
+    if isinstance(current_node, LiteralScalarString):
+        # literal scalar (|) starts on the next line after the indicator
+        key_col = cast("int", key_col)
+        value_line = cast("int", value_line)
+        value_col = cast("int", value_col)
+
+        if lines_before := text[:substring_idx].count("\n"):
+            last_newline_idx = text.rfind("\n", 0, substring_idx)
+            column_offset = substring_idx - last_newline_idx - 1
+
+            value_line += lines_before + 1
+            value_col = key_col + assume_indent_size + column_offset
+        else:
+            value_line += 1
+            value_col = key_col + assume_indent_size + substring_idx
+
+        return (value_line, value_col)
 
     if isinstance(current_node, DoubleQuotedScalarString | SingleQuotedScalarString):
-        # quoted strings (" and '): account for opening quote and anchor offset
-        anchor_offset = get_anchor_offset(parent_node, key)
-        if lines_before > 0:
-            col_pos = column_offset
-        else:
-            col_pos = fallback_position[1] + 1 + column_offset + anchor_offset
-        return (line_pos, col_pos)
+        additional_offset = 1
+
+    if isinstance(current_node, FoldedScalarString):
+        # folded scalar (>) merges adjacent lines so we can't tell the position
+        # of the substring reliably, return None
+        return None
 
     if isinstance(current_node, PlainScalarString):
-        # plain scalar string: check for anchor offset
-        anchor_offset = get_anchor_offset(parent_node, key)
-        if lines_before > 0:
-            col_pos = column_offset
-        else:
-            col_pos = fallback_position[1] + column_offset + anchor_offset
-        return (line_pos, col_pos)
+        # plain scalar string type is found when the field contains anchor or alias
+        # this breaks the logic of line/column calculation
+        return None
 
-    # handle regular strings (not ScalarString instances)
-    anchor_offset = get_anchor_offset(parent_node, key)
-    if lines_before > 0:
-        col_pos = column_offset
-    else:
-        col_pos = fallback_position[1] + column_offset + anchor_offset
+    # only tell the position if it's *likely* a simple line in YAML
+    if (
+        True
+        and key_line is not None
+        and value_line is not None
+        and text.find("\n", 0, substring_idx) == -1
+        and key_line == value_line
+        and not is_anchor_node(parent_node, key)
+    ):
+        column_offset = substring_idx
+        value_col = cast("int", value_col)
+        value_col += column_offset + additional_offset
+        return (value_line, value_col)
 
-    return (line_pos, col_pos)
+    return None
+
+
+def is_anchor_node(parent_node: CommentedMap | None, key: int | str | None) -> bool:
+    """
+    Check if a child node is an anchor (&anchor).
+
+    Parameters
+    ----------
+    parent_node : CommentedMap | None
+        The parent node.
+    key : int | str | None
+        The key in the parent node.
+
+    Returns
+    -------
+    bool
+        True if this is an anchor node, False otherwise.
+    """
+    if not parent_node or key is None:
+        return False
+
+    if (
+        True
+        and hasattr(parent_node[key], "yaml_anchor")
+        and parent_node[key].yaml_anchor()
+        and not is_alias_node(parent_node, key)
+    ):
+        return True
+
+    return False
 
 
 def is_alias_node(parent_node: CommentedMap | None, key: int | str | None) -> bool:
@@ -224,33 +268,3 @@ def is_alias_node(parent_node: CommentedMap | None, key: int | str | None) -> bo
             return True
 
     return False
-
-
-def get_anchor_offset(parent_node: CommentedMap | None, key: int | str | None) -> int:
-    """
-    Get the column offset introduced by anchor symbol (&anchor).
-
-    Parameters
-    ----------
-    parent_node : CommentedMap | None
-        The parent node.
-    key : int | str | None
-        The key in the parent node.
-
-    Returns
-    -------
-    int
-        The column offset for anchor symbol, 0 if not an anchor.
-    """
-    if not parent_node or key is None:
-        return 0
-
-    if (
-        not is_alias_node(parent_node, key)
-        and hasattr(parent_node[key], "yaml_anchor")
-        and (anchor := parent_node[key].yaml_anchor())
-    ):
-        # calculate offset: "&" + anchor_name + " " = 1 + len(anchor_name) + 1
-        return len(anchor.value) + 2
-
-    return 0
