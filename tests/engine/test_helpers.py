@@ -260,12 +260,19 @@ class TestGetSuppressionCodes:
     def test_3(self, parser: ruamel.yaml.YAML):
         document = parser.load(
             """
-            spec: | # noqa
-              Lorem ipsum dolor sit amet,
-              consectetur adipiscing elit.
+            spec:
+              name:
+                # noqa: T01
+                test case
+
+              desc: | # noqa: T02
+                Lorem ipsum dolor sit amet,
+                consectetur adipiscing elit.
+
             """
         )
-        assert "ANYTHING" in get_suppression_codes(document, ("spec", "name"))
+        assert set(get_suppression_codes(document, ("spec", "name"))) == {"T01"}
+        assert set(get_suppression_codes(document, ("spec", "desc"))) == {"T02"}
 
     def test_fallback(self, parser: ruamel.yaml.YAML):
         document = parser.load(

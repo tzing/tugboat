@@ -12,6 +12,7 @@ from ruamel.yaml.scalarstring import (
     PlainScalarString,
     SingleQuotedScalarString,
 )
+from ruamel.yaml.tokens import CommentToken
 
 from tugboat.types import Field
 
@@ -19,9 +20,9 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from typing import Any
 
-pattern_noqa_all = re.compile(r"#[ ]*noqa(?:;|$)", re.IGNORECASE | re.MULTILINE)
+pattern_noqa_all = re.compile(r"[ ]*#[ ]*noqa(?:;|$)", re.IGNORECASE | re.MULTILINE)
 pattern_noqa_line = re.compile(
-    r"#[ ]*noqa:[ ]*"  # prefix
+    r"[ ]*#[ ]*noqa:[ ]*"  # prefix
     r"("
     r"[a-z]+\d+"  # first code
     r"(?:,[ ]*[A-Z]+[0-9]+)*"  # additional codes, separated by commas
@@ -328,23 +329,21 @@ def _extract_noqa_codes_from_node(
     Iterator[str]
         Iterator of series codes found in the noqa comment.
     """
-    if not getattr(node, "ca", None):
+    if not isinstance(node, CommentedMap):
         return
 
     # try to find a comment on the key itself
-    if (
-        True
-        and key is not None
-        and isinstance(node, CommentedMap)
-        and node.ca.items
-        and (key_comment_info := node.ca.items.get(key))
-    ):
+    if key is not None and (key_comment_info := node.ca.items.get(key)):
         _, _, post_value_comment, pre_value_comments = key_comment_info
-
         if post_value_comment:
             yield from parse_noqa_codes(post_value_comment.value)
-        for comment in pre_value_comments or ():
-            yield from parse_noqa_codes(comment.lstrip())
+
+        if isinstance(node[key], int | float | str | bool):
+            for comment in pre_value_comments or ():
+                if isinstance(comment, CommentToken):
+                    yield from parse_noqa_codes(comment.value)
+                else:
+                    yield from parse_noqa_codes(comment)
 
     # then, try to find an end-of-line comment on the node itself
     if node.ca.comment:
