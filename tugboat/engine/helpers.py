@@ -12,7 +12,6 @@ from ruamel.yaml.scalarstring import (
     PlainScalarString,
     SingleQuotedScalarString,
 )
-from ruamel.yaml.tokens import CommentToken
 
 from tugboat.types import Field
 
