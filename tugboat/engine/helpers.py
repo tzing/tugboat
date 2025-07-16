@@ -155,7 +155,7 @@ def _calculate_substring_position(
 
     # calculate base line position
     key_line = key_col = value_line = value_col = None
-    if parent_node:
+    if isinstance(parent_node, CommentedMap):
         try:
             key_line, key_col, value_line, value_col = parent_node.lc.data[key]
         except KeyError:

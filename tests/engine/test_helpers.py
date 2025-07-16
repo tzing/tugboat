@@ -227,6 +227,26 @@ class TestGetLineColumn:
         loc = ("bar",)
         assert get_line_column(document, loc, "ipsum") == (2, 5)
 
+    def test_list_of_strings(self, parser: ruamel.yaml.YAML):
+        # NOTE
+        # this test case is set up for making sure that the task won't crash
+        # we currently don't support getting line/column for items in a list
+        document = parser.load(
+            textwrap.dedent(
+                """
+                foo:
+                  - Lorem ipsum dolor sit amet
+                  - consectetur adipiscing elit
+                """
+            )
+        )
+
+        loc = ("foo", 0)
+        assert get_line_column(document, loc, "ipsum")
+
+        loc = ("foo", 1)
+        assert get_line_column(document, loc, "adipiscing")
+
     def test_error(self, parser: ruamel.yaml.YAML):
         doc = parser.load("foo: bar")
         assert get_line_column(doc, ("no-this-key",), "bar") == (0, 0)
