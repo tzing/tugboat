@@ -12,11 +12,11 @@ import cloup
 import colorlog
 from pydantic import ValidationError
 
-from tugboat.analyze import analyze_yaml
 from tugboat.console.anchor import print_anchor
 from tugboat.console.glob import gather_paths
 from tugboat.console.outputs import get_output_builder
 from tugboat.console.utils import CachedStdin
+from tugboat.engine import analyze_yaml_stream
 from tugboat.settings import Settings, settings
 from tugboat.utils import join_with_and
 from tugboat.version import __version__
@@ -170,7 +170,7 @@ def main(
             logger.debug("Error details:", exc_info=True)
             raise click.Abort from None
 
-        diagnoses = analyze_yaml(content)
+        diagnoses = analyze_yaml_stream(content, path)
 
         counter.update(diag["type"] for diag in diagnoses)
         output_builder.update(path=path, content=content, diagnoses=diagnoses)
