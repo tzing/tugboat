@@ -227,6 +227,10 @@ class TestGetLineColumn:
         loc = ("bar",)
         assert get_line_column(document, loc, "ipsum") == (2, 5)
 
+    def test_error(self, parser: ruamel.yaml.YAML):
+        doc = parser.load("foo: bar")
+        assert get_line_column(doc, ("no-this-key",), "bar") == (0, 0)
+
 
 class TestIsAnchorNode:
 
