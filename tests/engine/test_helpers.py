@@ -7,6 +7,7 @@ from ruamel.yaml.comments import CommentedBase
 from tugboat.engine.helpers import (
     get_line_column,
     get_suppression_codes,
+    is_alias_node,
     parse_noqa_codes,
 )
 from tugboat.types import Field
@@ -224,6 +225,50 @@ class TestGetLineColumn:
 
         loc = ("bar",)
         assert get_line_column(document, loc, "ipsum") == (2, 5)
+
+
+class TestIsAliasNode:
+
+    def test_dict(self, parser: ruamel.yaml.YAML):
+        doc = parser.load(
+            """
+            foo: &foo
+              Lorem ipsum dolor sit amet
+
+            bar: *foo
+
+            baz:
+              Leorem ipsum dolor sit amet,
+              consectetur adipiscing elit.
+            """
+        )
+
+        assert not is_alias_node(doc, "foo")
+        assert is_alias_node(doc, "bar")
+        assert not is_alias_node(doc, "baz")
+
+    def test_list(self, parser: ruamel.yaml.YAML):
+        doc = parser.load(
+            """
+            foo: &foo
+              Lorem ipsum dolor sit amet
+
+            items:
+              - *foo
+              - Lorem ipsum dolor sit amet
+            """
+        )
+
+        node = doc["items"]
+        assert is_alias_node(node, 0)
+        assert not is_alias_node(node, 1)
+
+    def test_error(self, parser: ruamel.yaml.YAML):
+        doc = parser.load("foo: bar")
+        assert not is_alias_node(doc, "key")
+
+    def test_none(self, parser: ruamel.yaml.YAML):
+        assert not is_alias_node(None, "key")
 
 
 class TestGetSuppressionCodes:

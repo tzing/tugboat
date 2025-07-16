@@ -242,13 +242,13 @@ def is_anchor_node(parent_node: CommentedMap | None, key: int | str | None) -> b
     return False
 
 
-def is_alias_node(parent_node: CommentedMap | None, key: int | str | None) -> bool:
+def is_alias_node(parent_node: CommentedBase | None, key: int | str | None) -> bool:
     """
     Check if a child node is an alias (*anchor).
 
     Parameters
     ----------
-    parent_node : CommentedMap | None
+    parent_node : CommentedBase | None
         The parent node.
     key : int | str | None
         The key in the parent node.
@@ -258,15 +258,15 @@ def is_alias_node(parent_node: CommentedMap | None, key: int | str | None) -> bo
     bool
         True if this is an alias node, False otherwise.
     """
-    if not parent_node or key is None:
+    if not isinstance(parent_node, CommentedBase):
         return False
 
     try:
-        lc_data = parent_node.lc.data.get(key)
-    except (AttributeError, KeyError, IndexError, TypeError):
+        lc_data = parent_node.lc.data[key]
+    except (AttributeError, KeyError, IndexError):
         return False
 
-    if lc_data:
+    if isinstance(parent_node, dict):
         key_line, key_col, value_line, value_col = lc_data
 
         if key_line != value_line:
@@ -278,6 +278,12 @@ def is_alias_node(parent_node: CommentedMap | None, key: int | str | None) -> bo
                 return False
 
             return True
+
+    elif isinstance(parent_node, list):
+        value_line, value_col = lc_data
+        if value_line < parent_node.lc.line:
+            return True
+        # TODO need to handle the case where it references an item in a list
 
     return False
 
