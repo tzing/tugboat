@@ -26,6 +26,7 @@ from __future__ import annotations
 import functools
 import typing
 
+from tugboat.types import Field
 from tugboat.utils import get_alias, get_context_name, join_with_and, join_with_or
 
 if typing.TYPE_CHECKING:
@@ -56,7 +57,7 @@ def accept_none(
                 "loc": (*loc, field_alias),
                 "summary": f"Found redundant field '{field_alias}'",
                 "msg": f"Field '{field_alias}' is not valid within {get_context_name(loc)}.",
-                "input": field_alias,
+                "input": Field(field_alias),
             }
 
 
@@ -88,7 +89,7 @@ def mutually_exclusive(
             "loc": (*loc, field_alias),
             "summary": "Mutually exclusive field set",
             "msg": f"Field {exclusive_fields} are mutually exclusive.",
-            "input": field_alias,
+            "input": Field(field_alias),
         }
 
 
