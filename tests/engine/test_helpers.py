@@ -3,13 +3,16 @@ import textwrap
 import pytest
 import ruamel.yaml
 from ruamel.yaml.comments import CommentedBase
+from ruamel.yaml.error import MarkedYAMLError
 
+from tests.dirty_equals import ContainsSubStrings
 from tugboat.engine.helpers import (
     get_line_column,
     get_suppression_codes,
     is_alias_node,
     is_anchor_node,
     parse_noqa_codes,
+    translate_marked_yaml_error,
 )
 from tugboat.types import Field
 
@@ -19,6 +22,26 @@ def parser() -> ruamel.yaml.YAML:
     yaml = ruamel.yaml.YAML()
     yaml.preserve_quotes = True
     return yaml
+
+
+class TestTranslateMarkedYamlError:
+
+    def test(self, parser: ruamel.yaml.YAML):
+        with pytest.raises(MarkedYAMLError) as exc_info:
+            parser.load('test: "foo')
+
+        assert translate_marked_yaml_error(exc_info.value) == {
+            "line": 1,
+            "column": 11,
+            "type": "error",
+            "code": "F002",
+            "manifest": None,
+            "loc": (),
+            "summary": "Malformed YAML document",
+            "msg": ContainsSubStrings("found unexpected end of stream"),
+            "input": None,
+            "fix": None,
+        }
 
 
 class TestGetLineColumn:

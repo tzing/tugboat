@@ -20,6 +20,10 @@ if typing.TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence
     from typing import Any
 
+    from ruamel.yaml.error import MarkedYAMLError
+
+    from tugboat.engine.types import AugmentedDiagnosis
+
 pattern_noqa_all = re.compile(r"[ ]*#[ ]*noqa(?:;|$)", re.IGNORECASE | re.MULTILINE)
 pattern_noqa_line = re.compile(
     r"[ ]*#[ ]*noqa:[ ]*"  # prefix
@@ -29,6 +33,43 @@ pattern_noqa_line = re.compile(
     r")",
     re.IGNORECASE,
 )
+
+
+def translate_marked_yaml_error(err: MarkedYAMLError) -> AugmentedDiagnosis:
+    """
+    Translate a MarkedYAMLError into a more user-friendly format.
+
+    Parameters
+    ----------
+    err : MarkedYAMLError
+        The error to translate.
+
+    Returns
+    -------
+    AugmentedDiagnosis
+        The translated error.
+    """
+    line = column = 1
+    if err.problem_mark:
+        line = err.problem_mark.line + 1
+        column = err.problem_mark.column + 1
+
+    msg = err.problem or err.context
+    if msg and err.context_mark:
+        msg += f"\n{err.context_mark}"  # context_mark is not a string
+
+    return {
+        "line": line,
+        "column": column,
+        "type": "error",
+        "code": "F002",
+        "manifest": None,
+        "loc": (),
+        "summary": "Malformed YAML document",
+        "msg": msg,
+        "input": None,
+        "fix": None,
+    }
 
 
 def get_line_column(
