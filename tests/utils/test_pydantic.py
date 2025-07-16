@@ -13,6 +13,7 @@ from pydantic import (
 from pydantic_core import ErrorDetails
 
 from tugboat.schemas.basic import Array, Dict
+from tugboat.types import Field
 from tugboat.utils.pydantic import (
     _compose_string_error_message,
     _extract_expects,
@@ -146,7 +147,7 @@ class TestTranslatePydanticError:
             "loc": ("x", 0, "z"),
             "summary": "Found redundant field",
             "msg": "Field 'z' is not valid within the 'x' section.",
-            "input": "z",
+            "input": Field("z"),
         }
 
         # case 2 - extra field in the root model
@@ -157,7 +158,7 @@ class TestTranslatePydanticError:
             "loc": ("z",),
             "summary": "Found redundant field",
             "msg": "Field 'z' is not valid within current context.",
-            "input": "z",
+            "input": Field("z"),
         }
 
     def test_float_parsing(self):
