@@ -17,7 +17,7 @@ from ruamel.yaml.tokens import CommentToken
 from tugboat.types import Field
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Callable, Iterator, Sequence
     from typing import Any
 
 pattern_noqa_all = re.compile(r"[ ]*#[ ]*noqa(?:;|$)", re.IGNORECASE | re.MULTILINE)
@@ -157,8 +157,8 @@ def _calculate_substring_position(
     key_line = key_col = value_line = value_col = None
     if parent_node:
         try:
-            key_line, key_col, value_line, value_col = parent_node.lc.data.get(key)
-        except (KeyError, IndexError):
+            key_line, key_col, value_line, value_col = parent_node.lc.data[key]
+        except KeyError:
             ...
 
     # determine column position based on scalar string type
@@ -212,13 +212,13 @@ def _calculate_substring_position(
     return None
 
 
-def is_anchor_node(parent_node: CommentedMap | None, key: int | str | None) -> bool:
+def is_anchor_node(parent_node: CommentedBase | None, key: int | str | None) -> bool:
     """
     Check if a child node is an anchor (&anchor).
 
     Parameters
     ----------
-    parent_node : CommentedMap | None
+    parent_node : CommentedBase | None
         The parent node.
     key : int | str | None
         The key in the parent node.
@@ -228,16 +228,15 @@ def is_anchor_node(parent_node: CommentedMap | None, key: int | str | None) -> b
     bool
         True if this is an anchor node, False otherwise.
     """
-    if not parent_node or key is None:
+    try:
+        target_node = parent_node[key]  # type: ignore[reportIndexIssue]
+    except (KeyError, IndexError, TypeError):
         return False
 
-    if (
-        True
-        and hasattr(parent_node[key], "yaml_anchor")
-        and parent_node[key].yaml_anchor()
-        and not is_alias_node(parent_node, key)
-    ):
+    anchor: Callable | None = getattr(target_node, "yaml_anchor", None)
+    if anchor and anchor() and not is_alias_node(parent_node, key):
         return True
+    # TODO handle the anchor in a list item
 
     return False
 

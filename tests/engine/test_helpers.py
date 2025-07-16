@@ -8,6 +8,7 @@ from tugboat.engine.helpers import (
     get_line_column,
     get_suppression_codes,
     is_alias_node,
+    is_anchor_node,
     parse_noqa_codes,
 )
 from tugboat.types import Field
@@ -225,6 +226,34 @@ class TestGetLineColumn:
 
         loc = ("bar",)
         assert get_line_column(document, loc, "ipsum") == (2, 5)
+
+
+class TestIsAnchorNode:
+
+    def test_dict(self, parser: ruamel.yaml.YAML):
+        doc = parser.load(
+            """
+            foo: &foo
+              Lorem ipsum dolor sit amet
+
+            bar: *foo
+
+            baz:
+              Leorem ipsum dolor sit amet,
+              consectetur adipiscing elit.
+            """
+        )
+
+        assert is_anchor_node(doc, "foo")
+        assert not is_anchor_node(doc, "bar")
+        assert not is_anchor_node(doc, "baz")
+
+    def test_error(self, parser: ruamel.yaml.YAML):
+        doc = parser.load("foo: bar")
+        assert not is_anchor_node(doc, "key")
+
+    def test_none(self, parser: ruamel.yaml.YAML):
+        assert not is_anchor_node(None, "key")
 
 
 class TestIsAliasNode:
