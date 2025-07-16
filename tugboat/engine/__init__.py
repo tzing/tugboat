@@ -31,15 +31,14 @@ from tugboat.engine.types import AugmentedDiagnosis
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
-
-    from tugboat.engine.types import AugmentedDiagnosis
+    from os import PathLike
 
 logger = logging.getLogger(__name__)
 yaml_parser = ruamel.yaml.YAML(typ="rt")
 
 
 def analyze_yaml_stream(
-    stream: str, filepath: str | None = None
+    stream: str, filepath: PathLike | None = None
 ) -> list[AugmentedDiagnosis]:
     """
     Analyze YAML manifest(s) and report issues.
@@ -48,7 +47,7 @@ def analyze_yaml_stream(
     ----------
     stream : str
         The YAML manifest(s) as a string.
-    filepath : str | None
+    filepath : PathLike | None
         Path to the manifest file. This is used for error reporting.
 
     Returns
@@ -65,7 +64,7 @@ def analyze_yaml_stream(
                 # set the stream name to the filepath for better error reporting
                 # this is a workaround for ruamel.yaml, which does not support setting
                 # the name of the stream directly.
-                buf.name = filepath
+                buf.name = str(filepath)
             documents = list(yaml_parser.load_all(buf))  # force evaluation
 
     except ruamel.yaml.error.MarkedYAMLError as e:
