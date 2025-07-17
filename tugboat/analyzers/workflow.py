@@ -156,17 +156,19 @@ def check_argument_parameters(workflow: WorkflowCompatible) -> Iterator[Diagnosi
             loc=loc,
             fields=["name"],
         )
-        yield from require_exactly_one(
-            model=param,
-            loc=loc,
-            fields=["value", "valueFrom"],
-        )
         yield from accept_none(
             model=param,
             loc=loc,
             fields=["default", "enum"],
         )
         yield from prepend_loc(loc, critique_relaxed_parameter(param))
+
+        if workflow.kind == "Workflow":
+            yield from require_exactly_one(
+                model=param,
+                loc=loc,
+                fields=["value", "valueFrom"],
+            )
 
         if param.valueFrom:
             yield from require_exactly_one(
