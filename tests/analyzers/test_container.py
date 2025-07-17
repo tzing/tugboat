@@ -3,13 +3,13 @@ import logging
 
 from dirty_equals import IsPartialDict
 
-import tugboat.analyze
+from tugboat.engine import analyze_yaml_stream
 
 logger = logging.getLogger(__name__)
 
 
 def test_analyze_template():
-    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_REFERENCE)
+    diagnoses = analyze_yaml_stream(MANIFEST_INVALID_REFERENCE)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
     assert (
@@ -84,7 +84,7 @@ spec:
 
 
 def test_check_input_artifacts():
-    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MISSING_INPUT_PATH)
+    diagnoses = analyze_yaml_stream(MANIFEST_MISSING_INPUT_PATH)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
     assert (
@@ -116,7 +116,7 @@ spec:
 
 
 def test_check_output():
-    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MISSING_OUTPUT_PATH)
+    diagnoses = analyze_yaml_stream(MANIFEST_MISSING_OUTPUT_PATH)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
     assert (

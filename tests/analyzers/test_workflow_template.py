@@ -3,29 +3,29 @@ import logging
 
 from dirty_equals import IsPartialDict
 
-import tugboat.analyze
+from tugboat.engine import analyze_yaml_stream
 
 logger = logging.getLogger(__name__)
 
 
 class TestRules:
     def test_check_metadata_1(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_NAME_TOO_LONG)
+        diagnoses = analyze_yaml_stream(MANIFEST_NAME_TOO_LONG)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert IsPartialDict({"code": "M302"}) in diagnoses
 
     def test_check_metadata_2(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_USE_GENERATE_NAME)
+        diagnoses = analyze_yaml_stream(MANIFEST_USE_GENERATE_NAME)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert IsPartialDict({"code": "WT001"}) in diagnoses
 
     def test_check_spec(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_USE_GENERATE_NAME)
+        diagnoses = analyze_yaml_stream(MANIFEST_USE_GENERATE_NAME)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert IsPartialDict({"code": "M201"}) in diagnoses
 
     def test_check_entrypoint(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_ENTRYPOINT)
+        diagnoses = analyze_yaml_stream(MANIFEST_INVALID_ENTRYPOINT)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert IsPartialDict({"code": "WT201"}) in diagnoses
         assert IsPartialDict({"code": "TPL101"}) in diagnoses
@@ -73,7 +73,7 @@ spec:
 
 
 def test_check_argument_parameters():
-    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_PARAMETERS)
+    diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_PARAMETERS)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
     # WT101: Duplicated parameter name
@@ -121,7 +121,7 @@ spec:
 
 
 def test_check_argument_artifacts():
-    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_ARTIFACTS)
+    diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_ARTIFACTS)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
     # WT102: Duplicated input artifact name
@@ -192,7 +192,7 @@ spec:
 
 
 def test_check_metrics():
-    diagnoses = tugboat.analyze.analyze_yaml(
+    diagnoses = analyze_yaml_stream(
         """
         apiVersion: argoproj.io/v1alpha1
         kind: WorkflowTemplate

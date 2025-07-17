@@ -3,8 +3,8 @@ import logging
 
 from dirty_equals import IsPartialDict
 
-import tugboat.analyze
 from tests.dirty_equals import ContainsSubStrings
+from tugboat.engine import analyze_yaml_stream
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class TestGeneralRules:
 
     def test_analyze_template(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_AMBIGUOUS_TYPE)
+        diagnoses = analyze_yaml_stream(MANIFEST_AMBIGUOUS_TYPE)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
@@ -34,7 +34,7 @@ class TestGeneralRules:
         )
 
     def test_check_field_references(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_REFERENCES)
+        diagnoses = analyze_yaml_stream(MANIFEST_INVALID_REFERENCES)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
@@ -60,7 +60,7 @@ class TestGeneralRules:
         )
 
     def test_check_duplicate_step_names(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_DUPLICATE_STEP_NAMES)
+        diagnoses = analyze_yaml_stream(MANIFEST_DUPLICATE_STEP_NAMES)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
@@ -156,7 +156,7 @@ spec:
 
 
 def test_check_input_parameters_1():
-    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_PARAMETERS)
+    diagnoses = analyze_yaml_stream(MANIFEST_INVALID_INPUT_PARAMETERS)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
     assert (
         IsPartialDict(
@@ -250,7 +250,7 @@ spec:
 
 
 def test_check_input_parameters_2():
-    diagnoses = tugboat.analyze.analyze_yaml(
+    diagnoses = analyze_yaml_stream(
         """
         apiVersion: argoproj.io/v1alpha1
         kind: WorkflowTemplate
@@ -278,7 +278,7 @@ def test_check_input_parameters_2():
 
 
 def test_check_input_artifacts():
-    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_ARTIFACTS)
+    diagnoses = analyze_yaml_stream(MANIFEST_INVALID_INPUT_ARTIFACTS)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
     assert (
         IsPartialDict(
@@ -362,7 +362,7 @@ spec:
 class TestOutputRules:
 
     def test_check_output_parameters(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_OUTPUT_PARAMETERS)
+        diagnoses = analyze_yaml_stream(MANIFEST_INVALID_OUTPUT_PARAMETERS)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
@@ -419,7 +419,7 @@ class TestOutputRules:
         )
 
     def test_check_output_artifacts(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_OUTPUT_ARTIFACTS)
+        diagnoses = analyze_yaml_stream(MANIFEST_INVALID_OUTPUT_ARTIFACTS)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
@@ -505,7 +505,7 @@ spec:
 
 
 def test_check_metrics():
-    diagnoses = tugboat.analyze.analyze_yaml(
+    diagnoses = analyze_yaml_stream(
         """
         apiVersion: argoproj.io/v1alpha1
         kind: Workflow
