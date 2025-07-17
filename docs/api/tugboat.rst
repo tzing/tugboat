@@ -7,6 +7,8 @@ tugboat package
       :members:
       :show-inheritance:
 
+   .. autoclass:: Field
+
    .. py:data:: hookimpl
       :type: pluggy.HookimplMarker
 

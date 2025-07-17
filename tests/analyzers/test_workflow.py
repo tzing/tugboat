@@ -4,8 +4,8 @@ import logging
 
 from dirty_equals import IsPartialDict
 
-import tugboat.analyze
 from tugboat.core import hookimpl
+from tugboat.engine import analyze_yaml_stream
 from tugboat.schemas import Workflow, WorkflowTemplate
 
 logger = logging.getLogger(__name__)
@@ -129,7 +129,7 @@ class TestAnalyze:
 
 class TestRules:
     def test_check_metadata_1(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_NAME)
+        diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_NAME)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
@@ -139,7 +139,7 @@ class TestRules:
         )
 
     def test_check_metadata_2(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_GENERATE_NAME)
+        diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_GENERATE_NAME)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict({"code": "M301", "loc": ("metadata", "generateName")})
@@ -147,7 +147,7 @@ class TestRules:
         )
 
     def test_check_spec_1(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_NAME)
+        diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_NAME)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict({"code": "M201", "loc": ("spec", "workflowTemplateRef")})
@@ -155,14 +155,14 @@ class TestRules:
         )
 
     def test_check_spec_2(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_GENERATE_NAME)
+        diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_GENERATE_NAME)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict({"code": "M101", "loc": ("spec", "entrypoint")}) in diagnoses
         )
 
     def test_check_entrypoint(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_ENTRYPOINT)
+        diagnoses = analyze_yaml_stream(MANIFEST_INVALID_ENTRYPOINT)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict({"code": "WF201", "loc": ("spec", "entrypoint")}) in diagnoses
@@ -177,7 +177,7 @@ class TestRules:
         )
 
     def test_check_argument_parameters(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_ARGUMENTS)
+        diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_ARGUMENTS)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
         assert (
             IsPartialDict(
@@ -202,7 +202,7 @@ class TestRules:
         )
 
     def test_check_argument_artifacts(self):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_MALFORMED_ARGUMENTS)
+        diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_ARGUMENTS)
         logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
         assert (
@@ -308,7 +308,7 @@ spec:
 
 
 def test_check_metrics():
-    diagnoses = tugboat.analyze.analyze_yaml(
+    diagnoses = analyze_yaml_stream(
         """
         apiVersion: argoproj.io/v1alpha1
         kind: Workflow

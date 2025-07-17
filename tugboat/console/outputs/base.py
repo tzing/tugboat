@@ -8,7 +8,7 @@ if typing.TYPE_CHECKING:
     from pathlib import Path
     from typing import TextIO
 
-    from tugboat.analyze import AugmentedDiagnosis
+    from tugboat.engine import AugmentedDiagnosis
 
 
 class OutputBuilder(ABC):

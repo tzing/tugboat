@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+import pydantic
 
 from tests.dirty_equals import ContainsSubStrings
 from tugboat.constraints import (
@@ -8,11 +8,12 @@ from tugboat.constraints import (
     require_exactly_one,
     require_non_empty,
 )
+from tugboat.types import Field
 
 
-class SampleModel(BaseModel):
+class SampleModel(pydantic.BaseModel):
     foo: str | None = None
-    bar: str | None = Field(None, alias="baz")
+    bar: str | None = pydantic.Field(None, alias="baz")
 
 
 class TestAcceptNone:
@@ -34,7 +35,7 @@ class TestAcceptNone:
                 "loc": ("spec", 0, 1, "baz", "baz"),
                 "summary": "Found redundant field 'baz'",
                 "msg": "Field 'baz' is not valid within the 'baz' section.",
-                "input": "baz",
+                "input": Field("baz"),
             }
         ]
 
@@ -50,7 +51,7 @@ class TestAcceptNone:
                 "loc": ("spec", 0, 1, "baz"),
                 "summary": "Found redundant field 'baz'",
                 "msg": "Field 'baz' is not valid within the 'spec' section.",
-                "input": "baz",
+                "input": Field("baz"),
             }
         ]
 
@@ -83,7 +84,7 @@ class TestMutuallyExclusive:
                 "loc": ("spec", "baz"),
                 "summary": "Mutually exclusive field set",
                 "msg": "Field 'baz' and 'foo' are mutually exclusive.",
-                "input": "baz",
+                "input": Field("baz"),
             },
             {
                 "type": "failure",
@@ -91,7 +92,7 @@ class TestMutuallyExclusive:
                 "loc": ("spec", "foo"),
                 "summary": "Mutually exclusive field set",
                 "msg": "Field 'baz' and 'foo' are mutually exclusive.",
-                "input": "foo",
+                "input": Field("foo"),
             },
         ]
 

@@ -4,14 +4,14 @@ import logging
 import pytest
 from dirty_equals import IsPartialDict
 
-import tugboat.analyze
 from tests.dirty_equals import ContainsSubStrings
+from tugboat.engine import analyze_yaml_stream
 
 logger = logging.getLogger(__name__)
 
 
 def test_analyze_step():
-    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_STEP_USAGE)
+    diagnoses = analyze_yaml_stream(MANIFEST_INVALID_STEP_USAGE)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
     loc = ("spec", "templates", 0, "steps", 0, 0)
@@ -51,7 +51,7 @@ spec:
 
 
 def test_check_argument_parameters():
-    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_PARAMETERS)
+    diagnoses = analyze_yaml_stream(MANIFEST_INVALID_INPUT_PARAMETERS)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
     loc_prefix = ("spec", "templates", 0, "steps", 0, 0, "arguments", "parameters")
@@ -107,7 +107,7 @@ spec:
 
 
 def test_check_argument_artifacts():
-    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_INPUT_ARTIFACTS)
+    diagnoses = analyze_yaml_stream(MANIFEST_INVALID_INPUT_ARTIFACTS)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
     loc_prefix = ("spec", "templates", 0, "steps", 0, 0, "arguments", "artifacts")
@@ -166,7 +166,7 @@ spec:
 
 def test_check_referenced_template(caplog: pytest.LogCaptureFixture):
     with caplog.at_level("DEBUG", "tugboat.analyzers.step"):
-        diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INVALID_TEMPLATE_REFERENCE)
+        diagnoses = analyze_yaml_stream(MANIFEST_INVALID_TEMPLATE_REFERENCE)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
     assert (
@@ -237,7 +237,7 @@ spec:
 
 
 def test_check_fields_references():
-    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_FIELDS_REFERENCES)
+    diagnoses = analyze_yaml_stream(MANIFEST_FIELDS_REFERENCES)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
     assert IsPartialDict(
@@ -265,7 +265,7 @@ spec:
 
 
 def test_check_inline_template():
-    diagnoses = tugboat.analyze.analyze_yaml(MANIFEST_INLINE_TEMPLATE)
+    diagnoses = analyze_yaml_stream(MANIFEST_INLINE_TEMPLATE)
     logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
 
     assert (

@@ -6,6 +6,7 @@ from collections.abc import Mapping, Sequence
 
 from rapidfuzz.process import extractOne
 
+from tugboat.types import Field
 from tugboat.utils.humanize import get_context_name, join_with_or
 
 if typing.TYPE_CHECKING:
@@ -271,7 +272,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
                 "loc": error["loc"],
                 "summary": "Found redundant field",
                 "msg": f"Field {formatted_field} is not valid within {get_context_name(parents)}.",
-                "input": raw_field_name,
+                "input": Field(raw_field_name),
             }
 
         case (
