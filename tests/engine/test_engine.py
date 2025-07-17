@@ -1,10 +1,15 @@
+import json
+import logging
 import textwrap
+from pathlib import Path
 
 import pytest
 from dirty_equals import IsPartialDict
 
 from tests.dirty_equals import ContainsSubStrings
 from tugboat.engine import analyze_yaml_stream
+
+logger = logging.getLogger(__name__)
 
 
 def test_analyze_yaml_stream_1(monkeypatch: pytest.MonkeyPatch):
@@ -188,3 +193,33 @@ def test_suppression(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureF
         "Diagnosis T01 (<no summary>) at test-:spec.foo is suppressed by comment"
         in caplog.text
     )
+
+
+def test_analyze_yaml_stream_with_argo_examples(argo_example_dir: Path):
+    """
+    This test is an integration test that make sure that our rules are valid
+    for (almost) all examples from Argo Workflows official repository.
+    """
+    workflow_binding_dir = argo_example_dir / "workflow-event-binding"
+    EXCLUDES = {
+        # invalid reference
+        workflow_binding_dir / "event-consumer-workflowtemplate.yaml",
+        # param value is an object, expected a string
+        workflow_binding_dir / "github-path-filter-workflowtemplate.yaml",
+    }
+
+    for file_path in argo_example_dir.glob("**/*.yaml"):
+        # skip known false positives
+        if file_path in EXCLUDES:
+            continue
+
+        # analyze
+        diagnoses = analyze_yaml_stream(file_path.read_text())
+
+        # skip warnings
+        diagnoses = list(filter(lambda d: d["type"] != "warning", diagnoses))
+
+        # fail on errors
+        if any(diagnoses):
+            logger.critical("diagnoses: %s", json.dumps(diagnoses, indent=2))
+            pytest.fail(f"Found issue with {file_path}")
