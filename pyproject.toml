@@ -1,6 +1,6 @@
 [project]
 name = "argo-tugboat"
-version = "0.4.3-dev"
+version = "0.5.0"
 description = "Streamline your Argo Workflows with precision and confidence"
 authors = [{ name = "Tzu-Ting", email = "tzingshih@gmail.com" }]
 license = { text = "Apache-2.0" }
@@ -48,7 +48,7 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.bumpver]
-current_version = "0.4.3-dev"
+current_version = "0.5.0"
 version_pattern = "MAJOR.MINOR.PATCH[-TAG]"
 commit = false
 
