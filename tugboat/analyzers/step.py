@@ -14,6 +14,7 @@ from tugboat.constraints import (
 )
 from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_step_context
+from tugboat.types import Field
 from tugboat.utils import (
     check_model_fields_references,
     check_value_references,
@@ -58,7 +59,7 @@ def analyze_step(
             "loc": ("onExit",),
             "summary": "Deprecated field",
             "msg": "Field 'onExit' is deprecated. Please use 'hooks[exit].template' instead.",
-            "input": "onExit",
+            "input": Field("onExit"),
         }
 
 

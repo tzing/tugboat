@@ -12,6 +12,7 @@ import json
 import textwrap
 import typing
 
+from tugboat.types import Field
 from tugboat.utils.pydantic import get_type_name
 
 if typing.TYPE_CHECKING:
@@ -127,6 +128,6 @@ def critique_relaxed_artifact(artifact: RelaxedArtifact) -> Iterator[Diagnosis]:
                 If a literal value is intended, use raw artifact instead.
                 """
             ),
-            "input": "value",
+            "input": Field("value"),
             "fix": raw_artifact,
         }

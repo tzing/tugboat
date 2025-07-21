@@ -7,6 +7,7 @@ import tugboat.analyzers.workflow
 from tugboat.analyzers.kubernetes import check_resource_name
 from tugboat.constraints import require_exactly_one
 from tugboat.core import hookimpl
+from tugboat.types import Field
 from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:
@@ -36,7 +37,7 @@ def check_metadata(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
             "loc": ("metadata", "generateName"),
             "summary": "Use strict name",
             "msg": "Use a strict name instead of a generateName.",
-            "input": "generateName",
+            "input": Field("generateName"),
             "fix": "name",
         }
 

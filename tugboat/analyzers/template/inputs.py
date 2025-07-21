@@ -10,6 +10,7 @@ from tugboat.constraints import (
 )
 from tugboat.core import hookimpl
 from tugboat.references import get_workflow_context
+from tugboat.types import Field
 from tugboat.utils import (
     check_model_fields_references,
     check_value_references,
@@ -113,7 +114,7 @@ def _check_input_parameter(
                     Use 'default' instead to set a default value for the parameter.
                     """
                 ),
-                "input": "value",
+                "input": Field("value"),
                 "fix": "default",
             }
 
