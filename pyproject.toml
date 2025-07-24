@@ -25,6 +25,9 @@ documentation = "https://argo-tugboat.readthedocs.io/en/"
 [project.scripts]
 tugboat = "tugboat.console:main"
 
+[project.optional-dependencies]
+mcp = ["mcp (>=1.12.1,<2.0.0)"]
+
 [tool.poetry]
 packages = [{ include = "tugboat" }]
 classifiers = [
