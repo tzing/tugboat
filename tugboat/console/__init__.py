@@ -14,7 +14,7 @@ import tugboat.console.anchor
 import tugboat.settings
 from tugboat.console.glob import gather_paths
 from tugboat.console.outputs import get_output_builder
-from tugboat.console.utils import DiagnosesCounter
+from tugboat.console.utils import DiagnosesCounter, Stdin
 from tugboat.engine import analyze_yaml_stream
 from tugboat.settings import settings
 from tugboat.version import __version__
@@ -227,7 +227,7 @@ def update_settings(
     # special case: stdin
     if manifest == () and not sys.stdin.isatty() and not sys.stdin.closed:
         logger.debug("Detected stdin. Using it as input.")
-        path = typing.cast("FilePath", sys.stdin)
+        path = typing.cast("FilePath", Stdin())
         tugboat.settings.settings.include = [path]
 
 

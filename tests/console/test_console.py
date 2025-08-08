@@ -63,6 +63,24 @@ class TestMain:
         assert "All passed!" in result.output
 
     @pytest.mark.usefixtures("_reset_logging")
+    def test_stdin(self):
+        runner = click.testing.CliRunner()
+        result = runner.invoke(
+            main,
+            input="""
+                apiVersion: tugboat.example.com/v1
+                kind: Debug
+                metadata:
+                    generateName: test-
+                spec: {}
+                """,
+        )
+
+        assert not result.exception
+        assert result.exit_code == 0
+        assert "All passed!" in result.output
+
+    @pytest.mark.usefixtures("_reset_logging")
     def test_no_yaml_found(self, tmp_path: Path):
         runner = click.testing.CliRunner()
         result = runner.invoke(main, [str(tmp_path)])
