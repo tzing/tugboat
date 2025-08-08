@@ -38,7 +38,7 @@ yaml_parser = ruamel.yaml.YAML(typ="rt")
 
 
 def analyze_yaml_stream(
-    stream: str, filepath: PathLike | None = None
+    stream: str, filepath: str | PathLike[str] | None = None
 ) -> list[AugmentedDiagnosis]:
     """
     Analyze YAML manifest(s) and report issues.
