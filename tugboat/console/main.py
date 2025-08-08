@@ -184,51 +184,6 @@ def main(
         sys.exit(2)
 
 
-@functools.wraps(Settings)
-def update_settings(**kwargs):
-    """
-    Update settings based on command line arguments.
-
-    This function allows overriding settings that were loaded from config files
-    and environment variables. It handles special cases like stdin input and
-    color options.
-
-    The settings are updated in-place using the values passed in via command
-    line flags.
-    """
-    update_args = {}
-
-    # general settings
-    for key in (
-        "include",
-        "exclude",
-        "follow_symlinks",
-        "output_format",
-    ):
-        if value := kwargs.get(key):
-            update_args[key] = value
-
-    # special case: color
-    if (color := kwargs.get("color")) is not None:
-        update_args["color"] = color
-
-    # inplace update
-    # https://docs.pydantic.dev/latest/concepts/pydantic_settings/#in-place-reloading
-    try:
-        settings.__init__(**update_args)
-    except ValidationError as e:
-        for err in e.errors():
-            field = ".".join(map(str, err["loc"]))
-            msg = err["msg"]
-            raise click.UsageError(f"{field}: {msg}") from None
-
-    # special case: stdin
-    if kwargs["include"] == () and not sys.stdin.isatty() and not sys.stdin.closed:
-        logger.debug("Detected stdin. Using it as input.")
-        path = typing.cast("FilePath", CachedStdin())
-        settings.include = [path]
-
-
 class DiagnosesCounter(collections.Counter):
 
     def summary(self) -> str:

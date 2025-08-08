@@ -1,10 +1,16 @@
 import io
 import logging
+from pathlib import Path
 
+import click
+import click.testing
 import colorlog
 import pytest
+from dirty_equals import IsInstance, IsList
 
-from tugboat.console import setup_loggings
+from tugboat.console import setup_loggings, update_settings
+from tugboat.settings import settings
+from tugboat.types import GlobPath
 
 
 class TestSetupLoggings:
@@ -54,3 +60,86 @@ class TestSetupLoggings:
         assert ("INF" in err) == has_inf
         assert ("DEB" in err) == has_deb
         assert ("EXT" in err) == has_ext
+
+
+class TestUpdateSettings:
+
+    def test_1(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "foo").mkdir()
+        (tmp_path / "bar").touch()
+
+        update_settings(
+            manifest=["*"],
+            exclude=["bar"],
+            follow_symlinks=False,
+            color=True,
+            output_format="junit",
+        )
+
+        assert settings.include == IsList(IsInstance(GlobPath))
+        assert settings.exclude == IsList(IsInstance(Path))
+        assert settings.color is True
+        assert settings.follow_symlinks is False
+        assert settings.output_format == "junit"
+
+    def test_2(self):
+        update_settings(
+            manifest=[],
+            exclude=[],
+            follow_symlinks=None,
+            color=None,
+            output_format=None,
+        )
+
+        assert settings.include == []
+        assert settings.exclude == []
+        assert settings.color is None
+        assert settings.follow_symlinks is False
+        assert settings.output_format == "console"
+
+    def test_errors(self):
+        with pytest.raises(click.UsageError):
+            update_settings(
+                manifest=["/no/this/file"],
+                exclude=[],
+                follow_symlinks=None,
+                color=None,
+                output_format=None,
+            )
+
+        with pytest.raises(click.UsageError):
+            update_settings(
+                manifest=[],
+                exclude=["/no/this/file"],
+                follow_symlinks=None,
+                color=None,
+                output_format=None,
+            )
+
+        with pytest.raises(click.UsageError):
+            update_settings(
+                manifest=[],
+                exclude=[],
+                follow_symlinks="INVALID",
+                color=None,
+                output_format=None,
+            )
+
+        with pytest.raises(click.UsageError):
+            update_settings(
+                manifest=[],
+                exclude=[],
+                follow_symlinks=None,
+                color="INVALID",
+                output_format=None,
+            )
+
+        with pytest.raises(click.UsageError):
+            update_settings(
+                manifest=[],
+                exclude=[],
+                follow_symlinks=None,
+                color=None,
+                output_format="INVALID",
+            )
