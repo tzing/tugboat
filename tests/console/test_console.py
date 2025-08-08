@@ -3,11 +3,15 @@ import logging
 import shutil
 from pathlib import Path
 
+import click
 import click.testing
 import colorlog
 import pytest
+from dirty_equals import IsInstance, IsList
 
-from tugboat.console.main import DiagnosesCounter, main, setup_logging
+from tugboat.console import main, setup_loggings, update_settings
+from tugboat.settings import settings
+from tugboat.types import GlobPath
 
 
 class TestMain:
@@ -17,7 +21,7 @@ class TestMain:
         target = fixture_dir / "sample-workflow.yaml"
 
         runner = click.testing.CliRunner()
-        result = runner.invoke(main, [str(target), "--color", "1"])
+        result = runner.invoke(main, [str(target), "--color"])
 
         assert not result.exception
         assert result.exit_code == 0
@@ -98,7 +102,7 @@ class TestMain:
         assert "Failed to read file" in result.output
 
 
-class TestSetupLogging:
+class TestSetupLoggings:
 
     @pytest.mark.parametrize(
         ("verbose_level", "has_err", "has_inf", "has_deb", "has_ext"),
@@ -128,7 +132,7 @@ class TestSetupLogging:
         monkeypatch.setattr("colorlog.StreamHandler", _mock_stream_handler)
 
         # setup logging
-        setup_logging(verbose_level)
+        setup_loggings(verbose_level)
 
         # write logs
         logger = logging.getLogger("tugboat.sample")
@@ -147,33 +151,84 @@ class TestSetupLogging:
         assert ("EXT" in err) == has_ext
 
 
-class TestDiagnosesCounter:
+class TestUpdateSettings:
 
-    def test_pass(self):
-        counter = DiagnosesCounter()
-        assert counter.summary() == "All passed!"
-        assert not counter.has_any_error()
+    def test_1(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "foo").mkdir()
+        (tmp_path / "bar").touch()
+
+        update_settings(
+            manifest=["*"],
+            exclude=["bar"],
+            follow_symlinks=False,
+            color=True,
+            output_format="junit",
+        )
+
+        assert settings.include == IsList(IsInstance(GlobPath))
+        assert settings.exclude == IsList(IsInstance(Path))
+        assert settings.color is True
+        assert settings.follow_symlinks is False
+        assert settings.output_format == "junit"
+
+    def test_2(self):
+        update_settings(
+            manifest=[],
+            exclude=[],
+            follow_symlinks=None,
+            color=None,
+            output_format=None,
+        )
+
+        assert settings.include == []
+        assert settings.exclude == []
+        assert settings.color is None
+        assert settings.follow_symlinks is False
+        assert settings.output_format == "console"
 
     def test_errors(self):
-        counter = DiagnosesCounter(["error"])
-        assert counter.summary() == "Found 1 errors"
-        assert counter.has_any_error()
+        with pytest.raises(click.UsageError):
+            update_settings(
+                manifest=["/no/this/file"],
+                exclude=[],
+                follow_symlinks=None,
+                color=None,
+                output_format=None,
+            )
 
-    def test_failures(self):
-        counter = DiagnosesCounter(["failure"])
-        assert counter.summary() == "Found 1 failures"
-        assert counter.has_any_error()
+        with pytest.raises(click.UsageError):
+            update_settings(
+                manifest=[],
+                exclude=["/no/this/file"],
+                follow_symlinks=None,
+                color=None,
+                output_format=None,
+            )
 
-    def test_warning(self):
-        counter = DiagnosesCounter(["warning"])
-        assert counter.summary() == "Found 1 warnings"
-        assert not counter.has_any_error()
+        with pytest.raises(click.UsageError):
+            update_settings(
+                manifest=[],
+                exclude=[],
+                follow_symlinks="INVALID",
+                color=None,
+                output_format=None,
+            )
 
-    def test_mixed(self):
-        counter = DiagnosesCounter()
-        counter["error"] += 1
-        counter["error"] += 1
-        counter["failure"] += 1
-        counter["warning"] += 1
-        assert counter.summary() == "Found 2 errors, 1 failures and 1 warnings"
-        assert counter.has_any_error()
+        with pytest.raises(click.UsageError):
+            update_settings(
+                manifest=[],
+                exclude=[],
+                follow_symlinks=None,
+                color="INVALID",
+                output_format=None,
+            )
+
+        with pytest.raises(click.UsageError):
+            update_settings(
+                manifest=[],
+                exclude=[],
+                follow_symlinks=None,
+                color=None,
+                output_format="INVALID",
+            )
