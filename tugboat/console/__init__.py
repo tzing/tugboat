@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 import sys
 import typing
@@ -11,12 +12,17 @@ from pydantic import ValidationError
 
 import tugboat.console.anchor
 import tugboat.settings
+from tugboat.console.glob import gather_paths
+from tugboat.console.outputs import get_output_builder
+from tugboat.console.utils import DiagnosesCounter
+from tugboat.engine import analyze_yaml_stream
+from tugboat.settings import settings
 from tugboat.version import __version__
 
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
-    from typing import Any, NoReturn
+    from typing import Any, NoReturn, TextIO
 
     from pydantic import FilePath
     from pydantic_core import ErrorDetails
@@ -140,6 +146,15 @@ def main(
         tugboat.settings.settings.model_dump_json(indent=2),
     )
 
+    # perform linting
+    if output_file:
+        output_stream = output_file.open("w")
+    else:
+        # `nullcontext` prevents __exit__ call
+        output_stream = typing.cast("TextIO", contextlib.nullcontext(sys.stdout))
+
+    lint(output_stream)
+
 
 def setup_loggings(verbose_level: int):
     """
@@ -233,4 +248,51 @@ def _raise_usage_error(err: ErrorDetails) -> NoReturn:
         case "output_format":
             raise click.UsageError(f"Invalid value for '--output-format': {message}")
 
-    raise RuntimeError("Unknown validation error")
+    raise RuntimeError("Unknown validation error")  # pragma: no cover
+
+
+def lint(output_stream: TextIO) -> NoReturn:
+    # determine the inputs
+    manifest_paths = gather_paths(
+        includes=settings.include,
+        excludes=settings.exclude,
+        follow_symlinks=settings.follow_symlinks,
+    )
+
+    if not manifest_paths:
+        raise click.UsageError("No manifest found.")
+
+    manifest_paths = sorted(manifest_paths)
+    logger.info("Found %d manifest(s) to analyze.", len(manifest_paths))
+
+    # analyze manifests
+    counter = DiagnosesCounter()
+    output_builder = get_output_builder()
+
+    for i, path in enumerate(manifest_paths, 1):
+        logger.info("[%d/%d] Analyzing file %s", i, len(manifest_paths), path)
+        try:
+            content = path.read_text()
+        except Exception:
+            logger.error("Failed to read file %s", path)
+            logger.debug("Error details:", exc_info=True)
+            raise click.Abort from None
+
+        diagnoses = analyze_yaml_stream(content, path)
+
+        counter.update(diag["type"] for diag in diagnoses)
+        output_builder.update(path=path, content=content, diagnoses=diagnoses)
+
+    logger.debug("Analysis completed. Found %d diagnoses.", sum(counter.values()))
+
+    # write report
+    with output_stream as stream:
+        output_builder.dump(stream)
+
+    # finalize
+    click.echo(counter.summary(), err=True)
+
+    if counter.has_any_error():
+        sys.exit(2)
+
+    sys.exit(0)

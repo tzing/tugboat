@@ -1,7 +1,7 @@
 import click.testing
 import pytest
 
-from tugboat.console.main import main
+from tugboat.console import main
 from tugboat.version import __version__
 
 
