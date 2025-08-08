@@ -24,7 +24,7 @@ jobs:
           python-version: "3.12"
           cache: poetry
       - name: Install dependencies
-        run: poetry install
+        run: poetry install --all-extras
       - name: Add Argo Workflow to test fixtures
         uses: actions/checkout@v4
         with:
@@ -45,7 +45,7 @@ jobs:
           python-version: "3.12"
           cache: poetry
       - name: Install dependencies
-        run: poetry install
+        run: poetry install --all-extras
       - name: Coding style check
         run: poetry run ruff check
 
@@ -61,6 +61,6 @@ jobs:
           python-version: "3.12"
           cache: poetry
       - name: Install dependencies
-        run: poetry install
+        run: poetry install --all-extras
       - name: Type check
         run: poetry run pyright
