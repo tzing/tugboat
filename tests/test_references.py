@@ -3,6 +3,7 @@ import pytest
 from tugboat.references import (
     get_global_context,
     get_step_context,
+    get_task_context,
     get_template_context,
     get_workflow_context,
 )
@@ -465,5 +466,59 @@ class TestStepContext:
         assert ("item", "foo") not in ctx.parameters
 
         ctx = get_step_context(workflow, template, step_3)
+        assert ("item", "message") in ctx.parameters
+        assert ("item", "foo") in ctx.parameters
+
+
+class TestDagContext:
+
+    def test(self):
+        workflow = Workflow.model_validate(
+            {
+                "apiVersion": "argoproj.io/v1alpha1",
+                "kind": "Workflow",
+                "metadata": {"generateName": "loops-"},
+                "spec": {
+                    "templates": [
+                        {
+                            "dag": {
+                                "tasks": [
+                                    {
+                                        "name": "task-1",
+                                        "withItems": [{"message": "hello world"}],
+                                    },
+                                    {
+                                        "name": "task-2",
+                                        "withParam": '[{"message": "hello world"}]',
+                                    },
+                                    {
+                                        "name": "task-3",
+                                        "withParam": "{{ inputs.parameters }}",
+                                    },
+                                ]
+                            }
+                        },
+                    ],
+                },
+            }
+        )
+        assert workflow.spec.templates
+
+        (template,) = workflow.spec.templates
+        assert template.dag
+
+        task_1, task_2, task_3 = template.dag.tasks
+
+        ctx = get_task_context(workflow, template, task_1)
+        assert ("inputs", "parameters") in ctx.parameters
+        assert ("item",) in ctx.parameters
+        assert ("item", "message") in ctx.parameters
+        assert ("item", "foo") not in ctx.parameters
+
+        ctx = get_task_context(workflow, template, task_2)
+        assert ("item", "message") in ctx.parameters
+        assert ("item", "foo") not in ctx.parameters
+
+        ctx = get_task_context(workflow, template, task_3)
         assert ("item", "message") in ctx.parameters
         assert ("item", "foo") in ctx.parameters
