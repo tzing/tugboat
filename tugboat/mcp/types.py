@@ -10,10 +10,10 @@ if typing.TYPE_CHECKING:
     from pydantic.fields import FieldInfo
 
 
-def _Doc(text: str) -> FieldInfo:
+def Docstring(description: str) -> FieldInfo:
     """Shortcut for creating a description-only Field annotation."""
-    text = textwrap.dedent(text).strip()
-    return Field(description=text)
+    description = textwrap.dedent(description).strip()
+    return Field(description=description)
 
 
 class Result(BaseModel):
@@ -21,12 +21,12 @@ class Result(BaseModel):
 
     count: Annotated[
         int,
-        _Doc("The number of issues found in the manifest."),
+        Docstring("The number of issues found in the manifest."),
     ]
 
     issues: Annotated[
         list[Issue],
-        _Doc("A list of issues found in the manifest."),
+        Docstring("A list of issues found in the manifest."),
     ]
 
 
@@ -35,19 +35,19 @@ class Issue(BaseModel):
 
     line: Annotated[
         int,
-        _Doc(
+        Docstring(
             "Line number of the issue occurrence in the source file. The line number is cumulative across all documents in the YAML stream."
         ),
     ]
 
     column: Annotated[
         int,
-        _Doc("Column number of the issue occurrence in the source file."),
+        Docstring("Column number of the issue occurrence in the source file."),
     ]
 
     type: Annotated[
         Literal["error", "failure", "warning"],
-        _Doc(
+        Docstring(
             """
             The type of the issue.
             * ``error`` indicates a critical issue that prevents the analyzer from running.
@@ -59,17 +59,17 @@ class Issue(BaseModel):
 
     code: Annotated[
         str,
-        _Doc("A unique identifier representing the violated rule."),
+        Docstring("A unique identifier representing the violated rule."),
     ]
 
     manifest: Annotated[
         str | None,
-        _Doc("The manifest name where the issue occurred."),
+        Docstring("The manifest name where the issue occurred."),
     ]
 
     loc: Annotated[
         tuple[str | int, ...],
-        _Doc(
+        Docstring(
             """
             A list of keys indicating the location of the issue in the manifest.
             For example, a issue found in the `spec.containers[0].name` field would have a location of `["spec", "containers", 0, "name"]`.
@@ -79,22 +79,22 @@ class Issue(BaseModel):
 
     summary: Annotated[
         str,
-        _Doc("A short summary of the issue."),
+        Docstring("A short summary of the issue."),
     ]
 
     msg: Annotated[
         str,
-        _Doc("A human-readable message describing the issue."),
+        Docstring("A human-readable message describing the issue."),
     ]
 
     input: Annotated[
         str | int | bool | float | Any | None,
-        _Doc("The input that caused the issue."),
+        Docstring("The input that caused the issue."),
     ]
 
     fix: Annotated[
         str | None,
-        _Doc(
+        Docstring(
             """
             A possible fix to the issue.
             This output is based on the analyzer's best guess and may not be correct.
