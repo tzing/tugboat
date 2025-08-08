@@ -1,4 +1,3 @@
-
 import pytest
 
 from tugboat.references import (
@@ -357,6 +356,63 @@ class TestTemplateContext:
         ctx = get_template_context(workflow, workflow.spec.templates[1])
         assert ("workflow", "name") in ctx.parameters
         assert ("steps", "print-message-loop", "id") not in ctx.parameters
+
+    def test_dag(self):
+        workflow = Workflow.model_validate(
+            {
+                "apiVersion": "argoproj.io/v1alpha1",
+                "kind": "Workflow",
+                "metadata": {"generateName": "loops-"},
+                "spec": {
+                    "entrypoint": "loop-example",
+                    "templates": [
+                        {
+                            "name": "loop-example",
+                            "dag": {
+                                "tasks": [
+                                    {
+                                        "name": "print",
+                                        "template": "print-message",
+                                        "arguments": {
+                                            "parameters": [
+                                                {"name": "message", "value": "{{item}}"}
+                                            ]
+                                        },
+                                        "withItems": ["hello world", "goodbye world"],
+                                    },
+                                    {
+                                        "name": "extra-step",
+                                        "templateRef": {
+                                            "name": "demo",
+                                            "template": "print-message",
+                                        },
+                                    },
+                                ]
+                            },
+                        },
+                        {
+                            "name": "print-message",
+                            "inputs": {"parameters": [{"name": "message"}]},
+                            "outputs": {"parameters": [{"name": "echo"}]},
+                        },
+                    ],
+                },
+            }
+        )
+        assert workflow.spec.templates  # satisfy pyright
+
+        ctx = get_template_context(workflow, workflow.spec.templates[0])
+        assert ("workflow", "name") in ctx.parameters
+        assert ("tasks", "print", "outputs", "parameters", "echo") in ctx.parameters
+        assert ("tasks", "print", "outputs", "parameters", "NNN") not in ctx.parameters
+
+        assert (
+            "tasks",
+            "extra-step",
+            "outputs",
+            "parameters",
+            "ANYTHING",
+        ) in ctx.parameters
 
 
 class TestStepContext:

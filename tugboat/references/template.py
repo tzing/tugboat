@@ -67,7 +67,7 @@ def get_template_context(
 
     # add template-type specific references
     _add_step_references(ctx, template, workflow)
-    # TODO dag template
+    _add_dag_references(ctx, template, workflow)
     # TODO http template
 
     return ctx
@@ -138,4 +138,70 @@ def _add_step_references(
             }
             ctx.artifacts |= {
                 ("steps", step.name, "outputs", "artifacts", AnyStr),
+            }
+
+
+def _add_dag_references(
+    ctx: Context,
+    template: Template,
+    workflow: Workflow | WorkflowTemplate,
+):
+    if not template.dag:
+        return
+
+    ctx.parameters |= {("tasks", "name")}
+
+    for task in template.dag.tasks:
+        # default task parameters
+        ctx.parameters |= {
+            ("tasks", task.name, "id"),
+            ("tasks", task.name, "ip"),
+            ("tasks", task.name, "status"),
+            ("tasks", task.name, "exitCode"),
+            ("tasks", task.name, "startedAt"),
+            ("tasks", task.name, "finishedAt"),
+            ("tasks", task.name, "hostNodeName"),
+            ("tasks", task.name, "outputs", "result"),
+        }
+
+        # parallel tasks
+        if task.withItems or task.withParam:
+            ctx.parameters |= {
+                ("tasks", task.name, "outputs", "parameters"),
+            }
+
+        # task outputs
+        referenced_template = None
+        if task.template:
+            referenced_template = workflow.template_dict.get(task.template)
+        elif task.templateRef and task.templateRef.name == workflow.name:
+            referenced_template = workflow.template_dict.get(task.templateRef.template)
+        elif task.inline:
+            referenced_template = task.inline
+
+        if referenced_template and referenced_template.outputs:
+            ctx.parameters |= {
+                ("tasks", task.name, "outputs", "parameters", param.name)
+                for param in referenced_template.outputs.parameters or ()
+                if param.name
+            }
+            ctx.artifacts |= {
+                ("tasks", task.name, "outputs", "artifacts", artifact.name)
+                for artifact in referenced_template.outputs.artifacts or []
+                if artifact.name
+            }
+
+        if not referenced_template:
+            logger.debug(
+                "The referenced template %s is not available. "
+                "Allow `tasks.%s.outputs.parameters.ANY` and `tasks.%s.outputs.artifacts.ANY`.",
+                task.template,
+                task.name,
+                task.name,
+            )
+            ctx.parameters |= {
+                ("tasks", task.name, "outputs", "parameters", AnyStr),
+            }
+            ctx.artifacts |= {
+                ("tasks", task.name, "outputs", "artifacts", AnyStr),
             }
