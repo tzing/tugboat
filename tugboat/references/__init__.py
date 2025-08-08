@@ -1,10 +1,11 @@
 """
-Utilities for building available references within the given scope.
+Reference management utilities for workflows and templates.
 
-See Also
---------
-Reference
-   https://argo-workflows.readthedocs.io/en/latest/variables/#reference
+This module helps you track and validate variable references that are available in different workflow scopes. The core component is the :py:class:`Context` class, which maintains collections of available references for a specific scope.
+
+For detailed information about references, see `Workflow Variables`_ in the Argo Workflows documentation.
+
+.. _Workflow Variables: https://argo-workflows.readthedocs.io/en/latest/variables/
 """
 
 __all__ = [
