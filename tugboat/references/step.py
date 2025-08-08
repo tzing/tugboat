@@ -13,14 +13,36 @@ if typing.TYPE_CHECKING:
     from typing import Any
 
     from tugboat.references.context import Context
-    from tugboat.schemas import Step, Template, Workflow, WorkflowTemplate
+    from tugboat.schemas import DagTask, Step, Template, Workflow, WorkflowTemplate
 
 logger = logging.getLogger(__name__)
 
 
-@cache(32)
 def get_step_context(
     workflow: Workflow | WorkflowTemplate, template: Template, step: Step
+) -> Context:
+    """
+    Retrieve the context for a specific `step`_.
+
+    .. _step: https://argo-workflows.readthedocs.io/en/latest/walk-through/steps/
+    """
+    return _get_step_context(workflow, template, step)
+
+
+def get_task_context(
+    workflow: Workflow | WorkflowTemplate, template: Template, task: DagTask
+) -> Context:
+    """
+    Retrieves the context for a `DAG`_ task.
+
+    .. _DAG: https://argo-workflows.readthedocs.io/en/latest/walk-through/dag/
+    """
+    return _get_step_context(workflow, template, task)
+
+
+@cache(32)
+def _get_step_context(
+    workflow: Workflow | WorkflowTemplate, template: Template, step: Step | DagTask
 ) -> Context:
     ctx = get_template_context(workflow, template)
 

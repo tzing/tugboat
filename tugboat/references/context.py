@@ -129,9 +129,27 @@ class ReferenceCollection(MutableSet[_TR]):
 
 
 class Context(BaseModel):
+    """
+    Data class for storing available references within a given scope.
+
+    You can use the :py:keyword:`in` syntax to check if a reference exists in the context.
+    For example:
+
+    .. code-block:: python
+
+       ctx = get_workflow_context(workflow)
+       if ("inputs", "parameters", "message") in ctx.parameters:
+           print("The variable `inputs.parameters.message` is available.")
+    """
+
     parameters: InstanceOf[ReferenceCollection] = Field(
         default_factory=ReferenceCollection
     )
+    """Collection of available parameters.
+    """
+
     artifacts: InstanceOf[ReferenceCollection] = Field(
         default_factory=ReferenceCollection
     )
+    """Collection of available artifacts.
+    """
