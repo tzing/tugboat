@@ -85,6 +85,11 @@ logger = logging.getLogger(__name__)
     ),
 )
 @cloup.option(
+    "--mcp",
+    is_flag=True,
+    help="Start the MCP server.",
+)
+@cloup.option(
     "--anchor",
     is_flag=True,
     help="Drop an anchor.",
@@ -98,6 +103,7 @@ def main(
     output_format: str | None,
     output_file: Path | None,
     verbose: int,
+    mcp: bool,
     anchor: bool,
 ):
     """
@@ -145,6 +151,10 @@ def main(
         "Current settings: %s",
         tugboat.settings.settings.model_dump_json(indent=2),
     )
+
+    # special case: MCP
+    if mcp:
+        run_mcp()
 
     # perform linting
     if output_file:
@@ -295,4 +305,16 @@ def lint(output_stream: TextIO) -> NoReturn:
     if counter.has_any_error():
         sys.exit(2)
 
+    sys.exit(0)
+
+
+def run_mcp() -> NoReturn:
+    try:
+        import tugboat.mcp
+    except ImportError:
+        raise click.UsageError(
+            "MCP is not installed. To use this feature, please install Tugboat with the 'mcp' extra."
+        ) from None
+
+    tugboat.mcp.server.run()
     sys.exit(0)
