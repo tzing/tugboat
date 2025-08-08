@@ -18,8 +18,30 @@ if typing.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@cache(32)
 def get_step_context(
+    workflow: Workflow | WorkflowTemplate, template: Template, step: Step
+) -> Context:
+    """
+    Retrieve the context for a specific `step`_.
+
+    .. _step: https://argo-workflows.readthedocs.io/en/latest/walk-through/steps/
+    """
+    return _get_step_context(workflow, template, step)
+
+
+def get_task_context(
+    workflow: Workflow | WorkflowTemplate, template: Template, task: DagTask
+) -> Context:
+    """
+    Retrieves the context for a `DAG`_ task.
+
+    .. _DAG: https://argo-workflows.readthedocs.io/en/latest/walk-through/dag/
+    """
+    return _get_step_context(workflow, template, task)
+
+
+@cache(32)
+def _get_step_context(
     workflow: Workflow | WorkflowTemplate, template: Template, step: Step | DagTask
 ) -> Context:
     ctx = get_template_context(workflow, template)
@@ -46,14 +68,6 @@ def get_step_context(
         ctx.parameters |= {("item",)}
 
     return ctx
-
-
-get_task_context = get_step_context
-"""
-Retrieves the context for a `DAG`_ task.
-
-.. _DAG: https://argo-workflows.readthedocs.io/en/latest/walk-through/dag/
-"""
 
 
 def _collect_item_fields(with_items: Iterable[Any]) -> set[str]:
