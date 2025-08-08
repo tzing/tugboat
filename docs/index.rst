@@ -38,27 +38,44 @@ Tugboat provides a range of features tailored to the needs of Argo Workflow user
    We are eager to hear from users like you — your feedback will directly influence how we refine and improve Tugboat.
 
 
-Quick Start
------------
+Get Tugboat
++++++++++++
 
-To get started with Tugboat, you can install it using pip:
+Tugboat requires `Python`_ 3.12 or later.
 
-Install Tugboat
-+++++++++++++++
+The package is available on PyPI as `argo-tugboat`_. Just pick your favorite way to install it:
 
-Tugboat requires Python 3.12 or later (download from the `Python website <https://www.python.org/downloads/>`_ if needed).
+.. tab-set::
 
-The package is available on PyPI as `argo-tugboat`_. Install it using pip:
+    .. tab-item:: pipx
 
-.. code-block:: bash
+       .. code-block:: bash
 
-   pip install argo-tugboat
+          # install
+          pipx install argo-tugboat
 
+          # invoke without installing
+          pipx run argo-tugboat
+
+    .. tab-item:: uv
+
+       .. code-block:: bash
+
+          # invoke without installing
+          uvx --from=argo-tugboat tugboat
+
+    .. tab-item:: pip
+
+       .. code-block:: bash
+
+          pip install argo-tugboat
+
+.. _Python: https://www.python.org/downloads/
 .. _argo-tugboat: https://pypi.org/project/argo-tugboat/
 
 
-Prepare workflow manifest
-+++++++++++++++++++++++++
+Prepare manifest
+++++++++++++++++
 
 Make sure you have an Argo Workflow manifest ready. It should be a valid YAML file.
 
@@ -95,8 +112,8 @@ This manifest has two issues:
 Save this as ``whalesay.yaml``.
 
 
-Run Tugboat
-+++++++++++
+Run :octicon:`rocket`
++++++++++++++++++++++
 
 Lint your workflow manifest by running:
 
