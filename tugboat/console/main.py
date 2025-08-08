@@ -125,10 +125,6 @@ def main(
       # Read from stdin
       cat my-workflow.yaml | tugboat
     """
-    # setup logging
-    setup_logging(verbose)
-    logger.debug("Tugboat sets sail!")
-
     # easter egg: drop an anchor
     if anchor:
         print_anchor()
@@ -191,37 +187,6 @@ def main(
 
     if counter.has_any_error():
         sys.exit(2)
-
-
-def setup_logging(verbose_level: int):
-    """
-    Setup logging
-    We separate the configuration of the tugboat logger from the other loggers.
-    """
-    # tugboar loggers
-    tugboat_logger = colorlog.getLogger("tugboat")
-    tugboat_logger.propagate = False
-
-    match verbose_level:
-        case 0:
-            tugboat_logger.setLevel(colorlog.WARNING)
-        case 1:
-            tugboat_logger.setLevel(colorlog.INFO)
-        case _:
-            tugboat_logger.setLevel(colorlog.DEBUG)
-
-    handler = colorlog.StreamHandler()
-    handler.setFormatter(
-        colorlog.ColoredFormatter("%(log_color)s%(levelname)7s |%(reset)s %(message)s")
-    )
-    tugboat_logger.addHandler(handler)
-
-    # other loggers
-    # only show logs when verbose level >= 3
-    if verbose_level >= 3:
-        logger = colorlog.getLogger()
-        logger.setLevel(colorlog.DEBUG)
-        logger.addHandler(handler)
 
 
 @functools.wraps(Settings)

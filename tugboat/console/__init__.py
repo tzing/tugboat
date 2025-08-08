@@ -4,6 +4,7 @@ import logging
 import typing
 
 import cloup
+import colorlog
 
 from tugboat.version import __version__
 
@@ -108,3 +109,38 @@ def main(
       # Read from stdin
       cat my-workflow.yaml | tugboat
     """
+    # setup logging
+    setup_loggings(verbose)
+    logger.debug("Tugboat sets sail!")
+
+
+def setup_loggings(verbose_level: int):
+    """
+    Setup loggings
+
+    We separate the configuration of the tugboat logger from the other loggers.
+    """
+    # tugboat loggers
+    tugboat_logger = colorlog.getLogger("tugboat")
+    tugboat_logger.propagate = False
+
+    match verbose_level:
+        case 0:
+            tugboat_logger.setLevel(colorlog.WARNING)
+        case 1:
+            tugboat_logger.setLevel(colorlog.INFO)
+        case _:
+            tugboat_logger.setLevel(colorlog.DEBUG)
+
+    handler = colorlog.StreamHandler()
+    handler.setFormatter(
+        colorlog.ColoredFormatter("%(log_color)s%(levelname)7s |%(reset)s %(message)s")
+    )
+    tugboat_logger.addHandler(handler)
+
+    # other loggers
+    # only show logs when verbose level >= 3
+    if verbose_level >= 3:
+        logger = colorlog.getLogger()
+        logger.setLevel(colorlog.DEBUG)
+        logger.addHandler(handler)
