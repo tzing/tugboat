@@ -12,7 +12,6 @@ import cloup
 import colorlog
 from pydantic import ValidationError
 
-from tugboat.console.anchor import print_anchor
 from tugboat.console.glob import gather_paths
 from tugboat.console.outputs import get_output_builder
 from tugboat.console.utils import CachedStdin
@@ -125,10 +124,6 @@ def main(
       # Read from stdin
       cat my-workflow.yaml | tugboat
     """
-    # easter egg: drop an anchor
-    if anchor:
-        print_anchor()
-
     # update and validate settings
     update_settings(
         color=color,

@@ -6,6 +6,7 @@ import typing
 import cloup
 import colorlog
 
+import tugboat.console.anchor
 from tugboat.version import __version__
 
 if typing.TYPE_CHECKING:
@@ -112,6 +113,10 @@ def main(
     # setup logging
     setup_loggings(verbose)
     logger.debug("Tugboat sets sail!")
+
+    # easter egg: drop an anchor
+    if anchor:
+        tugboat.console.anchor.print_anchor()
 
 
 def setup_loggings(verbose_level: int):
