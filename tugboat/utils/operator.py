@@ -16,12 +16,18 @@ from tugboat.types import Diagnosis
 
 if typing.TYPE_CHECKING:
     from collections.abc import Container, Iterator
-    from typing import Self
+    from typing import Protocol, Self
 
     from tugboat.references.context import ReferenceCollection
-    from tugboat.schemas import Artifact, Parameter, Template
 
-    type NamedModel = Artifact | Parameter | Template
+    class _NamedModel(Protocol):
+        name: str
+
+    class _NullableNamedModel(Protocol):
+        name: str | None
+
+    # pyright 1.1 says non-nullable and nullable protocols are incompatible
+    type NamedModel = _NamedModel | _NullableNamedModel
 
 
 class prepend_loc(Iterable[Diagnosis]):
