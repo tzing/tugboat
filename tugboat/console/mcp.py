@@ -3,15 +3,17 @@ from __future__ import annotations
 import logging
 import textwrap
 import typing
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, cast
 
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field
 
-import tugboat.engine
+from tugboat.engine import analyze_yaml_stream
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from pydantic.fields import FieldInfo
 
 logger = logging.getLogger(__name__)
@@ -51,6 +53,11 @@ class Issue(BaseModel):
     column: Annotated[
         int,
         _Docstring("Column number of the issue occurrence in the source file."),
+    ]
+
+    sourceNearby: Annotated[
+        str,
+        _Docstring("Text near the issue occurrence in the source file."),
     ]
 
     type: Annotated[
@@ -123,7 +130,11 @@ def analyze_stream(
     manifest_path: Annotated[
         str,
         _Docstring(
-            "Path to the manifest file. The file must be a valid Kubernetes manifest file in YAML format. Any templated manifests (e.g., Helm) should be pre-processed before submission."
+            """
+            Path to the manifest file.
+            The file MUST be a valid, plain Kubernetes manifest file in YAML format.
+            Any manifest template (e.g. Helm) should be pre-processed before being passed to this tool.
+            """
         ),
     ],
 ) -> Result:
@@ -156,19 +167,35 @@ def analyze_stream(
     This tool will analyze the manifest and return a JSON object with the following structure:
 
     ```json
-    {"count":2,"issues":[[{"code":"M101","column":5,"fix":null,"input":null,"line":6,"loc":["spec","entrypoint"],"manifest":"demo-","msg":"Field 'entrypoint' is required in the 'spec' section but missing.","summary":"Missing required field 'entrypoint'","type":"failure"},{"code":"VAR002","column":17,"fix":"{{ inputs.parameters.message }}","input":"{{ inputs.parameter.message }}","line":17,"loc":["spec","templates",0,"container","args",0],"manifest":"demo-","msg":"The parameter reference 'inputs.parameter.message' used in template 'whalesay' is invalid.","summary":"Invalid reference","type":"failure"}]]}
+    {"count": 2, "issues": [{"line": 6, "column": 3, "sourceNearby": "spec:\\n  templates:\\n    - name: whalesay\\n      inputs:", "type": "failure", "code": "M101", "manifest": "demo-", "loc": ["spec", "entrypoint"], "summary": "Missing required field \'entrypoint\'", "msg": "Field \'entrypoint\' is required in the \'spec\' section but missing.", "input": null, "fix": null}, {"line": 16, "column": 11, "sourceNearby": "        args:\\n          - \\"{{ inputs.parameter.message }}\\"", "type": "failure", "code": "VAR002", "manifest": "demo-", "loc": ["spec", "templates", 0, "container", "args", 0], "summary": "Invalid reference", "msg": "The parameter reference \'inputs.parameter.message\' used in template \'whalesay\' is invalid.", "input": "{{ inputs.parameter.message }}", "fix": "{{ inputs.parameters.message }}"}]}
     ```
     """
     logger.debug("Linting manifest %s", manifest_path)
 
     with open(manifest_path) as fd:
         manifest_content = fd.read()
+    manifest_content_lines = manifest_content.splitlines()
 
-    diagnoses = tugboat.engine.analyze_yaml_stream(manifest_content, manifest_path)
+    issues = []
+    for diagnosis in analyze_yaml_stream(manifest_content, manifest_path):
+        issue = cast("dict", diagnosis)
+        line = diagnosis["line"]
+
+        # get lines near the issue
+        issue["sourceNearby"] = "\n".join(get_lines_near(manifest_content_lines, line))
+
+        issues.append(issue)
 
     return Result.model_validate(
         {
-            "count": len(diagnoses),
-            "issues": diagnoses,
+            "count": len(issues),
+            "issues": issues,
         }
     )
+
+
+def get_lines_near(content: list[str], focus_line: int) -> Iterator[str]:
+    focus_line -= 1  # 1-based to 0-based
+    line_starting = max(0, focus_line - 1)
+    line_ending = min(len(content), focus_line + 2)
+    yield from content[line_starting : line_ending + 1]
