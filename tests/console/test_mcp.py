@@ -6,18 +6,18 @@ import mcp.types
 import pytest
 from dirty_equals import IsPartialDict
 
-import tugboat.mcp
+from tugboat.console.mcp import server
 
 
 @pytest.mark.asyncio
 async def test_list_tools():
-    (tool,) = await tugboat.mcp.server.list_tools()
+    (tool,) = await server.list_tools()
     assert tool.name == "analyze_stream"
 
 
 @pytest.mark.asyncio
 async def test_analyze_stream(fixture_dir: Path):
-    async with fastmcp.Client(tugboat.mcp.server) as client:
+    async with fastmcp.Client(server) as client:
         result = await client.call_tool(
             "analyze_stream",
             {

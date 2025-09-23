@@ -310,11 +310,11 @@ def lint(output_stream: TextIO) -> NoReturn:
 
 def run_mcp() -> NoReturn:
     try:
-        import tugboat.mcp
+        import tugboat.console.mcp
     except ImportError:
         raise click.UsageError(
             "MCP is not installed. To use this feature, please install Tugboat with the 'mcp' extra."
         ) from None
 
-    tugboat.mcp.server.run()
+    tugboat.console.mcp.server.run()
     sys.exit(0)
