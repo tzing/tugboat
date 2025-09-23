@@ -9,7 +9,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field
 
-import tugboat.engine
+from tugboat.engine import analyze_yaml_stream
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
@@ -174,26 +174,21 @@ def analyze_stream(
 
     with open(manifest_path) as fd:
         manifest_content = fd.read()
-
-    # analyze
-    diagnoses = tugboat.engine.analyze_yaml_stream(manifest_content, manifest_path)
-
-    # convert to MCP Issue format
-    manifest_content = manifest_content.splitlines()
+    manifest_content_lines = manifest_content.splitlines()
 
     issues = []
-    for diagnosis in diagnoses:
+    for diagnosis in analyze_yaml_stream(manifest_content, manifest_path):
         issue = cast("dict", diagnosis)
         line = diagnosis["line"]
 
         # get lines near the issue
-        issue["sourceNearby"] = "\n".join(get_lines_near(manifest_content, line))
+        issue["sourceNearby"] = "\n".join(get_lines_near(manifest_content_lines, line))
 
         issues.append(issue)
 
     return Result.model_validate(
         {
-            "count": len(diagnoses),
+            "count": len(issues),
             "issues": issues,
         }
     )
