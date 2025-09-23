@@ -130,7 +130,11 @@ def analyze_stream(
     manifest_path: Annotated[
         str,
         _Docstring(
-            "Path to the manifest file. The file must be a valid Kubernetes manifest file in YAML format. Any templated manifests (e.g., Helm) should be pre-processed before submission."
+            """
+            Path to the manifest file.
+            The file MUST be a valid, plain Kubernetes manifest file in YAML format.
+            Any manifest template (e.g. Helm) should be pre-processed before being passed to this tool.
+            """
         ),
     ],
 ) -> Result:
