@@ -2208,6 +2208,21 @@ theme-rtd = ["sphinx-rtd-theme (>=2.0,<3.0)"]
 theme-sbt = ["sphinx-book-theme (>=1.1,<2.0)"]
 
 [[package]]
+name = "sphinx-iconify"
+version = "0.2.1"
+description = "A sphinx role allowing you to embed icons from over 200,000 open-source vector icons."
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "sphinx_iconify-0.2.1-py3-none-any.whl", hash = "sha256:b226b955ab273429eee38f2060de18f26e8864773d3362813cd388cd852381ff"},
+    {file = "sphinx_iconify-0.2.1.tar.gz", hash = "sha256:4720000ab51a7ab7a4c88588f5b5d96246d304238095ffd11358a142435c7c30"},
+]
+
+[package.dependencies]
+sphinx = "*"
+
+[[package]]
 name = "sphinxcontrib-applehelp"
 version = "2.0.0"
 description = "sphinxcontrib-applehelp is a Sphinx extension which outputs Apple help books"
@@ -2438,4 +2453,4 @@ mcp = ["mcp"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "f9f68fddaef7839bb5a9ce674731ef60b0331f882983dc8bd4f42e81da40cd10"
+content-hash = "1cbe00205289fb46b99c6ce88fa8288a1d1b164b748ba06d50ce1af750359d74"

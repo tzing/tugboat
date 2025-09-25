@@ -47,7 +47,7 @@ The package is available on PyPI as `argo-tugboat`_. Just pick your favorite way
 
 .. tab-set::
 
-    .. tab-item:: pipx
+    .. tab-item:: pipx :iconify:`simple-icons:pipx`
 
        .. code-block:: bash
 
@@ -57,14 +57,14 @@ The package is available on PyPI as `argo-tugboat`_. Just pick your favorite way
           # invoke without installing
           pipx run argo-tugboat
 
-    .. tab-item:: uv
+    .. tab-item:: uv :iconify:`simple-icons:uv`
 
        .. code-block:: bash
 
           # invoke without installing
           uvx --from=argo-tugboat tugboat
 
-    .. tab-item:: pip
+    .. tab-item:: pip :iconify:`file-icons:pypi`
 
        .. code-block:: bash
 
