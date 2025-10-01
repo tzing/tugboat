@@ -164,3 +164,4 @@ cython_debug/
 
 # Test fixtures
 /tests/fixtures/argo-workflows
+/tests/fixtures/argo-workflows-example-helm
