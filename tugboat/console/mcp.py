@@ -134,7 +134,7 @@ class Issue(BaseModel):
         title="Analyze Manifest",
         readOnlyHint=True,
         destructiveHint=False,
-        openWorldHint=False,
+        openWorldHint=True,
     )
 )
 async def analyze_stream(
