@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import textwrap
 import typing
@@ -221,6 +222,58 @@ async def analyze_stream(
             "issues": issues,
         }
     )
+
+
+async def render_helm_template(template: Path) -> str:
+    """
+    Give a path to the template file.
+    Returns the rendered output of a helm template command.
+    """
+    # locate the Helm chart root (directory containing Chart.yaml).
+    chart_dir: Path | None = None
+    for candidate in template.parents:
+        if (candidate / "Chart.yaml").is_file():
+            chart_dir = candidate
+            break
+
+    if chart_dir is None:
+        raise FileNotFoundError(
+            f"Could not find Chart.yaml for template path {template}"
+        )
+
+    # render the template using `helm template`
+    command = [
+        "helm",
+        "template",
+        ".",
+        "--show-only",
+        str(template.relative_to(chart_dir)),
+    ]
+
+    logger.debug("Executing command: $ %s", " ".join(command))
+
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=chart_dir,
+        )
+    except FileNotFoundError:
+        raise RuntimeError(
+            "Helm executable not found; ensure Helm is installed and in PATH."
+        ) from None
+
+    stdout, stderr = await process.communicate()
+
+    if stderr:
+        error_msg = stderr.decode("utf-8", errors="replace").strip()
+        logger.warning("Helm template command stderr: %s", error_msg)
+
+        if process.returncode != 0:
+            raise RuntimeError(f"Helm template command failed: {error_msg}")
+
+    return stdout.decode("utf-8", errors="replace")
 
 
 def get_lines_near(content: list[str], focus_line: int) -> Iterator[str]:
