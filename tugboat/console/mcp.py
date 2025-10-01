@@ -148,6 +148,16 @@ async def analyze_stream(
             """
         ),
     ],
+    is_helm_template: Annotated[
+        bool,
+        _Docstring(
+            """
+            Whether the manifest file is a Helm template.
+            If `true`, the tool will try to render the Helm template before analyzing it.
+            If `false`, the tool will analyze the manifest file as-is.
+            """
+        ),
+    ],
 ) -> SuccessResult | ErrorResult:
     """
     A linter to analyze a Argo Workflows manifest file for potential issues.
@@ -200,8 +210,17 @@ async def analyze_stream(
         )
 
     # read the manifest content
-    with open(manifest) as fd:
-        manifest_content = fd.read()
+    if is_helm_template:
+        # render Helm template
+        try:
+            manifest_content = await render_helm_template(manifest)
+        except Exception as e:
+            return ErrorResult.model_validate({"message": str(e)})
+
+    else:
+        # plain manifest file
+        with manifest.open() as fd:
+            manifest_content = fd.read()
 
     manifest_content_lines = manifest_content.splitlines()
 

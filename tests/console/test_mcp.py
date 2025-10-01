@@ -29,7 +29,7 @@ async def test_list_tools():
 class TestAnalyzeStream:
 
     @pytest.mark.asyncio
-    async def test_basic(self, tmp_path: Path):
+    async def test_plain(self, tmp_path: Path):
         MANIFEST = textwrap.dedent(
             """
             apiVersion: argoproj.io/v1alpha1
@@ -90,6 +90,26 @@ class TestAnalyzeStream:
         }
 
     @pytest.mark.asyncio
+    @pytest.mark.usefixtures("_requires_helm")
+    async def test_helm(self, argo_example_helm_dir: Path):
+        template_path = argo_example_helm_dir / "templates" / "print-message.yaml"
+
+        async with fastmcp.Client(server) as client:
+            result = await client.call_tool(
+                "analyze_stream",
+                {
+                    "manifest_path": str(template_path),
+                    "is_helm_template": True,
+                },
+            )
+
+        assert len(result.content) == 1
+        assert isinstance(result.content[0], mcp.types.TextContent)
+
+        response = json.loads(result.content[0].text)
+        assert response == {"count": 0, "issues": []}
+
+    @pytest.mark.asyncio
     async def test_manifest_not_found(self):
         async with fastmcp.Client(server) as client:
             result = await client.call_tool(
@@ -126,6 +146,33 @@ class TestAnalyzeStream:
         assert response == {
             "message": f"Manifest path is not a file. Input path: {tmp_path}, resolved path: {tmp_path}"
         }
+
+    @pytest.mark.asyncio
+    async def test_helm_template_error(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ):
+        monkeypatch.setattr(
+            "tugboat.console.mcp.render_helm_template",
+            AsyncMock(side_effect=RuntimeError("Mock template error")),
+        )
+
+        manifest_path = tmp_path / "template.yaml"
+        manifest_path.touch()
+
+        async with fastmcp.Client(server) as client:
+            result = await client.call_tool(
+                "analyze_stream",
+                {
+                    "manifest_path": str(manifest_path),
+                    "is_helm_template": True,
+                },
+            )
+
+        assert len(result.content) == 1
+        assert isinstance(result.content[0], mcp.types.TextContent)
+
+        response = json.loads(result.content[0].text)
+        assert response == {"message": "Mock template error"}
 
 
 class TestRenderHelmTemplate:
