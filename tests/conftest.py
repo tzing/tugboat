@@ -18,6 +18,14 @@ def argo_example_dir(fixture_dir: Path) -> Path:
     return directory
 
 
+@pytest.fixture(scope="session")
+def argo_example_helm_dir(fixture_dir: Path) -> Path:
+    directory = fixture_dir / "argo-workflows-example-helm"
+    if not directory.is_dir():
+        pytest.skip("Argo Helm examples directory not found")
+    return directory
+
+
 @pytest.fixture
 def plugin_manager():
     get_plugin_manager.cache_clear()

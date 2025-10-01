@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import textwrap
 import typing
@@ -133,7 +134,7 @@ class Issue(BaseModel):
         title="Analyze Manifest",
         readOnlyHint=True,
         destructiveHint=False,
-        openWorldHint=False,
+        openWorldHint=True,
     )
 )
 async def analyze_stream(
@@ -144,6 +145,16 @@ async def analyze_stream(
             Path to the manifest file.
             The file MUST be a valid, plain Kubernetes manifest file in YAML format.
             Any manifest template (e.g. Helm) should be pre-processed before being passed to this tool.
+            """
+        ),
+    ],
+    is_helm_template: Annotated[
+        bool,
+        _Docstring(
+            """
+            Whether the manifest file is a Helm template.
+            If `true`, the tool will try to render the Helm template before analyzing it.
+            If `false`, the tool will analyze the manifest file as-is.
             """
         ),
     ],
@@ -199,8 +210,17 @@ async def analyze_stream(
         )
 
     # read the manifest content
-    with open(manifest) as fd:
-        manifest_content = fd.read()
+    if is_helm_template:
+        # render Helm template
+        try:
+            manifest_content = await render_helm_template(manifest)
+        except Exception as e:
+            return ErrorResult.model_validate({"message": str(e)})
+
+    else:
+        # plain manifest file
+        with manifest.open() as fd:
+            manifest_content = fd.read()
 
     manifest_content_lines = manifest_content.splitlines()
 
@@ -221,6 +241,58 @@ async def analyze_stream(
             "issues": issues,
         }
     )
+
+
+async def render_helm_template(template: Path) -> str:
+    """
+    Give a path to the template file.
+    Returns the rendered output of a helm template command.
+    """
+    # locate the Helm chart root (directory containing Chart.yaml).
+    chart_dir: Path | None = None
+    for candidate in template.parents:
+        if (candidate / "Chart.yaml").is_file():
+            chart_dir = candidate
+            break
+
+    if chart_dir is None:
+        raise FileNotFoundError(
+            f"Could not find Chart.yaml for template path {template}"
+        )
+
+    # render the template using `helm template`
+    command = [
+        "helm",
+        "template",
+        ".",
+        "--show-only",
+        str(template.relative_to(chart_dir)),
+    ]
+
+    logger.debug("Executing command: $ %s", " ".join(command))
+
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=chart_dir,
+        )
+    except FileNotFoundError:
+        raise RuntimeError(
+            "Helm executable not found; ensure Helm is installed and in PATH."
+        ) from None
+
+    stdout, stderr = await process.communicate()
+
+    if stderr:
+        error_msg = stderr.decode("utf-8", errors="replace").strip()
+        logger.warning("Helm template command stderr: %s", error_msg)
+
+        if process.returncode != 0:
+            raise RuntimeError(f"Helm template command failed: {error_msg}")
+
+    return stdout.decode("utf-8", errors="replace")
 
 
 def get_lines_near(content: list[str], focus_line: int) -> Iterator[str]:
