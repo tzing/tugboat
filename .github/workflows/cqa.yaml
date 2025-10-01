@@ -23,6 +23,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: poetry
+      - uses: azure/setup-helm@v4
       - name: Install dependencies
         run: poetry install --all-extras
       - name: Add Argo Workflow to test fixtures
@@ -30,6 +31,11 @@ jobs:
         with:
           repository: argoproj/argo-workflows
           path: tests/fixtures/argo-workflows
+      - name: Add Argo Example Chart to test fixtures
+        uses: actions/checkout@v4
+        with:
+          repository: tzing/argo-workflows-example-helm
+          path: tests/fixtures/argo-workflows-example-helm
       - name: PyTest
         run: poetry run pytest
 
