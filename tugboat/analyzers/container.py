@@ -187,9 +187,9 @@ def check_shared_fields(
     for diag in check_model_fields_references(node, context.parameters):
         match diag["code"]:
             case "VAR002":
-                ctx = typing.cast("dict", diag.get("ctx"))
-                ref = ".".join(ctx["ref"])
-                diag["msg"] = (
-                    f"The parameter reference '{ref}' used in template '{template.name}' is invalid."
-                )
+                if metadata := diag.get("ctx", {}).get("reference"):
+                    ref = metadata["found:str"]
+                    diag["msg"] = (
+                        f"The parameter reference '{ref}' used in template '{template.name}' is invalid."
+                    )
         yield diag

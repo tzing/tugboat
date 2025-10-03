@@ -90,11 +90,11 @@ def _check_output_parameter(param: Parameter, context: Context) -> Iterable[Diag
     for diag in check_model_fields_references(param, context.parameters):
         match diag["code"]:
             case "VAR002":
-                ctx = typing.cast("dict", diag.get("ctx"))
-                ref = ".".join(ctx["ref"])
-                diag["msg"] = (
-                    f"The parameter reference '{ref}' used in parameter '{param.name}' is invalid."
-                )
+                if metadata := diag.get("ctx", {}).get("reference"):
+                    ref = metadata["found:str"]
+                    diag["msg"] = (
+                        f"The parameter reference '{ref}' used in parameter '{param.name}' is invalid."
+                    )
         yield diag
 
 
@@ -178,11 +178,11 @@ def _check_output_artifact(artifact: Artifact, context: Context) -> Iterable[Dia
         ):
             match diag["code"]:
                 case "VAR002":
-                    ctx = typing.cast("dict", diag.get("ctx"))
-                    ref = ".".join(ctx["ref"])
-                    diag["msg"] = (
-                        f"The artifact reference '{ref}' used in artifact '{artifact.name}' is invalid."
-                    )
+                    if metadata := diag.get("ctx", {}).get("reference"):
+                        ref = metadata["found:str"]
+                        diag["msg"] = (
+                            f"The artifact reference '{ref}' used in artifact '{artifact.name}' is invalid."
+                        )
             yield diag
 
     # TODO artifact.fromExpression
