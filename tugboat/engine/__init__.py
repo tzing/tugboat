@@ -126,24 +126,25 @@ def analyze_yaml_document(doc: CommentedMap) -> Iterator[AugmentedDiagnosis]:
     This function wraps the :py:func:`analyze_manifest` function and transforms
     the :py:class:`tugboat.types.Diagnosis` objects into :py:class:`AugmentedDiagnosis` objects.
     """
-    manifest_metadata = doc.get("metadata", {})
-    manifest_name = (
-        None
-        or manifest_metadata.get("name", None)
-        or manifest_metadata.get("generateName", None)
-    )
-
     for diag in analyze_manifest(doc):
         # TODO exclude diagnoses that are suppressed by settings
 
+        # get metadata
+        if metadata := diag.get("ctx", {}).get("manifest", {}):
+            manifest_name = metadata.get("name", "<missing>")
+        else:
+            manifest_name = None
+
         # exclude diagnoses that are suppressed by comments
         if diag["code"] in get_suppression_codes(doc, diag["loc"]):
+            summary = diag.get("summary")
+            loc = ".".join(map(str, diag["loc"]))
             logger.debug(
                 "Diagnosis %s (%s) at %s:%s is suppressed by comment",
                 diag["code"],
-                diag.get("summary", "<no summary>"),
-                manifest_name or "<unnamed manifest>",
-                ".".join(map(str, diag["loc"])),
+                summary or "<no summary>",
+                metadata.get("name", "<unnamed manifest>"),
+                loc,
             )
             continue
 

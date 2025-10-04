@@ -101,8 +101,12 @@ class TestCheckModelFieldsReferences:
                 "msg": "The used reference 'invalid' is invalid.",
                 "summary": "Invalid reference",
                 "ctx": {
-                    "closest": ("valid",),
-                    "ref": ("invalid",),
+                    "reference": {
+                        "found": ("invalid",),
+                        "found:str": "invalid",
+                        "closest": ("valid",),
+                        "closest:str": "valid",
+                    }
                 },
             },
             {

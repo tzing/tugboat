@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
 
     from pydantic_core import ErrorDetails
 
-    from tugboat.types import Diagnosis
+    from tugboat.types import Bundle, Diagnosis
 
 
 def bulk_translate_pydantic_errors(
@@ -347,7 +347,9 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
         "loc": error["loc"],
         "msg": error["msg"],
         "input": error["input"],
-        "ctx": {"pydantic_error": error},
+        "ctx": {
+            "pydantic_error": typing.cast("Bundle", error),
+        },
     }
 
 

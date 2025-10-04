@@ -75,8 +75,15 @@ class Diagnosis(TypedDict):
     fix: NotRequired[str | None]
     """Possible fix for the issue."""
 
-    ctx: NotRequired[Any]
-    """Additional context."""
+    ctx: NotRequired[dict[str, Bundle]]
+    """
+    Additional context(s).
+    The context is a dictionary that maps context names to their corresponding
+    bundle.
+    """
+
+
+type Bundle = dict[str, Any]
 
 
 class PathLike:

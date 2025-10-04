@@ -89,20 +89,29 @@ def check_value_references(
     yield from report_syntax_errors(doc)
 
     for node, ref in doc.iter_references():
-        if ref not in references:
-            closest = references.find_closest(ref)
-            yield {
-                "code": "VAR002",
-                "loc": (),
-                "summary": "Invalid reference",
-                "msg": f"The used reference '{".".join(ref)}' is invalid.",
-                "input": str(node),
-                "fix": node.format(closest),
-                "ctx": {
-                    "ref": ref,
-                    "closest": closest,
-                },
-            }
+        if ref in references:
+            continue
+
+        ref_str = ".".join(ref)
+        metadata = {
+            "found": ref,
+            "found:str": ref_str,
+        }
+
+        closest = references.find_closest(ref)
+        if closest:
+            metadata["closest"] = closest
+            metadata["closest:str"] = ".".join(closest)
+
+        yield {
+            "code": "VAR002",
+            "loc": (),
+            "summary": "Invalid reference",
+            "msg": f"The used reference '{ref_str}' is invalid.",
+            "input": str(node),
+            "fix": node.format(closest),
+            "ctx": {"reference": metadata},
+        }
 
 
 def check_model_fields_references(

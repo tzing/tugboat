@@ -52,15 +52,23 @@ def analyze_manifest(manifest: dict) -> list[Diagnosis]:
             }
         ]
 
-    # get the manifest name
-    kind, name = get_manifest_kind_and_name(manifest)
-    logger.debug("Starting analysis of manifest '%s' (Kind %s)", name, kind)
+    # get manifest metadata
+    metadata = get_manifest_metadata(manifest)
+    logger.debug(
+        "Starting analysis of manifest '%s' (Kind %s)",
+        metadata.get("name", "<unknown>"),
+        metadata["kind"],
+    )
 
     # parse the manifest
     try:
         manifest_obj = pm.hook.parse_manifest(manifest=manifest)
     except ValidationError as e:
-        return bulk_translate_pydantic_errors(e.errors())
+        diagnoses = bulk_translate_pydantic_errors(e.errors())
+        for diagnosis in diagnoses:
+            context = diagnosis.setdefault("ctx", {})
+            context["manifest"] = metadata
+        return diagnoses
     except Exception as e:
         logger.exception("Error during execution of parse_manifest hook")
         return [
@@ -70,10 +78,15 @@ def analyze_manifest(manifest: dict) -> list[Diagnosis]:
                 "loc": (),
                 "summary": "Internal error while analyzing manifest",
                 "msg": f"An error occurred while parsing the manifest: {e}",
+                "ctx": {"manifest": metadata},
             }
         ]
 
-    logger.debug("Parsed manifest '%s' as %s object", name, type(manifest_obj))
+    logger.debug(
+        "Parsed manifest '%s' as %s object",
+        metadata.get("name", "<unknown>"),
+        type(manifest_obj),
+    )
 
     if not manifest_obj:
         return [
@@ -82,7 +95,8 @@ def analyze_manifest(manifest: dict) -> list[Diagnosis]:
                 "code": "M002",
                 "loc": (),
                 "summary": "Unsupported manifest kind",
-                "msg": f"Manifest kind {kind} is not supported",
+                "msg": f"Manifest kind {metadata['kind']} is not supported",
+                "ctx": {"manifest": metadata},
             }
         ]
 
@@ -94,6 +108,7 @@ def analyze_manifest(manifest: dict) -> list[Diagnosis]:
                 "loc": (),
                 "summary": "Internal error while analyzing manifest",
                 "msg": f"Expected a Manifest object, got {type(manifest_obj)}",
+                "ctx": {"manifest": metadata},
             }
         ]
 
@@ -112,10 +127,15 @@ def analyze_manifest(manifest: dict) -> list[Diagnosis]:
                 "loc": (),
                 "summary": "Internal error while analyzing manifest",
                 "msg": f"An error occurred while analyzing the manifest: {e}",
+                "ctx": {"manifest": metadata},
             }
         ]
 
-    logger.debug("Got %d diagnoses for manifest '%s'", len(diagnoses), name)
+    logger.debug(
+        "Got %d diagnoses for manifest '%s'",
+        len(diagnoses),
+        metadata.get("name", "<unknown>"),
+    )
 
     # sort the diagnoses
     def _sort_key(diagnosis: Diagnosis) -> tuple:
@@ -129,30 +149,41 @@ def analyze_manifest(manifest: dict) -> list[Diagnosis]:
     diagnoses = map(normalize_diagnosis, diagnoses)
     diagnoses = sorted(diagnoses, key=_sort_key)
 
+    # add manifest info to each diagnosis
+    for diagnosis in diagnoses:
+        context = diagnosis.setdefault("ctx", {})
+        context["manifest"] = metadata
+
     return diagnoses
 
 
 def is_kubernetes_manifest(d: dict) -> bool:
     """Returns True if the dictionary *looks like* a Kubernetes manifest."""
-    return "apiVersion" in d and "kind" in d
+    return isinstance(d.get("apiVersion"), str) and isinstance(d.get("kind"), str)
 
 
-def get_manifest_kind_and_name(manifest: dict) -> tuple[str, str]:
-    """Get the kind and name of the manifest."""
-    # extract group
-    if api_version := manifest["apiVersion"]:
+def get_manifest_metadata(manifest: dict) -> dict[str, str]:
+    """Safely extract metadata from the manifest."""
+    # full qualified kind
+    if api_version := manifest.get("apiVersion"):
         group, *_ = api_version.split("/", 1)
     else:
         group = "unknown"
 
-    # extract kind
-    kind = manifest["kind"] or "Unknown"
+    kind = manifest.get("kind") or "Unknown"
 
-    # extract name
-    metadata = manifest.get("metadata") or {}
-    name = metadata.get("name") or metadata.get("generateName") or "<unknown>"
+    output = {
+        "kind": f"{group}/{kind}",
+    }
 
-    return f"{group}/{kind}", name
+    # name / namespace
+    if metadata := manifest.get("metadata"):
+        if name := metadata.get("name") or metadata.get("generateName"):
+            output["name"] = name
+        if namespace := metadata.get("namespace"):
+            output["namespace"] = namespace
+
+    return output
 
 
 def normalize_diagnosis(diagnosis: Diagnosis) -> Diagnosis:

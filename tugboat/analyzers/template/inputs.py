@@ -79,12 +79,12 @@ def _check_input_parameter(
     for diag in check_model_fields_references(param, context.parameters):
         match diag["code"]:
             case "VAR002":
-                ctx = typing.cast("dict", diag.get("ctx"))
-                ref = ".".join(ctx["ref"])
                 diag["code"] = "TPL201"
-                diag["msg"] = (
-                    f"The parameter reference '{ref}' used in parameter '{param.name}' is invalid."
-                )
+                if metadata := diag.get("ctx", {}).get("reference"):
+                    ref = metadata["found:str"]
+                    diag["msg"] = (
+                        f"The parameter reference '{ref}' used in parameter '{param.name}' is invalid."
+                    )
         yield diag
 
     # kind-specific checks
@@ -211,13 +211,13 @@ def _check_input_artifact(
         ):
             match diag["code"]:
                 case "VAR002":
-                    ctx = typing.cast("dict", diag.get("ctx"))
-                    ref = ".".join(ctx["ref"])
                     diag["code"] = "TPL202"
-                    diag["msg"] = (
-                        f"""
-                        The parameter reference '{ref}' used in artifact '{artifact.name}' is invalid.
-                        Note: Only parameter references are allowed here, even though this is an artifact object.
-                        """
-                    )
+                    if metadata := diag.get("ctx", {}).get("reference"):
+                        ref = metadata["found:str"]
+                        diag["msg"] = (
+                            f"""
+                            The parameter reference '{ref}' used in artifact '{artifact.name}' is invalid.
+                            Note: Only parameter references are allowed here, even though this is an artifact object.
+                            """
+                        )
             yield diag

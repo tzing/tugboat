@@ -22,6 +22,12 @@ def test_analyze_yaml_stream_1(monkeypatch: pytest.MonkeyPatch):
                 "loc": ("spec", "foo"),
                 "summary": "Test diagnosis",
                 "msg": "This is a test diagnosis.",
+                "ctx": {
+                    "manifest": {
+                        "kind": "v1/Test",
+                        "name": "test-",
+                    }
+                },
             }
         ],
     )
@@ -55,7 +61,7 @@ def test_analyze_yaml_stream_1(monkeypatch: pytest.MonkeyPatch):
     ]
 
 
-def tets_analyze_yaml_stream_2():
+def test_analyze_yaml_stream_2():
     # this is an integration test case
     diagnoses = analyze_yaml_stream(
         textwrap.dedent(
@@ -73,7 +79,7 @@ def tets_analyze_yaml_stream_2():
         {
             "manifest": "test-",
             "line": 7,
-            "column": 8,
+            "column": 3,
             "type": "failure",
             "code": "M102",
             "loc": ("spec", "foo"),
@@ -170,6 +176,12 @@ def test_suppression(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureF
             {
                 "code": "T01",
                 "loc": ("spec", "foo"),
+                "ctx": {
+                    "manifest": {
+                        "kind": "v1/Test",
+                        "name": "test-",
+                    }
+                },
             }
         ],
     )

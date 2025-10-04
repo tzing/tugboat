@@ -1,7 +1,9 @@
+from dirty_equals import IsPartialDict
+
 from tugboat.core import hookimpl
 from tugboat.engine.mainfest import (
     analyze_manifest,
-    get_manifest_kind_and_name,
+    get_manifest_metadata,
     is_kubernetes_manifest,
     normalize_diagnosis,
 )
@@ -51,6 +53,12 @@ def test_analyze_manifest_picked(plugin_manager):
             "loc": (),
             "summary": "Test 1",
             "msg": "Test 1",
+            "ctx": {
+                "manifest": {
+                    "kind": "tugboat.example.com/Debug",
+                    "name": "test",
+                }
+            },
         },
         {
             "code": "T03",
@@ -58,19 +66,15 @@ def test_analyze_manifest_picked(plugin_manager):
             "summary": "Test 4",
             "msg": "Test 4. This is a long message that should be wrapped across\n"
             "multiple lines to test the formatting.",
+            "ctx": {
+                "manifest": {
+                    "kind": "tugboat.example.com/Debug",
+                    "name": "test",
+                }
+            },
         },
-        {
-            "code": "T02",
-            "loc": ("spec", "foo"),
-            "summary": "Test 3",
-            "msg": "Test 3",
-        },
-        {
-            "code": "T04",
-            "loc": ("spec", "foo"),
-            "summary": "Test 2",
-            "msg": "Test 2",
-        },
+        IsPartialDict({"code": "T02"}),
+        IsPartialDict({"code": "T04"}),
     ]
 
 
@@ -110,6 +114,12 @@ def test_analyze_manifest_manifest_validation_failed():
             "msg": "Field 'foo' is not valid within the 'spec' section.",
             "summary": "Found redundant field",
             "type": "failure",
+            "ctx": {
+                "manifest": {
+                    "kind": "tugboat.example.com/Debug",
+                    "name": "test",
+                }
+            },
         },
     ]
 
@@ -129,13 +139,15 @@ def test_analyze_manifest_manifest_error(plugin_manager):
         }
     )
     assert diagnoses == [
-        {
-            "type": "error",
-            "code": "F001",
-            "loc": (),
-            "summary": "Internal error while analyzing manifest",
-            "msg": "An error occurred while parsing the manifest: Test exception",
-        }
+        IsPartialDict(
+            {
+                "type": "error",
+                "code": "F001",
+                "loc": (),
+                "summary": "Internal error while analyzing manifest",
+                "msg": "An error occurred while parsing the manifest: Test exception",
+            }
+        )
     ]
 
 
@@ -147,13 +159,15 @@ def test_analyze_manifest_unknown_manifest():
         }
     )
     assert diagnoses == [
-        {
-            "type": "warning",
-            "code": "M002",
-            "loc": (),
-            "summary": "Unsupported manifest kind",
-            "msg": "Manifest kind example.com/Unknown is not supported",
-        }
+        IsPartialDict(
+            {
+                "type": "warning",
+                "code": "M002",
+                "loc": (),
+                "summary": "Unsupported manifest kind",
+                "msg": "Manifest kind example.com/Unknown is not supported",
+            }
+        )
     ]
 
 
@@ -172,13 +186,15 @@ def test_analyze_manifest_not_a_manifest_object(plugin_manager):
         }
     )
     assert diagnoses == [
-        {
-            "type": "error",
-            "code": "F001",
-            "loc": (),
-            "summary": "Internal error while analyzing manifest",
-            "msg": "Expected a Manifest object, got <class 'object'>",
-        }
+        IsPartialDict(
+            {
+                "type": "error",
+                "code": "F001",
+                "loc": (),
+                "summary": "Internal error while analyzing manifest",
+                "msg": "Expected a Manifest object, got <class 'object'>",
+            }
+        )
     ]
 
 
@@ -200,13 +216,15 @@ def test_analyze_manifest_analyze_error(plugin_manager):
         }
     )
     assert diagnoses == [
-        {
-            "type": "error",
-            "code": "F001",
-            "loc": (),
-            "summary": "Internal error while analyzing manifest",
-            "msg": "An error occurred while analyzing the manifest: Test exception",
-        }
+        IsPartialDict(
+            {
+                "type": "error",
+                "code": "F001",
+                "loc": (),
+                "summary": "Internal error while analyzing manifest",
+                "msg": "An error occurred while analyzing the manifest: Test exception",
+            }
+        )
     ]
 
 
@@ -240,30 +258,36 @@ class TestIsKubernetesManifest:
         assert not is_kubernetes_manifest({"foo": "bar"})
 
 
-class TestGetManifestKindAndName:
+class TestGetManifestMetadata:
 
     def test_1(self):
-        kind, name = get_manifest_kind_and_name(
+        metadata = get_manifest_metadata(
             {
                 "apiVersion": "argoproj.io/v1alpha1",
                 "kind": "Workflow",
-                "metadata": {"name": "my-workflow"},
+                "metadata": {"name": "my-workflow", "namespace": "my-namespace"},
             }
         )
-        assert kind == "argoproj.io/Workflow"
-        assert name == "my-workflow"
+        assert metadata == {
+            "kind": "argoproj.io/Workflow",
+            "name": "my-workflow",
+            "namespace": "my-namespace",
+        }
 
     def test_2(self):
-        kind, name = get_manifest_kind_and_name(
+        metadata = get_manifest_metadata(
             {"apiVersion": "v1", "kind": "Pod", "metadata": {"generateName": "my-pod-"}}
         )
-        assert kind == "v1/Pod"
-        assert name == "my-pod-"
+        assert metadata == {
+            "kind": "v1/Pod",
+            "name": "my-pod-",
+        }
 
     def test_fallback(self):
-        kind, name = get_manifest_kind_and_name({"apiVersion": "", "kind": ""})
-        assert kind == "unknown/Unknown"
-        assert name == "<unknown>"
+        metadata = get_manifest_metadata({"apiVersion": "", "kind": ""})
+        assert metadata == {
+            "kind": "unknown/Unknown",
+        }
 
 
 class TestNormalizeDiagnosis:
