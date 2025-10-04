@@ -5,7 +5,6 @@ from tugboat.engine.mainfest import (
     analyze_manifest,
     get_manifest_metadata,
     is_kubernetes_manifest,
-    normalize_diagnosis,
 )
 
 
@@ -28,14 +27,7 @@ def test_analyze_manifest_picked(plugin_manager):
             yield {"code": "T01", "loc": (), "msg": "Test 1"}
             yield {"code": "T04", "loc": ("spec", "foo"), "msg": "Test 2"}
             yield {"code": "T02", "loc": ("spec", "foo"), "msg": "Test 3"}
-            yield {
-                "code": "T03",
-                "loc": ("spec",),
-                "msg": """
-                    Test 4. This is a long message that should be wrapped across
-                    multiple lines to test the formatting.
-                    """,
-            }
+            yield {"code": "T03", "loc": ("spec",)}
 
     plugin_manager.register(_Domain)
 
@@ -51,7 +43,6 @@ def test_analyze_manifest_picked(plugin_manager):
         {
             "code": "T01",
             "loc": (),
-            "summary": "Test 1",
             "msg": "Test 1",
             "ctx": {
                 "manifest": {
@@ -63,9 +54,6 @@ def test_analyze_manifest_picked(plugin_manager):
         {
             "code": "T03",
             "loc": ("spec",),
-            "summary": "Test 4",
-            "msg": "Test 4. This is a long message that should be wrapped across\n"
-            "multiple lines to test the formatting.",
             "ctx": {
                 "manifest": {
                     "kind": "tugboat.example.com/Debug",
@@ -287,42 +275,4 @@ class TestGetManifestMetadata:
         metadata = get_manifest_metadata({"apiVersion": "", "kind": ""})
         assert metadata == {
             "kind": "unknown/Unknown",
-        }
-
-
-class TestNormalizeDiagnosis:
-
-    def test_1(self):
-        diagnosis = {
-            "code": "T01",
-            "loc": ["spec", "foo"],
-            "msg": "Test 1. Some extra message.",
-        }
-        assert normalize_diagnosis(diagnosis) == {
-            "code": "T01",
-            "loc": ("spec", "foo"),
-            "summary": "Test 1",
-            "msg": "Test 1. Some extra message.",
-        }
-
-    def test_2(self):
-        diagnosis = {
-            "code": "T01",
-            "loc": ("spec", "foo"),
-            "msg": "Test 2 with \nnew line",
-        }
-        assert normalize_diagnosis(diagnosis) == {
-            "code": "T01",
-            "loc": ("spec", "foo"),
-            "summary": "Test 2 with",
-            "msg": "Test 2 with \nnew line",
-        }
-
-    def test_empty(self):
-        diagnosis = {}
-        assert normalize_diagnosis(diagnosis) == {
-            "code": "F-D41D8C",
-            "loc": (),
-            "summary": "",
-            "msg": "",
         }

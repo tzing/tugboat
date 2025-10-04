@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import hashlib
 import itertools
 import logging
-import textwrap
 import typing
 
 from pydantic import ValidationError
@@ -146,7 +144,6 @@ def analyze_manifest(manifest: dict) -> list[Diagnosis]:
             diagnosis["code"],
         )
 
-    diagnoses = map(normalize_diagnosis, diagnoses)
     diagnoses = sorted(diagnoses, key=_sort_key)
 
     # add manifest info to each diagnosis
@@ -184,34 +181,3 @@ def get_manifest_metadata(manifest: dict) -> dict[str, str]:
             output["namespace"] = namespace
 
     return output
-
-
-def normalize_diagnosis(diagnosis: Diagnosis) -> Diagnosis:
-    # loc
-    loc = diagnosis.setdefault("loc", ())
-    if not isinstance(loc, tuple):
-        diagnosis["loc"] = tuple(loc)
-
-    # msg
-    msg = diagnosis.get("msg") or ""
-    msg = textwrap.dedent(msg).strip()
-    diagnosis["msg"] = msg
-
-    # summary
-    summary = diagnosis.get("summary")
-    if not summary:
-        if msg:
-            first_line, *_ = msg.splitlines()
-            summary, *_ = first_line.split(". ")
-            diagnosis["summary"] = summary.strip()
-        else:
-            diagnosis["summary"] = ""
-
-    # code
-    if diagnosis.get("code") is None:
-        digest = hashlib.md5(msg.encode()).hexdigest()
-        diagnosis["code"] = f"F-{digest[:6].upper()}"
-        logger.warning("Missing code for diagnosis %s", diagnosis["code"])
-        logger.debug("Diagnosis: %s", diagnosis)
-
-    return diagnosis
