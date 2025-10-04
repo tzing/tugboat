@@ -7,9 +7,60 @@ import pytest
 from dirty_equals import IsPartialDict
 
 from tests.dirty_equals import ContainsSubStrings
-from tugboat.engine import analyze_yaml_stream
+from tugboat.engine import DiagnosisModel, analyze_yaml_stream
 
 logger = logging.getLogger(__name__)
+
+
+class TestDiagnosisModel:
+
+    def test_1(self):
+        diagnosis = DiagnosisModel.model_validate(
+            {
+                "code": "t01",
+                "loc": ("foo", 0, "bar"),
+                "msg": "Test 1. Some extra message.",
+            }
+        )
+
+        assert diagnosis.code == "T01"
+        assert diagnosis.summary == "Test 1"
+        assert diagnosis.extras.manifest is None
+
+        assert diagnosis.loc_path == ".foo[0].bar"
+
+    def test_2(self):
+        diagnosis = DiagnosisModel.model_validate(
+            {
+                "code": "T01",
+                "loc": ("foo", "bar"),
+                "msg": "Test 2 with \nnew line.",
+            }
+        )
+
+        assert diagnosis.summary == "Test 2 with"
+        assert diagnosis.loc_path == ".foo.bar"
+
+    def test_3(self):
+        diagnosis = DiagnosisModel.model_validate(
+            {
+                "code": "T01",
+                "loc": (),
+                "msg": "",
+                "extras": {
+                    "manifest": {
+                        "kind": "Test",
+                        "name": "test-",
+                    }
+                },
+            }
+        )
+
+        assert diagnosis.extras.manifest
+        assert diagnosis.extras.manifest.kind == "Test"
+        assert diagnosis.extras.manifest.name == "test-"
+
+        assert diagnosis.loc_path == "."
 
 
 def test_analyze_yaml_stream_1(monkeypatch: pytest.MonkeyPatch):
