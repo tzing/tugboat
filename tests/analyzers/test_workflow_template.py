@@ -1,34 +1,28 @@
-import json
-import logging
-
-from dirty_equals import IsPartialDict
-
+from tests.dirty_equals import IsPartialModel
 from tugboat.engine import analyze_yaml_stream
-
-logger = logging.getLogger(__name__)
 
 
 class TestRules:
-    def test_check_metadata_1(self):
+    def test_check_metadata_1(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_NAME_TOO_LONG)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-        assert IsPartialDict({"code": "M302"}) in diagnoses
+        diagnoses_logger(diagnoses)
+        assert IsPartialModel({"code": "M302"}) in diagnoses
 
-    def test_check_metadata_2(self):
+    def test_check_metadata_2(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_USE_GENERATE_NAME)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-        assert IsPartialDict({"code": "WT001"}) in diagnoses
+        diagnoses_logger(diagnoses)
+        assert IsPartialModel({"code": "WT001"}) in diagnoses
 
-    def test_check_spec(self):
+    def test_check_spec(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_USE_GENERATE_NAME)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-        assert IsPartialDict({"code": "M201"}) in diagnoses
+        diagnoses_logger(diagnoses)
+        assert IsPartialModel({"code": "M201"}) in diagnoses
 
-    def test_check_entrypoint(self):
+    def test_check_entrypoint(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_INVALID_ENTRYPOINT)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
-        assert IsPartialDict({"code": "WT201"}) in diagnoses
-        assert IsPartialDict({"code": "TPL101"}) in diagnoses
+        diagnoses_logger(diagnoses)
+        assert IsPartialModel({"code": "WT201"}) in diagnoses
+        assert IsPartialModel({"code": "TPL101"}) in diagnoses
 
 
 MANIFEST_NAME_TOO_LONG = """
@@ -72,19 +66,19 @@ spec:
 """
 
 
-def test_check_argument_parameters():
+def test_check_argument_parameters(diagnoses_logger):
     diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_PARAMETERS)
-    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    diagnoses_logger(diagnoses)
 
     # WT101: Duplicated parameter name
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {"code": "WT101", "loc": ("spec", "arguments", "parameters", 0, "name")}
         )
         in diagnoses
     )
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {"code": "WT101", "loc": ("spec", "arguments", "parameters", 1, "name")}
         )
         in diagnoses
@@ -92,7 +86,7 @@ def test_check_argument_parameters():
 
     # M103: Type error
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {"code": "M103", "loc": ("spec", "arguments", "parameters", 2, "value")}
         )
         in diagnoses
@@ -120,19 +114,19 @@ spec:
 """
 
 
-def test_check_argument_artifacts():
+def test_check_argument_artifacts(diagnoses_logger):
     diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_ARTIFACTS)
-    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    diagnoses_logger(diagnoses)
 
     # WT102: Duplicated input artifact name
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {"code": "WT102", "loc": ("spec", "arguments", "artifacts", 0, "name")}
         )
         in diagnoses
     )
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {"code": "WT102", "loc": ("spec", "arguments", "artifacts", 1, "name")}
         )
         in diagnoses
@@ -140,7 +134,7 @@ def test_check_argument_artifacts():
 
     # M201: Invalid reference
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "M201",
                 "loc": ("spec", "arguments", "artifacts", 0, "raw"),
@@ -149,7 +143,7 @@ def test_check_argument_artifacts():
         in diagnoses
     )
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "M201",
                 "loc": ("spec", "arguments", "artifacts", 0, "s3"),
@@ -160,7 +154,7 @@ def test_check_argument_artifacts():
 
     # M102: Found redundant field
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "M102",
                 "loc": ("spec", "arguments", "artifacts", 2, "value"),
@@ -191,7 +185,7 @@ spec:
 """
 
 
-def test_check_metrics():
+def test_check_metrics(diagnoses_logger):
     diagnoses = analyze_yaml_stream(
         """
         apiVersion: argoproj.io/v1alpha1
@@ -210,10 +204,10 @@ def test_check_metrics():
                   value: "1"
         """
     )
-    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    diagnoses_logger(diagnoses)
 
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "WT301",
                 "loc": ("spec", "metrics", "prometheus", 0, "name"),
@@ -224,7 +218,7 @@ def test_check_metrics():
 
     loc_labels = ("spec", "metrics", "prometheus", 0, "labels")
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "WT302",
                 "loc": (*loc_labels, 0, "key"),
@@ -233,7 +227,7 @@ def test_check_metrics():
         in diagnoses
     )
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "WT303",
                 "loc": (*loc_labels, 0, "value"),

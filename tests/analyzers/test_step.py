@@ -1,26 +1,20 @@
-import json
-import logging
-
 import pytest
-from dirty_equals import IsPartialDict
 
-from tests.dirty_equals import ContainsSubStrings
+from tests.dirty_equals import ContainsSubStrings, IsPartialModel
 from tugboat.engine import analyze_yaml_stream
 
-logger = logging.getLogger(__name__)
 
-
-def test_analyze_step():
+def test_analyze_step(diagnoses_logger):
     diagnoses = analyze_yaml_stream(MANIFEST_INVALID_STEP_USAGE)
-    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    diagnoses_logger(diagnoses)
 
     loc = ("spec", "templates", 0, "steps", 0, 0)
 
-    assert IsPartialDict({"code": "M201", "loc": (*loc, "template")}) in diagnoses
-    assert IsPartialDict({"code": "M201", "loc": (*loc, "templateRef")}) in diagnoses
+    assert IsPartialModel({"code": "M201", "loc": (*loc, "template")}) in diagnoses
+    assert IsPartialModel({"code": "M201", "loc": (*loc, "templateRef")}) in diagnoses
 
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {"code": "STP901", "loc": ("spec", "templates", 0, "steps", 1, 0, "onExit")}
         )
         in diagnoses
@@ -50,34 +44,34 @@ spec:
 """
 
 
-def test_check_argument_parameters():
+def test_check_argument_parameters(diagnoses_logger):
     diagnoses = analyze_yaml_stream(MANIFEST_INVALID_INPUT_PARAMETERS)
-    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    diagnoses_logger(diagnoses)
 
     loc_prefix = ("spec", "templates", 0, "steps", 0, 0, "arguments", "parameters")
 
     # M102: Found redundant field
     assert (
-        IsPartialDict({"code": "M102", "loc": (*loc_prefix, 0, "valueFrom", "path")})
+        IsPartialModel({"code": "M102", "loc": (*loc_prefix, 0, "valueFrom", "path")})
         in diagnoses
     )
 
     # M103: Type error
     assert (
-        IsPartialDict({"code": "M103", "loc": (*loc_prefix, 2, "value")}) in diagnoses
+        IsPartialModel({"code": "M103", "loc": (*loc_prefix, 2, "value")}) in diagnoses
     )
 
     # STP102: Duplicated input parameter name
     assert (
-        IsPartialDict({"code": "STP102", "loc": (*loc_prefix, 0, "name")}) in diagnoses
+        IsPartialModel({"code": "STP102", "loc": (*loc_prefix, 0, "name")}) in diagnoses
     )
     assert (
-        IsPartialDict({"code": "STP102", "loc": (*loc_prefix, 1, "name")}) in diagnoses
+        IsPartialModel({"code": "STP102", "loc": (*loc_prefix, 1, "name")}) in diagnoses
     )
 
     # STP301: Invalid reference
     assert (
-        IsPartialDict({"code": "STP301", "loc": (*loc_prefix, 1, "value")}) in diagnoses
+        IsPartialModel({"code": "STP301", "loc": (*loc_prefix, 1, "value")}) in diagnoses
     )
 
 
@@ -106,35 +100,35 @@ spec:
 """
 
 
-def test_check_argument_artifacts():
+def test_check_argument_artifacts(diagnoses_logger):
     diagnoses = analyze_yaml_stream(MANIFEST_INVALID_INPUT_ARTIFACTS)
-    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    diagnoses_logger(diagnoses)
 
     loc_prefix = ("spec", "templates", 0, "steps", 0, 0, "arguments", "artifacts")
 
     # STP103: Duplicated input artifact name
     assert (
-        IsPartialDict({"code": "STP103", "loc": (*loc_prefix, 0, "name")}) in diagnoses
+        IsPartialModel({"code": "STP103", "loc": (*loc_prefix, 0, "name")}) in diagnoses
     )
     assert (
-        IsPartialDict({"code": "STP103", "loc": (*loc_prefix, 1, "name")}) in diagnoses
+        IsPartialModel({"code": "STP103", "loc": (*loc_prefix, 1, "name")}) in diagnoses
     )
 
     # STP302: Invalid reference
     assert (
-        IsPartialDict({"code": "STP302", "loc": (*loc_prefix, 0, "from")}) in diagnoses
+        IsPartialModel({"code": "STP302", "loc": (*loc_prefix, 0, "from")}) in diagnoses
     )
     assert (
-        IsPartialDict({"code": "STP303", "loc": (*loc_prefix, 1, "raw", "data")})
+        IsPartialModel({"code": "STP303", "loc": (*loc_prefix, 1, "raw", "data")})
         in diagnoses
     )
     assert (
-        IsPartialDict({"code": "STP302", "loc": (*loc_prefix, 2, "from")}) in diagnoses
+        IsPartialModel({"code": "STP302", "loc": (*loc_prefix, 2, "from")}) in diagnoses
     )
 
     # M102: Found redundant field
     assert (
-        IsPartialDict({"code": "M102", "loc": (*loc_prefix, 3, "value")}) in diagnoses
+        IsPartialModel({"code": "M102", "loc": (*loc_prefix, 3, "value")}) in diagnoses
     )
 
 
@@ -164,13 +158,13 @@ spec:
 """
 
 
-def test_check_referenced_template(caplog: pytest.LogCaptureFixture):
+def test_check_referenced_template(caplog: pytest.LogCaptureFixture, diagnoses_logger):
     with caplog.at_level("DEBUG", "tugboat.analyzers.step"):
         diagnoses = analyze_yaml_stream(MANIFEST_INVALID_TEMPLATE_REFERENCE)
-    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    diagnoses_logger(diagnoses)
 
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "STP201",
                 "loc": ("spec", "templates", 0, "steps", 0, 0, "template"),
@@ -179,7 +173,7 @@ def test_check_referenced_template(caplog: pytest.LogCaptureFixture):
         in diagnoses
     )
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "STP202",
                 "loc": (
@@ -236,16 +230,16 @@ spec:
 """
 
 
-def test_check_fields_references():
+def test_check_fields_references(diagnoses_logger):
     diagnoses = analyze_yaml_stream(MANIFEST_FIELDS_REFERENCES)
-    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    diagnoses_logger(diagnoses)
 
-    assert IsPartialDict(
+    assert IsPartialModel(
         {
             "code": "VAR002",
             "loc": ("spec", "templates", 0, "steps", 0, 0, "when"),
         }
-    )
+    ) in diagnoses
 
 
 MANIFEST_FIELDS_REFERENCES = """
@@ -264,12 +258,12 @@ spec:
 """
 
 
-def test_check_inline_template():
+def test_check_inline_template(diagnoses_logger):
     diagnoses = analyze_yaml_stream(MANIFEST_INLINE_TEMPLATE)
-    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    diagnoses_logger(diagnoses)
 
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "STP401",
                 "loc": ("spec", "templates", 0, "steps", 0, 0, "inline", "steps"),
@@ -278,7 +272,7 @@ def test_check_inline_template():
         in diagnoses
     )
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "M101",
                 "loc": ("spec", "templates", 0, "steps", 0, 1, "inline"),

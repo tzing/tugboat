@@ -14,6 +14,7 @@ from ruamel.yaml.scalarstring import (
 )
 from ruamel.yaml.tokens import CommentToken
 
+from tugboat.engine.types import DiagnosisModel
 from tugboat.types import Field
 
 if typing.TYPE_CHECKING:
@@ -21,8 +22,6 @@ if typing.TYPE_CHECKING:
     from typing import Any
 
     from ruamel.yaml.error import MarkedYAMLError
-
-    from tugboat.engine.types import AugmentedDiagnosis
 
 pattern_noqa_all = re.compile(r"[ ]*#[ ]*noqa(?:;|$)", re.IGNORECASE | re.MULTILINE)
 pattern_noqa_line = re.compile(
@@ -35,7 +34,7 @@ pattern_noqa_line = re.compile(
 )
 
 
-def translate_marked_yaml_error(err: MarkedYAMLError) -> AugmentedDiagnosis:
+def translate_marked_yaml_error(err: MarkedYAMLError) -> DiagnosisModel:
     """
     Translate a MarkedYAMLError into a more user-friendly format.
 
@@ -46,7 +45,7 @@ def translate_marked_yaml_error(err: MarkedYAMLError) -> AugmentedDiagnosis:
 
     Returns
     -------
-    AugmentedDiagnosis
+    DiagnosisModel
         The translated error.
     """
     line = column = 1
@@ -58,18 +57,17 @@ def translate_marked_yaml_error(err: MarkedYAMLError) -> AugmentedDiagnosis:
     if msg and err.context_mark:
         msg += f"\n{err.context_mark}"  # context_mark is not a string
 
-    return {
-        "line": line,
-        "column": column,
-        "type": "error",
-        "code": "F002",
-        "manifest": None,
-        "loc": (),
-        "summary": "Malformed YAML document",
-        "msg": msg,
-        "input": None,
-        "fix": None,
-    }
+    return DiagnosisModel.model_validate(
+        {
+            "line": line,
+            "column": column,
+            "type": "error",
+            "code": "F002",
+            "loc": (),
+            "summary": "Malformed YAML document",
+            "msg": msg,
+        }
+    )
 
 
 def get_line_column(

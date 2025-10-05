@@ -5,13 +5,13 @@ import logging
 import textwrap
 import typing
 from pathlib import Path
-from typing import Annotated, Any, Literal, cast
+from typing import Annotated
 
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field
 
-from tugboat.engine import analyze_yaml_stream
+from tugboat.engine import DiagnosisModel, analyze_yaml_stream
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
@@ -51,81 +51,12 @@ class ErrorResult(BaseModel):
     ]
 
 
-class Issue(BaseModel):
+class Issue(DiagnosisModel):
     """An issue reported by the analyzer."""
-
-    line: Annotated[
-        int,
-        _Docstring(
-            "Line number of the issue occurrence in the source file. The line number is cumulative across all documents in the YAML stream."
-        ),
-    ]
-
-    column: Annotated[
-        int,
-        _Docstring("Column number of the issue occurrence in the source file."),
-    ]
 
     sourceNearby: Annotated[
         str,
         _Docstring("Text near the issue occurrence in the source file."),
-    ]
-
-    type: Annotated[
-        Literal["error", "failure", "warning"],
-        _Docstring(
-            """
-            The type of the issue.
-            * ``error`` indicates a critical issue that prevents the analyzer from running.
-            * ``failure`` indicates an issue that the analyzer has detected.
-            * ``warning`` indicates a potential issue that the analyzer has detected. This is not a critical issue, but it may require attention.
-            """
-        ),
-    ]
-
-    code: Annotated[
-        str,
-        _Docstring("A unique identifier representing the violated rule."),
-    ]
-
-    manifest: Annotated[
-        str | None,
-        _Docstring("The manifest name where the issue occurred."),
-    ]
-
-    loc: Annotated[
-        tuple[str | int, ...],
-        _Docstring(
-            """
-            A list of keys indicating the location of the issue in the manifest.
-            For example, a issue found in the `spec.containers[0].name` field would have a location of `["spec", "containers", 0, "name"]`.
-            """
-        ),
-    ]
-
-    summary: Annotated[
-        str,
-        _Docstring("A short summary of the issue."),
-    ]
-
-    msg: Annotated[
-        str,
-        _Docstring("A human-readable message describing the issue."),
-    ]
-
-    input: Annotated[
-        str | int | bool | float | Any | None,
-        _Docstring("The input that caused the issue."),
-    ]
-
-    fix: Annotated[
-        str | None,
-        _Docstring(
-            """
-            A possible fix to the issue.
-            This output is based on the analyzer's best guess and may not be correct.
-            """
-        ),
     ]
 
 
@@ -188,7 +119,7 @@ async def analyze_stream(
     This tool will analyze the manifest and return a JSON object with the following structure:
 
     ```json
-    {"count": 2, "issues": [{"line": 6, "column": 3, "sourceNearby": "spec:\\n  templates:\\n    - name: whalesay\\n      inputs:", "type": "failure", "code": "M101", "manifest": "demo-", "loc": ["spec", "entrypoint"], "summary": "Missing required field \'entrypoint\'", "msg": "Field \'entrypoint\' is required in the \'spec\' section but missing.", "input": null, "fix": null}, {"line": 16, "column": 11, "sourceNearby": "        args:\\n          - \\"{{ inputs.parameter.message }}\\"", "type": "failure", "code": "VAR002", "manifest": "demo-", "loc": ["spec", "templates", 0, "container", "args", 0], "summary": "Invalid reference", "msg": "The parameter reference \'inputs.parameter.message\' used in template \'whalesay\' is invalid.", "input": "{{ inputs.parameter.message }}", "fix": "{{ inputs.parameters.message }}"}]}
+    {"count":2,"issues":[{"line":6,"column":3,"type":"failure","code":"M101","loc":["spec","entrypoint"],"summary":"Missing required field 'entrypoint'","msg":"Field 'entrypoint' is required in the 'spec' section but missing.","input":null,"fix":null,"extras":{"file":{"filepath":"/path/to/manifest.yaml"},"manifest":{"kind":"workflow.argoproj.io","name":"demo-"}},"sourceNearby":"spec:\n  templates:\n    - name: whalesay\n      inputs:"},{"line":16,"column":11,"type":"failure","code":"VAR002","loc":["spec","templates",0,"container","args",0],"summary":"Invalid reference","msg":"The parameter reference 'inputs.parameter.message' used in template 'whalesay' is invalid.","input":"{{ inputs.parameter.message }}","fix":"{{ inputs.parameters.message }}","extras":{"file":{"filepath":"/path/to/manifest.yaml"},"manifest":{"kind":"workflow.argoproj.io","name":"demo-"}},"sourceNearby":"        args:\n          - \"{{ inputs.parameter.message }}\""}]}
     ```
     """
     # resolve the manifest path
@@ -227,11 +158,12 @@ async def analyze_stream(
     # analyze
     issues = []
     for diagnosis in analyze_yaml_stream(manifest_content, manifest):
-        issue = cast("dict", diagnosis)
-        line = diagnosis["line"]
+        issue = diagnosis.model_dump()
 
         # get lines near the issue
-        issue["sourceNearby"] = "\n".join(get_lines_near(manifest_content_lines, line))
+        issue["sourceNearby"] = "\n".join(
+            get_lines_near(manifest_content_lines, diagnosis.line)
+        )
 
         issues.append(issue)
 

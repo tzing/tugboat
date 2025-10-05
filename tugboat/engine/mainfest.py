@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import hashlib
+import io
 import itertools
 import logging
-import textwrap
 import typing
 
 from pydantic import ValidationError
@@ -146,7 +145,6 @@ def analyze_manifest(manifest: dict) -> list[Diagnosis]:
             diagnosis["code"],
         )
 
-    diagnoses = map(normalize_diagnosis, diagnoses)
     diagnoses = sorted(diagnoses, key=_sort_key)
 
     # add manifest info to each diagnosis
@@ -165,15 +163,27 @@ def is_kubernetes_manifest(d: dict) -> bool:
 def get_manifest_metadata(manifest: dict) -> dict[str, str]:
     """Safely extract metadata from the manifest."""
     # full qualified kind
-    if api_version := manifest.get("apiVersion"):
-        group, *_ = api_version.split("/", 1)
-    else:
-        group = "unknown"
+    with io.StringIO() as buf:
+        # kind
+        if kind := manifest.get("kind"):
+            buf.write(kind.lower())
+        else:
+            buf.write("unknown")
 
-    kind = manifest.get("kind") or "Unknown"
+        # API group
+        api_version = manifest.get("apiVersion")
+        if api_version == "v1":
+            ...  # core group, do nothing
+        elif api_version and "/" in api_version:
+            group, _ = api_version.split("/", 1)
+            buf.write(f".{group}")
+        else:
+            buf.write(".unknown")
+
+        fqk = buf.getvalue()
 
     output = {
-        "kind": f"{group}/{kind}",
+        "kind": fqk,
     }
 
     # name / namespace
@@ -184,34 +194,3 @@ def get_manifest_metadata(manifest: dict) -> dict[str, str]:
             output["namespace"] = namespace
 
     return output
-
-
-def normalize_diagnosis(diagnosis: Diagnosis) -> Diagnosis:
-    # loc
-    loc = diagnosis.setdefault("loc", ())
-    if not isinstance(loc, tuple):
-        diagnosis["loc"] = tuple(loc)
-
-    # msg
-    msg = diagnosis.get("msg") or ""
-    msg = textwrap.dedent(msg).strip()
-    diagnosis["msg"] = msg
-
-    # summary
-    summary = diagnosis.get("summary")
-    if not summary:
-        if msg:
-            first_line, *_ = msg.splitlines()
-            summary, *_ = first_line.split(". ")
-            diagnosis["summary"] = summary.strip()
-        else:
-            diagnosis["summary"] = ""
-
-    # code
-    if diagnosis.get("code") is None:
-        digest = hashlib.md5(msg.encode()).hexdigest()
-        diagnosis["code"] = f"F-{digest[:6].upper()}"
-        logger.warning("Missing code for diagnosis %s", diagnosis["code"])
-        logger.debug("Diagnosis: %s", diagnosis)
-
-    return diagnosis

@@ -6,9 +6,9 @@ from abc import ABC, abstractmethod
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
-    from typing import TextIO
+    from typing import Any, TextIO
 
-    from tugboat.engine import AugmentedDiagnosis
+    type AugmentedDiagnosis = dict[str, Any]
 
 
 class OutputBuilder(ABC):
