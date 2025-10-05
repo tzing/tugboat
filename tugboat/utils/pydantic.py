@@ -122,7 +122,7 @@ def bulk_translate_pydantic_errors(
     return diagnoes
 
 
-def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
+def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
     """
     Translate a Pydantic error to a diagnosis object.
 
