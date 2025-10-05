@@ -1,14 +1,9 @@
 import itertools
-import json
-import logging
-
-from dirty_equals import IsPartialDict
 
 from tugboat.core import hookimpl
 from tugboat.engine import analyze_yaml_stream
 from tugboat.schemas import Workflow, WorkflowTemplate
-
-logger = logging.getLogger(__name__)
+from tests.dirty_equals import IsPartialModel
 
 
 class TestAnalyze:
@@ -128,71 +123,72 @@ class TestAnalyze:
 
 
 class TestRules:
-    def test_check_metadata_1(self):
+    def test_check_metadata_1(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_NAME)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        diagnoses_logger(diagnoses)
         assert (
-            IsPartialDict(
+            IsPartialModel(
                 {"code": "M301", "loc": ("metadata", "name"), "fix": "invalid-name"}
             )
             in diagnoses
         )
 
-    def test_check_metadata_2(self):
+    def test_check_metadata_2(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_GENERATE_NAME)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        diagnoses_logger(diagnoses)
         assert (
-            IsPartialDict({"code": "M301", "loc": ("metadata", "generateName")})
+            IsPartialModel({"code": "M301", "loc": ("metadata", "generateName")})
             in diagnoses
         )
 
-    def test_check_spec_1(self):
+    def test_check_spec_1(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_NAME)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        diagnoses_logger(diagnoses)
         assert (
-            IsPartialDict({"code": "M201", "loc": ("spec", "workflowTemplateRef")})
+            IsPartialModel({"code": "M201", "loc": ("spec", "workflowTemplateRef")})
             in diagnoses
         )
 
-    def test_check_spec_2(self):
+    def test_check_spec_2(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_GENERATE_NAME)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        diagnoses_logger(diagnoses)
         assert (
-            IsPartialDict({"code": "M101", "loc": ("spec", "entrypoint")}) in diagnoses
+            IsPartialModel({"code": "M101", "loc": ("spec", "entrypoint")})
+            in diagnoses
         )
 
-    def test_check_entrypoint(self):
+    def test_check_entrypoint(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_INVALID_ENTRYPOINT)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        diagnoses_logger(diagnoses)
         assert (
-            IsPartialDict({"code": "WF201", "loc": ("spec", "entrypoint")}) in diagnoses
+            IsPartialModel({"code": "WF201", "loc": ("spec", "entrypoint")}) in diagnoses
         )
         assert (
-            IsPartialDict({"code": "TPL101", "loc": ("spec", "templates", 0, "name")})
+            IsPartialModel({"code": "TPL101", "loc": ("spec", "templates", 0, "name")})
             in diagnoses
         )
         assert (
-            IsPartialDict({"code": "TPL101", "loc": ("spec", "templates", 2, "name")})
+            IsPartialModel({"code": "TPL101", "loc": ("spec", "templates", 2, "name")})
             in diagnoses
         )
 
-    def test_check_argument_parameters(self):
+    def test_check_argument_parameters(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_ARGUMENTS)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        diagnoses_logger(diagnoses)
         assert (
-            IsPartialDict(
+            IsPartialModel(
                 {"code": "WF101", "loc": ("spec", "arguments", "parameters", 0, "name")}
             )
             in diagnoses
         )
         assert (
-            IsPartialDict(
+            IsPartialModel(
                 {"code": "WF101", "loc": ("spec", "arguments", "parameters", 1, "name")}
             )
             in diagnoses
         )
         assert (
-            IsPartialDict(
+            IsPartialModel(
                 {
                     "code": "M102",
                     "loc": ("spec", "arguments", "parameters", 1, "default"),
@@ -201,12 +197,12 @@ class TestRules:
             in diagnoses
         )
 
-    def test_check_argument_artifacts(self):
+    def test_check_argument_artifacts(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_ARGUMENTS)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        diagnoses_logger(diagnoses)
 
         assert (
-            IsPartialDict(
+            IsPartialModel(
                 {
                     "code": "M201",
                     "loc": ("spec", "arguments", "artifacts", 1, "raw"),
@@ -215,7 +211,7 @@ class TestRules:
             in diagnoses
         )
         assert (
-            IsPartialDict(
+            IsPartialModel(
                 {
                     "code": "M201",
                     "loc": ("spec", "arguments", "artifacts", 1, "s3"),
@@ -225,13 +221,13 @@ class TestRules:
         )
 
         assert (
-            IsPartialDict(
+            IsPartialModel(
                 {"code": "WF102", "loc": ("spec", "arguments", "artifacts", 0, "name")}
             )
             in diagnoses
         )
         assert (
-            IsPartialDict(
+            IsPartialModel(
                 {"code": "WF102", "loc": ("spec", "arguments", "artifacts", 1, "name")}
             )
             in diagnoses
@@ -307,7 +303,7 @@ spec:
 """
 
 
-def test_check_metrics():
+def test_check_metrics(diagnoses_logger):
     diagnoses = analyze_yaml_stream(
         """
         apiVersion: argoproj.io/v1alpha1
@@ -326,10 +322,10 @@ def test_check_metrics():
                   value: "1"
         """
     )
-    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    diagnoses_logger(diagnoses)
 
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "WF301",
                 "loc": ("spec", "metrics", "prometheus", 0, "name"),
@@ -340,7 +336,7 @@ def test_check_metrics():
 
     loc_labels = ("spec", "metrics", "prometheus", 0, "labels")
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "WF302",
                 "loc": (*loc_labels, 0, "key"),
@@ -349,7 +345,7 @@ def test_check_metrics():
         in diagnoses
     )
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "WF303",
                 "loc": (*loc_labels, 0, "value"),

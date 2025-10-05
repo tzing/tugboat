@@ -1,19 +1,13 @@
-import json
-import logging
-
-from dirty_equals import IsPartialDict
-
+from tests.dirty_equals import IsPartialModel
 from tugboat.engine import analyze_yaml_stream
 
-logger = logging.getLogger(__name__)
 
-
-def test_analyze_template():
+def test_analyze_template(diagnoses_logger):
     diagnoses = analyze_yaml_stream(MANIFEST_INVALID_REFERENCE)
-    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    diagnoses_logger(diagnoses)
 
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "VAR002",
                 "loc": ("spec", "templates", 0, "script", "source"),
@@ -23,7 +17,7 @@ def test_analyze_template():
         in diagnoses
     )
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "TPL304",
                 "loc": (
@@ -41,7 +35,7 @@ def test_analyze_template():
         in diagnoses
     )
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "TPL304",
                 "loc": (
@@ -83,12 +77,12 @@ spec:
 """
 
 
-def test_check_input_artifacts():
+def test_check_input_artifacts(diagnoses_logger):
     diagnoses = analyze_yaml_stream(MANIFEST_MISSING_INPUT_PATH)
-    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    diagnoses_logger(diagnoses)
 
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "M101",
                 "loc": ("spec", "templates", 0, "inputs", "artifacts", 0, "path"),
@@ -115,12 +109,12 @@ spec:
 """
 
 
-def test_check_output():
+def test_check_output(diagnoses_logger):
     diagnoses = analyze_yaml_stream(MANIFEST_MISSING_OUTPUT_PATH)
-    logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+    diagnoses_logger(diagnoses)
 
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "M101",
                 "loc": (
@@ -137,7 +131,7 @@ def test_check_output():
         in diagnoses
     )
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "M101",
                 "loc": (
@@ -155,7 +149,7 @@ def test_check_output():
         in diagnoses
     )
     assert (
-        IsPartialDict(
+        IsPartialModel(
             {
                 "code": "M101",
                 "loc": ("spec", "templates", 0, "outputs", "artifacts", 0, "path"),

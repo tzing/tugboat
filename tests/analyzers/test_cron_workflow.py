@@ -1,21 +1,14 @@
-import json
-import logging
-
-from dirty_equals import IsPartialDict
-
-from tests.dirty_equals import ContainsSubStrings
+from tests.dirty_equals import ContainsSubStrings, IsPartialModel
 from tugboat.engine import analyze_yaml_stream
-
-logger = logging.getLogger(__name__)
 
 
 class TestRules:
 
-    def test_name_too_long_1(self):
+    def test_name_too_long_1(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_NAME_TOO_LONG)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        diagnoses_logger(diagnoses)
         assert (
-            IsPartialDict(
+            IsPartialModel(
                 {
                     "code": "CW001",
                     "loc": ("metadata", "name"),
@@ -27,11 +20,11 @@ class TestRules:
             in diagnoses
         )
 
-    def test_name_too_long_2(self):
+    def test_name_too_long_2(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_GENERATE_NAME_TOO_LONG)
-        logger.critical("Diagnoses: %s", json.dumps(diagnoses, indent=2))
+        diagnoses_logger(diagnoses)
         assert (
-            IsPartialDict(
+            IsPartialModel(
                 {
                     "code": "CW001",
                     "loc": ("metadata", "generateName"),
