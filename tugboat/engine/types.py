@@ -204,3 +204,6 @@ class ManifestMetadata(BaseModel):
             ),
         ),
     ]
+
+
+DiagnosisModel.model_rebuild()  # required for subclassing
