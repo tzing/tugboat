@@ -122,7 +122,7 @@ def bulk_translate_pydantic_errors(
     return diagnoes
 
 
-def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
+def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
     """
     Translate a Pydantic error to a diagnosis object.
 
@@ -247,8 +247,9 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
 
             _, field = _get_field_name(error["loc"])
 
-            input_ = error["input"]
-            fix, _, _ = extractOne(error["input"], expected)
+            fix = None
+            if result := extractOne(input_ := error["input"], expected):
+                fix, _, _ = result
 
             return {
                 "type": "failure",
