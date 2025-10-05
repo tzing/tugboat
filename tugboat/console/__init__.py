@@ -288,7 +288,17 @@ def lint(output_stream: TextIO) -> NoReturn:
             logger.debug("Error details:", exc_info=True)
             raise click.Abort from None
 
-        diagnoses = analyze_yaml_stream(content, path)
+        # TODO replace data dict with DiagnosisModel
+        diagnoses = []
+        for diag_model in analyze_yaml_stream(content, path):
+            diag_dict = diag_model.model_dump()
+
+            if diag_model.extras.manifest:
+                diag_dict["manifest"] = diag_model.extras.manifest
+            else:
+                diag_dict["manifest"] = None
+
+            diagnoses.append(diag_dict)
 
         counter.update(diag["type"] for diag in diagnoses)
         output_builder.update(path=path, content=content, diagnoses=diagnoses)
