@@ -305,7 +305,7 @@ def is_alias_node(parent_node: CommentedBase | None, key: int | str | None) -> b
         return False
 
     if isinstance(parent_node, dict):
-        key_line, key_col, value_line, value_col = lc_data
+        key_line, _key_col, value_line, _value_col = lc_data
 
         if key_line != value_line:
             # heuristic: check if the value appears to be a multi-line string
@@ -318,7 +318,7 @@ def is_alias_node(parent_node: CommentedBase | None, key: int | str | None) -> b
             return True
 
     elif isinstance(parent_node, list):
-        value_line, value_col = lc_data
+        value_line, _value_col = lc_data
         if value_line < parent_node.lc.line:
             return True
         # TODO need to handle the case where it references an item in a list
@@ -391,7 +391,7 @@ def _extract_noqa_codes_from_node(
 
     # then, try to find an end-of-line comment on the node itself
     if node.ca.comment:
-        post_comment, pre_comments = node.ca.comment
+        post_comment, _pre_comments = node.ca.comment
         if post_comment:
             yield from parse_noqa_codes(post_comment.value)
 
