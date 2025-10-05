@@ -5,7 +5,7 @@ import ruamel.yaml
 from ruamel.yaml.comments import CommentedBase
 from ruamel.yaml.error import MarkedYAMLError
 
-from tests.dirty_equals import ContainsSubStrings
+from tests.dirty_equals import IsMatch, IsPartialModel
 from tugboat.engine.helpers import (
     get_line_column,
     get_suppression_codes,
@@ -30,18 +30,15 @@ class TestTranslateMarkedYamlError:
         with pytest.raises(MarkedYAMLError) as exc_info:
             parser.load('test: "foo')
 
-        assert translate_marked_yaml_error(exc_info.value) == {
-            "line": 1,
-            "column": 11,
-            "type": "error",
-            "code": "F002",
-            "manifest": None,
-            "loc": (),
-            "summary": "Malformed YAML document",
-            "msg": ContainsSubStrings("found unexpected end of stream"),
-            "input": None,
-            "fix": None,
-        }
+        assert translate_marked_yaml_error(exc_info.value) == IsPartialModel(
+            line=1,
+            column=11,
+            type="error",
+            code="F002",
+            loc=(),
+            summary="Malformed YAML document",
+            msg=IsMatch(r"^found unexpected end of stream"),
+        )
 
 
 class TestGetLineColumn:
