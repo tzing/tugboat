@@ -1,9 +1,9 @@
 import itertools
 
+from tests.dirty_equals import IsPartialModel
 from tugboat.core import hookimpl
 from tugboat.engine import analyze_yaml_stream
 from tugboat.schemas import Workflow, WorkflowTemplate
-from tests.dirty_equals import IsPartialModel
 
 
 class TestAnalyze:

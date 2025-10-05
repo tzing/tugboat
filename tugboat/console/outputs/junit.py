@@ -13,9 +13,9 @@ from tugboat.console.utils import format_loc
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
     from pathlib import Path
-    from typing import TextIO
+    from typing import Any, TextIO
 
-    from tugboat.engine import AugmentedDiagnosis
+    type AugmentedDiagnosis = dict[str, Any]
 
 logger = logging.getLogger(__name__)
 

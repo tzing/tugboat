@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
     from pathlib import Path
     from typing import Any, TextIO
 
-    from tugboat.engine import AugmentedDiagnosis
+    type AugmentedDiagnosis = dict[str, Any]
 
 
 class ConsoleOutputBuilder(OutputBuilder):
