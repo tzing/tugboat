@@ -46,7 +46,7 @@ def test_analyze_manifest_picked(plugin_manager):
             "msg": "Test 1",
             "ctx": {
                 "manifest": {
-                    "kind": "tugboat.example.com/Debug",
+                    "kind": "debug.tugboat.example.com",
                     "name": "test",
                 }
             },
@@ -56,7 +56,7 @@ def test_analyze_manifest_picked(plugin_manager):
             "loc": ("spec",),
             "ctx": {
                 "manifest": {
-                    "kind": "tugboat.example.com/Debug",
+                    "kind": "debug.tugboat.example.com",
                     "name": "test",
                 }
             },
@@ -104,7 +104,7 @@ def test_analyze_manifest_manifest_validation_failed():
             "type": "failure",
             "ctx": {
                 "manifest": {
-                    "kind": "tugboat.example.com/Debug",
+                    "kind": "debug.tugboat.example.com",
                     "name": "test",
                 }
             },
@@ -153,7 +153,7 @@ def test_analyze_manifest_unknown_manifest():
                 "code": "M002",
                 "loc": (),
                 "summary": "Unsupported manifest kind",
-                "msg": "Manifest kind example.com/Unknown is not supported",
+                "msg": "Manifest kind unknown.example.com is not supported",
             }
         )
     ]
@@ -257,7 +257,7 @@ class TestGetManifestMetadata:
             }
         )
         assert metadata == {
-            "kind": "argoproj.io/Workflow",
+            "kind": "workflow.argoproj.io",
             "name": "my-workflow",
             "namespace": "my-namespace",
         }
@@ -267,12 +267,12 @@ class TestGetManifestMetadata:
             {"apiVersion": "v1", "kind": "Pod", "metadata": {"generateName": "my-pod-"}}
         )
         assert metadata == {
-            "kind": "v1/Pod",
+            "kind": "pod",
             "name": "my-pod-",
         }
 
     def test_fallback(self):
         metadata = get_manifest_metadata({"apiVersion": "", "kind": ""})
         assert metadata == {
-            "kind": "unknown/Unknown",
+            "kind": "unknown.unknown",
         }

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import itertools
 import logging
 import typing
@@ -162,15 +163,27 @@ def is_kubernetes_manifest(d: dict) -> bool:
 def get_manifest_metadata(manifest: dict) -> dict[str, str]:
     """Safely extract metadata from the manifest."""
     # full qualified kind
-    if api_version := manifest.get("apiVersion"):
-        group, *_ = api_version.split("/", 1)
-    else:
-        group = "unknown"
+    with io.StringIO() as buf:
+        # kind
+        if kind := manifest.get("kind"):
+            buf.write(kind.lower())
+        else:
+            buf.write("unknown")
 
-    kind = manifest.get("kind") or "Unknown"
+        # API group
+        api_version = manifest.get("apiVersion")
+        if api_version == "v1":
+            ...  # core group, do nothing
+        elif api_version and "/" in api_version:
+            group, _ = api_version.split("/", 1)
+            buf.write(f".{group}")
+        else:
+            buf.write(".unknown")
+
+        fqk = buf.getvalue()
 
     output = {
-        "kind": f"{group}/{kind}",
+        "kind": fqk,
     }
 
     # name / namespace
