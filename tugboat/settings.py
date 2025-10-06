@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import os
 import typing
 from pathlib import Path
 from typing import Literal
@@ -86,9 +87,18 @@ class Settings(BaseSettings):
     output_format: Literal["console", "junit"] = "console"
     """Output serialization format."""
 
+    @field_validator("color")
+    @classmethod
+    def _validate_color_(cls, value: bool | None) -> bool | None:
+        if os.getenv("FORCE_COLOR"):  # https://force-color.org/
+            return True
+        if os.getenv("NO_COLOR"):  # https://no-color.org/
+            return False
+        return value
+
     @field_validator("include", "exclude", mode="wrap")
     @classmethod
-    def _wrap_path_validator(
+    def _validate_path_(
         cls, value: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo
     ):
         try:

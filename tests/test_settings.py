@@ -11,12 +11,32 @@ from tugboat.types import GlobPath
 class TestSettings:
 
     def test_env_var(self, monkeypatch: pytest.MonkeyPatch):
-        monkeypatch.setenv("TUGBOAT_COLOR", "true")
+        monkeypatch.setenv("TUGBOAT_OUTPUT_FORMAT", "junit")
         monkeypatch.setenv("TUGBOAT_CONSOLE_OUTPUT__SNIPPET_LINES_AHEAD", "99")
 
         settings = Settings()
-        assert settings.color is True
+        assert settings.output_format == "junit"
         assert settings.console_output.snippet_lines_ahead == 99
+
+    def test_color(self, monkeypatch: pytest.MonkeyPatch):
+        # default
+        settings = Settings()
+        assert settings.color is None
+
+        # default overridden
+        settings = Settings(color=True)
+        assert settings.color is True
+
+        # FORCE_COLOR / NO_COLOR
+        with monkeypatch.context() as m:
+            m.setenv("FORCE_COLOR", "1")
+            settings = Settings(color=False)
+            assert settings.color is True
+
+        with monkeypatch.context() as m:
+            m.setenv("NO_COLOR", "1")
+            settings = Settings(color=True)
+            assert settings.color is False
 
     def test_toml(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
         toml_file = tmp_path / ".tugboat.toml"
