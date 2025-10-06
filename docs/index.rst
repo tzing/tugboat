@@ -125,32 +125,34 @@ This will output a list of issues found in the manifest:
 
 .. code-block:: none
 
-   whalesay.yaml:6:3: WF001 Invalid entrypoint
+   WF201 Invalid entrypoint
+     @whalesay.yaml:6:15 (test-)
 
-    4 |   generateName: test-
-    5 | spec:
-    6 |   entrypoint: ducksay
-      |               ^^^^^^^
-      |               └ WF001 at .spec.entrypoint in test-
-    7 |   templates:
-    8 |     - name: whalesay
+     4 |   generateName: test-
+     5 | spec:
+     6 |   entrypoint: ducksay
+       |               ^^^^^^^
+       |               └ WF201 at .spec.entrypoint
+     7 |   templates:
+     8 |     - name: whalesay
 
-      Entrypoint 'ducksay' is not defined in any template.
-      Defined entrypoints: 'whalesay'.
+     Entrypoint 'ducksay' is not defined in any template.
+     Defined entrypoints: 'whalesay'
 
-      Do you mean: whalesay
+     Do you mean: whalesay
 
-   whalesay.yaml:17:13: VAR002 Invalid reference
+   VAR002 Invalid reference
+     @whalesay.yaml:17:11 (test-)
 
-    15 |         command: [cowsay]
-    16 |         args:
-    17 |           - "{{ inputs.parameters.messages }}"
-       |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-       |              └ VAR002 at .spec.templates.0.container.args.0 in test-
+     15 |         command: [cowsay]
+     16 |         args:
+     17 |           - "{{ inputs.parameters.messages }}"
+        |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        |              └ VAR002 at .spec.templates[0].container.args[0]
 
-       The parameter reference 'inputs.parameters.messages' used in template 'whalesay' is invalid.
+     The parameter reference 'inputs.parameters.messages' used in template 'whalesay' is invalid.
 
-       Do you mean: {{ inputs.parameters.message }}
+     Do you mean: {{ inputs.parameters.message }}
 
    Found 2 failures
 
