@@ -4,19 +4,16 @@ from pathlib import Path
 
 from dirty_equals import DirtyEquals
 
-from tugboat.console.formatters.console import (
-    ConsoleOutputFormatter,
-    calc_highlight_range,
-)
+from tugboat.console.formatters.console import ConsoleFormatter, calc_highlight_range
 from tugboat.engine import DiagnosisModel
 
 
-class TestConsoleOutputFormatter:
+class TestConsoleFormatter:
 
     def test_1(self, fixture_dir: Path):
         manifest_path = fixture_dir / "sample-workflow.yaml"
 
-        formatter = ConsoleOutputFormatter()
+        formatter = ConsoleFormatter()
         formatter.update(
             content=manifest_path.read_text(),
             diagnoses=[
@@ -65,7 +62,7 @@ class TestConsoleOutputFormatter:
     def test_2(self, fixture_dir: Path):
         manifest_path = fixture_dir / "missing-script-source.yaml"
 
-        formatter = ConsoleOutputFormatter()
+        formatter = ConsoleFormatter()
         formatter.update(
             content=manifest_path.read_text(),
             diagnoses=[
@@ -117,7 +114,7 @@ class TestConsoleOutputFormatter:
     def test_3(self, fixture_dir: Path):
         manifest_path = fixture_dir / "sample-workflow.yaml"
 
-        formatter = ConsoleOutputFormatter()
+        formatter = ConsoleFormatter()
         formatter.update(
             content=manifest_path.read_text(),
             diagnoses=[

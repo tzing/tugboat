@@ -17,13 +17,11 @@ if typing.TYPE_CHECKING:
     from tugboat.engine import DiagnosisModel
 
 
-class ConsoleOutputFormatter(OutputFormatter):
+class ConsoleFormatter(OutputFormatter):
 
     def __init__(self):
         super().__init__()
         self.buf = io.StringIO()
-
-        self._buffer = io.StringIO()
 
     def update(self, *, content: str, diagnoses: Sequence[DiagnosisModel]) -> None:
         content_lines = content.splitlines()
