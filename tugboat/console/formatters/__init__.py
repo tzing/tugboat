@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+__all__ = ["OutputFormatter", "get_output_formatter"]
+
 import tugboat.settings
 from tugboat.console.formatters.base import OutputFormatter
 
