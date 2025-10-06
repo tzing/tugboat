@@ -12,8 +12,8 @@ from pydantic import ValidationError
 
 import tugboat.console.anchor
 import tugboat.settings
+from tugboat.console.formatters import get_output_formatter
 from tugboat.console.glob import gather_paths
-from tugboat.console.outputs import get_output_builder
 from tugboat.console.utils import DiagnosesCounter, Stdin
 from tugboat.engine import analyze_yaml_stream
 from tugboat.settings import settings
@@ -277,7 +277,7 @@ def lint(output_stream: TextIO) -> NoReturn:
 
     # analyze manifests
     counter = DiagnosesCounter()
-    output_builder = get_output_builder()
+    output_formatter = get_output_formatter()
 
     for i, path in enumerate(manifest_paths, 1):
         logger.info("[%d/%d] Analyzing file %s", i, len(manifest_paths), path)
@@ -288,26 +288,16 @@ def lint(output_stream: TextIO) -> NoReturn:
             logger.debug("Error details:", exc_info=True)
             raise click.Abort from None
 
-        # TODO replace data dict with DiagnosisModel
-        diagnoses = []
-        for diag_model in analyze_yaml_stream(content, path):
-            diag_dict = diag_model.model_dump()
+        diagnoses = analyze_yaml_stream(content, path)
 
-            if diag_model.extras.manifest:
-                diag_dict["manifest"] = diag_model.extras.manifest
-            else:
-                diag_dict["manifest"] = None
-
-            diagnoses.append(diag_dict)
-
-        counter.update(diag["type"] for diag in diagnoses)
-        output_builder.update(path=path, content=content, diagnoses=diagnoses)
+        counter.update(diag.type for diag in diagnoses)
+        output_formatter.update(content=content, diagnoses=diagnoses)
 
     logger.debug("Analysis completed. Found %d diagnoses.", sum(counter.values()))
 
     # write report
     with output_stream as stream:
-        output_builder.dump(stream)
+        output_formatter.dump(stream)
 
     # finalize
     click.echo(counter.summary(), err=True)

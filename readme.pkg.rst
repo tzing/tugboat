@@ -8,19 +8,20 @@ Tugboat is a linter to streamline your `Argo Workflows <https://argoproj.github.
 .. code-block:: none
 
    $ tugboat
-   whalesay.yaml:6:3: WF001 Invalid entrypoint
+   WF201 Invalid entrypoint
+     @whalesay.yaml:6:15 (test-)
 
-    4 |   generateName: test-
-    5 | spec:
-    6 |   entrypoint: ducksay
-      |               ^^^^^^^
-      |               └ WF001 at .spec.entrypoint in test-
-    7 |   templates:
-    8 |     - name: whalesay
+     4 |   generateName: test-
+     5 | spec:
+     6 |   entrypoint: ducksay
+       |               ^^^^^^^
+       |               └ WF201 at .spec.entrypoint
+     7 |   templates:
+     8 |     - name: whalesay
 
-      Entrypoint 'ducksay' is not defined in any template.
-      Defined entrypoints: 'whalesay'.
+     Entrypoint 'ducksay' is not defined in any template.
+     Defined entrypoints: 'whalesay'
 
-      Do you mean: whalesay
+     Do you mean: whalesay
 
    Found 1 failures

@@ -2,17 +2,9 @@ from __future__ import annotations
 
 import collections
 import sys
-import typing
 
 from tugboat.types import PathLike
 from tugboat.utils import join_with_and
-
-if typing.TYPE_CHECKING:
-    from collections.abc import Sequence
-
-
-def format_loc(loc: Sequence[str | int]) -> str:
-    return "." + ".".join(map(str, loc))
 
 
 class Stdin(PathLike):
