@@ -21,6 +21,7 @@ dynamic = ["classifiers"]
 [project.urls]
 repository = "https://github.com/tzing/tugboat"
 documentation = "https://argo-tugboat.readthedocs.io/en/"
+changelog = "https://argo-tugboat.readthedocs.io/en/stable/changelog.html"
 
 [project.scripts]
 tugboat = "tugboat.console:main"

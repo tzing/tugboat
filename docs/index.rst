@@ -187,3 +187,4 @@ For more information on how to use Tugboat, runs its help command:
    :caption: Development
 
    api/index
+   changelog
