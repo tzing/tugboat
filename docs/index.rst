@@ -74,17 +74,16 @@ The package is available on PyPI as `argo-tugboat`_. Just pick your favorite way
 .. _argo-tugboat: https://pypi.org/project/argo-tugboat/
 
 
-Prepare manifest
-++++++++++++++++
+Argo Workflows Manifest
++++++++++++++++++++++++
 
-Make sure you have an Argo Workflow manifest ready. It should be a valid YAML file.
-
-For testing, you can use this minimal example:
+To get started, find an Argo Workflow manifest that contains an error.
+For example, the following manifest has an invalid entrypoint:
 
 .. code-block:: yaml
    :caption: whalesay.yaml
    :linenos:
-   :emphasize-lines: 6,17
+   :emphasize-lines: 6
 
    apiVersion: argoproj.io/v1alpha1
    kind: Workflow
@@ -102,14 +101,7 @@ For testing, you can use this minimal example:
            image: docker/whalesay:latest
            command: [cowsay]
            args:
-             - "{{ inputs.parameters.messages }}"
-
-This manifest has two issues:
-
-- The entrypoint ``ducksay`` is not defined in any template.
-- The parameter reference is typo; it should be ``message`` instead of ``messages``.
-
-Save this as ``whalesay.yaml``.
+             - "{{ inputs.parameters.message }}"
 
 
 Run :octicon:`rocket`
@@ -121,7 +113,7 @@ Lint your workflow manifest by running:
 
    tugboat whalesay.yaml
 
-This will output a list of issues found in the manifest:
+This will output the following:
 
 .. code-block:: none
 
@@ -141,20 +133,7 @@ This will output a list of issues found in the manifest:
 
      Do you mean: whalesay
 
-   VAR002 Invalid reference
-     @whalesay.yaml:17:11 (test-)
-
-     15 |         command: [cowsay]
-     16 |         args:
-     17 |           - "{{ inputs.parameters.messages }}"
-        |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        |              └ VAR002 at .spec.templates[0].container.args[0]
-
-     The parameter reference 'inputs.parameters.messages' used in template 'whalesay' is invalid.
-
-     Do you mean: {{ inputs.parameters.message }}
-
-   Found 2 failures
+   Found 1 failures
 
 For more information on how to use Tugboat, runs its help command:
 
