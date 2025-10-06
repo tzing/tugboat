@@ -70,7 +70,7 @@ class ConsoleOutputFormatter(OutputFormatter):
                 emphasis = Style.Warn
 
         # ---------------------------------------------------------------------
-        # PART: summary
+        # :PART: summary
 
         # > T01 Example error message
         self.buf.write(emphasis.fmt(diagnosis.code))
@@ -96,7 +96,7 @@ class ConsoleOutputFormatter(OutputFormatter):
         self.buf.write("\n\n")
 
         # ---------------------------------------------------------------------
-        # PART: code snippet
+        # :PART: code snippet
         max_line_number = diagnosis.line + settings.console_output.snippet_lines_behind
         lncw = len(str(max_line_number - 1)) + 2  # line number column width
 
@@ -139,14 +139,14 @@ class ConsoleOutputFormatter(OutputFormatter):
                 self.buf.write("\n")
 
         # ---------------------------------------------------------------------
-        # PART: detail message
+        # :PART: detail message
         if diagnosis.msg:
             self.buf.write("\n")
             self.buf.write(textwrap.indent(diagnosis.msg, "  "))
             self.buf.write("\n")
 
         # ---------------------------------------------------------------------
-        # PART: suggestion
+        # :PART: suggestion
         if diagnosis.fix:
             self.buf.write("\n")
             self.buf.write("  ")
