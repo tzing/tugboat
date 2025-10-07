@@ -132,8 +132,8 @@ class TestJUnitFormatter:
               <!-- GROUP A: three exactly same diagnoses -->
               <testsuite name="demo.example.com/diagnoses" file="manifest.yaml" failures="3">
                 <properties>
-                  <property name="kind" value="demo.example.com"/>
-                  <property name="name" value="diagnoses"/>
+                  <property name="string:manifest-kind" value="demo.example.com"/>
+                  <property name="string:manifest-name" value="diagnoses"/>
                 </properties>
                 <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
                 <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
@@ -143,8 +143,8 @@ class TestJUnitFormatter:
               <!-- GROUP B: different filepath -->
               <testsuite name="demo.example.com/diagnoses" file="another-manifest.yaml" errors="1">
                 <properties>
-                  <property name="kind" value="demo.example.com"/>
-                  <property name="name" value="diagnoses"/>
+                  <property name="string:manifest-kind" value="demo.example.com"/>
+                  <property name="string:manifest-name" value="diagnoses"/>
                 </properties>
                 <testcase classname="T01" errors="1" file="another-manifest.yaml" line="1" name="."><error message="test">test</error></testcase>
               </testsuite>
@@ -152,8 +152,8 @@ class TestJUnitFormatter:
               <!-- GROUP C: different manifest name -->
               <testsuite name="demo.example.com/other-diagnoses" file="manifest.yaml" failures="1">
                 <properties>
-                  <property name="kind" value="demo.example.com"/>
-                  <property name="name" value="other-diagnoses"/>
+                  <property name="string:manifest-kind" value="demo.example.com"/>
+                  <property name="string:manifest-name" value="other-diagnoses"/>
                 </properties>
                 <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
               </testsuite>
@@ -161,8 +161,8 @@ class TestJUnitFormatter:
               <!-- GROUP D: different manifest kind -->
               <testsuite name="another.demo.example.com/diagnoses" file="manifest.yaml" failures="1">
                 <properties>
-                  <property name="kind" value="another.demo.example.com"/>
-                  <property name="name" value="diagnoses"/>
+                  <property name="string:manifest-kind" value="another.demo.example.com"/>
+                  <property name="string:manifest-name" value="diagnoses"/>
                 </properties>
                 <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
               </testsuite>
@@ -203,8 +203,8 @@ class TestElementTestSuite:
             """
             <testsuite name="demo.example.com/test" file="/path/to/file" failures="1">
               <properties>
-                <property name="kind" value="demo.example.com"/>
-                <property name="name" value="test"/>
+                <property name="string:manifest-kind" value="demo.example.com"/>
+                <property name="string:manifest-name" value="test"/>
               </properties>
               <testcase classname="T01" name="." line="10" failures="1">
                 <failure message="test failure">test failure</failure>
@@ -221,7 +221,7 @@ class TestElementTestSuite:
             """
             <testsuite name="demo.example.com/&lt;unnamed&gt;">
               <properties>
-                <property name="kind" value="demo.example.com"/>
+                <property name="string:manifest-kind" value="demo.example.com"/>
               </properties>
             </testsuite>
             """

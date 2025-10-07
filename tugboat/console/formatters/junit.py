@@ -109,10 +109,22 @@ class ElementTestSuite(Element):
         properties = SubElement(self, "properties")
 
         if manifest:
-            SubElement(properties, "property", {"name": "kind", "value": manifest.kind})
+            SubElement(
+                properties,
+                "property",
+                {
+                    "name": "string:manifest-kind",
+                    "value": manifest.kind,
+                },
+            )
             if manifest.name:
                 SubElement(
-                    properties, "property", {"name": "name", "value": manifest.name}
+                    properties,
+                    "property",
+                    {
+                        "name": "string:manifest-name",
+                        "value": manifest.name,
+                    },
                 )
 
     def append(self, subelement):
