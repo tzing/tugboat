@@ -19,13 +19,60 @@ if typing.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class ElementTestSuite(Element):
+    """<testsuite> element = a manifest"""
+
+    def __init__(
+        self,
+        manifest: ManifestMetadata | None = None,
+        filesystem: FilesystemMetadata | None = None,
+    ):
+        # create <testsuite> element
+        now = datetime.datetime.now().astimezone()
+        attrib = {
+            "timestamp": now.isoformat(),
+        }
+
+        if manifest:
+            if manifest.name:
+                attrib["name"] = f"{manifest.kind}/{manifest.name}"
+            else:
+                attrib["name"] = f"{manifest.kind}/<unnamed>"
+
+        if filesystem:
+            attrib["file"] = filesystem.filepath
+
+        super().__init__("testsuite", attrib)
+
+        # internal counter for statistics
+        self.counter = collections.Counter()
+
+        # create <properties> element
+        properties = SubElement(self, "properties")
+
+        if manifest:
+            SubElement(properties, "property", {"name": "kind", "value": manifest.kind})
+            if manifest.name:
+                SubElement(
+                    properties, "property", {"name": "name", "value": manifest.name}
+                )
+
+    def append(self, subelement):
+        if isinstance(subelement, ElementTestCase):
+            self.counter[subelement.stat_name] += 1
+            for stat_name, count in self.counter.items():
+                self.attrib[stat_name] = str(count)
+
+        return super().append(subelement)
+
+
 class ElementTestCase(Element):
     """<testcase> element = a single diagnosis"""
 
     def __init__(self, diagnosis: DiagnosisModel):
         # create <testcase> element
         attrib = {
-            "name": diagnosis.loc_path[1:],  # skip the leading dot
+            "name": diagnosis.loc_path,
             "classname": diagnosis.code,
             "line": str(diagnosis.line),
         }
