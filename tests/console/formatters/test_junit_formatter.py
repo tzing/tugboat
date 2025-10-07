@@ -1,16 +1,181 @@
 import io
-import textwrap
-from pathlib import Path
-from unittest.mock import Mock
+import logging
 from xml.etree.ElementTree import Element, ElementTree
 
 import lxml.etree
 from dirty_equals import DirtyEquals
 
-from tugboat.console.formatters.junit import ElementTestCase, ElementTestSuite
+from tugboat.console.formatters.junit import (
+    ElementTestCase,
+    ElementTestSuite,
+    JUnitFormatter,
+)
 from tugboat.engine import DiagnosisModel, FilesystemMetadata, ManifestMetadata
+from tugboat.engine.types import Extras
 
+logger = logging.getLogger(__name__)
 xml_parser = lxml.etree.XMLParser(remove_blank_text=True)
+
+
+class TestJUnitFormatter:
+
+    def test(self):
+        diagnosis_data = {
+            "line": 1,
+            "column": 1,
+            "code": "T01",
+            "loc": (),
+            "msg": "test",
+        }
+
+        formatter = JUnitFormatter()
+        formatter.update(
+            content="",
+            diagnoses=[
+                # GROUP A: three exactly same diagnoses (one left for later)
+                *[
+                    DiagnosisModel.model_validate(
+                        {
+                            **diagnosis_data,
+                            "extras": Extras(
+                                file=FilesystemMetadata(
+                                    filepath="manifest.yaml",
+                                ),
+                                manifest=ManifestMetadata(
+                                    kind="demo.example.com",
+                                    name="diagnoses",
+                                ),
+                            ),
+                        }
+                    )
+                ]
+                * 2,
+                # GROUP B: different filepath
+                DiagnosisModel.model_validate(
+                    {
+                        **diagnosis_data,
+                        "type": "error",
+                        "extras": Extras(
+                            file=FilesystemMetadata(
+                                filepath="another-manifest.yaml",
+                            ),
+                            manifest=ManifestMetadata(
+                                kind="demo.example.com",
+                                name="diagnoses",
+                            ),
+                        ),
+                    }
+                ),
+                # GROUP C: different manifest name
+                DiagnosisModel.model_validate(
+                    {
+                        **diagnosis_data,
+                        "extras": Extras(
+                            file=FilesystemMetadata(
+                                filepath="manifest.yaml",
+                            ),
+                            manifest=ManifestMetadata(
+                                kind="demo.example.com",
+                                name="other-diagnoses",
+                            ),
+                        ),
+                    }
+                ),
+                # GROUP A
+                DiagnosisModel.model_validate(
+                    {
+                        **diagnosis_data,
+                        "extras": Extras(
+                            file=FilesystemMetadata(
+                                filepath="manifest.yaml",
+                            ),
+                            manifest=ManifestMetadata(
+                                kind="demo.example.com",
+                                name="diagnoses",
+                            ),
+                        ),
+                    }
+                ),
+                # GROUP D: different manifest kind
+                DiagnosisModel.model_validate(
+                    {
+                        **diagnosis_data,
+                        "extras": Extras(
+                            file=FilesystemMetadata(
+                                filepath="manifest.yaml",
+                            ),
+                            manifest=ManifestMetadata(
+                                kind="another.demo.example.com",
+                                name="diagnoses",
+                            ),
+                        ),
+                    }
+                ),
+                # GROUP E: missing path and manifest
+                DiagnosisModel.model_validate(
+                    {
+                        **diagnosis_data,
+                        "type": "error",
+                    }
+                ),
+            ],
+        )
+
+        with io.StringIO() as buf:
+            formatter.dump(buf)
+            output = buf.getvalue()
+
+        assert output == IsElementEqual(
+            """<?xml version='1.0' encoding='utf-8'?>
+            <testsuites name="tugboat" errors="2" failures="5">
+
+              <!-- GROUP A: three exactly same diagnoses -->
+              <testsuite name="demo.example.com/diagnoses" file="manifest.yaml" failures="3">
+                <properties>
+                  <property name="kind" value="demo.example.com"/>
+                  <property name="name" value="diagnoses"/>
+                </properties>
+                <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
+                <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
+                <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
+              </testsuite>
+
+              <!-- GROUP B: different filepath -->
+              <testsuite name="demo.example.com/diagnoses" file="another-manifest.yaml" errors="1">
+                <properties>
+                  <property name="kind" value="demo.example.com"/>
+                  <property name="name" value="diagnoses"/>
+                </properties>
+                <testcase classname="T01" errors="1" file="another-manifest.yaml" line="1" name="."><error message="test">test</error></testcase>
+              </testsuite>
+
+              <!-- GROUP C: different manifest name -->
+              <testsuite name="demo.example.com/other-diagnoses" file="manifest.yaml" failures="1">
+                <properties>
+                  <property name="kind" value="demo.example.com"/>
+                  <property name="name" value="other-diagnoses"/>
+                </properties>
+                <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
+              </testsuite>
+
+              <!-- GROUP D: different manifest kind -->
+              <testsuite name="another.demo.example.com/diagnoses" file="manifest.yaml" failures="1">
+                <properties>
+                  <property name="kind" value="another.demo.example.com"/>
+                  <property name="name" value="diagnoses"/>
+                </properties>
+                <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
+              </testsuite>
+
+              <!-- GROUP E: missing path and manifest -->
+              <testsuite errors="1">
+                <properties/>
+                <testcase classname="T01" errors="1" line="1" name="."><error message="test">test</error></testcase>
+              </testsuite>
+
+            </testsuites>
+            """
+        )
 
 
 class TestElementTestSuite:
@@ -178,7 +343,9 @@ class IsElementEqual(DirtyEquals[Element]):
         other_c14n = self.canonicalize(other)
 
         (expected_c14n,) = self._repr_args
-        logger.info("== COMPARING XML ==")
-        logger.info("== Expected ==\n%s", expected_c14n.decode())
-        logger.info("== Actual ==\n%s", other_c14n.decode())
+        logger.info(
+            "=== COMPARING XML ===\n--- expect\n+++ actual\n@@ -1 +1 @@\n-%s\n+%s",
+            expected_c14n.decode(),
+            other_c14n.decode(),
+        )
         return expected_c14n == other_c14n

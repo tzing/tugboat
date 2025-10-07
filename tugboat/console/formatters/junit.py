@@ -4,19 +4,77 @@ import collections
 import datetime
 import logging
 import typing
-from xml.etree.ElementTree import Element, SubElement
+from xml.etree.ElementTree import Element, ElementTree, SubElement
 
 from tugboat.console.formatters.base import OutputFormatter
 
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
-    from pathlib import Path
-    from typing import Self
+    from typing import TextIO
 
     from tugboat.engine import DiagnosisModel, FilesystemMetadata, ManifestMetadata
 
 
 logger = logging.getLogger(__name__)
+
+
+class JUnitFormatter(OutputFormatter):
+
+    def __init__(self):
+        super().__init__()
+        self.testsuites: dict[tuple[str | None, str | None], ElementTestSuite] = {}
+
+    def update(self, *, content: str, diagnoses: Sequence[DiagnosisModel]) -> None:
+        for diagnosis in diagnoses:
+            # find or create the appropriate testsuite element
+            file_path = None
+            if diagnosis.extras.file:
+                file_path = diagnosis.extras.file.filepath
+
+            manifest_name = None
+            if diagnosis.extras.manifest:
+                manifest_name = (
+                    f"{diagnosis.extras.manifest.kind}/{diagnosis.extras.manifest.name}"
+                )
+
+            key = (file_path, manifest_name)
+            if key not in self.testsuites:
+                self.testsuites[key] = ElementTestSuite(
+                    manifest=diagnosis.extras.manifest,
+                    filesystem=diagnosis.extras.file,
+                )
+
+            testsuite = self.testsuites[key]
+
+            # create a testcase element for this diagnosis
+            testcase = ElementTestCase(diagnosis)
+            testsuite.append(testcase)
+
+    def dump(self, stream: TextIO) -> None:
+        # create root <testsuites> element
+        now = datetime.datetime.now().astimezone()
+        attrib = {
+            "name": "tugboat",
+            "timestamp": now.isoformat(),
+        }
+
+        counter = collections.Counter()
+        for testsuite in self.testsuites.values():
+            for stat_name, count in testsuite.counter.items():
+                counter[stat_name] += count
+
+        for stat_name, count in counter.items():
+            attrib[stat_name] = str(count)
+
+        testsuites = Element("testsuites", attrib)
+
+        # append all <testsuite> elements
+        for testsuite in self.testsuites.values():
+            testsuites.append(testsuite)
+
+        # serialize <testsuites> element
+        tree = ElementTree(testsuites)
+        tree.write(stream, encoding="unicode", xml_declaration=True)
 
 
 class ElementTestSuite(Element):
