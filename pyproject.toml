@@ -40,6 +40,7 @@ classifiers = [
 [tool.poetry.group.dev.dependencies]
 dirty-equals = "^0.10.0"
 fastmcp = "^2.11.3"
+lxml = "^6.0.2"
 pyright = "^1.1.386"
 pytest = "^8.3.3"
 pytest-asyncio = "^1.2.0"
