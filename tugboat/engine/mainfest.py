@@ -155,42 +155,35 @@ def analyze_manifest(manifest: dict) -> list[Diagnosis]:
     return diagnoses
 
 
-def is_kubernetes_manifest(d: dict) -> bool:
-    """Returns True if the dictionary *looks like* a Kubernetes manifest."""
-    return isinstance(d.get("apiVersion"), str) and isinstance(d.get("kind"), str)
-
-
 def get_manifest_metadata(manifest: dict) -> dict[str, str]:
     """Safely extract metadata from the manifest."""
-    # full qualified kind
-    with io.StringIO() as buf:
-        # kind
-        if kind := manifest.get("kind"):
-            buf.write(kind.lower())
-        else:
-            buf.write("unknown")
+    output: dict[str, str] = {}
 
-        # API group
-        api_version = manifest.get("apiVersion")
+    # API group
+    api_version = manifest.get("apiVersion")
+    if api_version and isinstance(api_version, str):
         if api_version == "v1":
-            ...  # core group, do nothing
-        elif api_version and "/" in api_version:
+            output["group"] = ""  # core group
+        elif "/" in api_version:
             group, _ = api_version.split("/", 1)
-            buf.write(f".{group}")
+            output["group"] = group
         else:
-            buf.write(".unknown")
+            raise ValueError("Invalid apiVersion format")
+    else:
+        raise ValueError("apiVersion is missing or not a string")
 
-        fqk = buf.getvalue()
+    # kind
+    kind = manifest.get("kind")
+    if kind and isinstance(kind, str):
+        output["kind"] = kind
+    else:
+        raise ValueError("kind is missing")
 
-    output = {
-        "kind": fqk,
-    }
-
-    # name / namespace
-    if metadata := manifest.get("metadata"):
-        if name := metadata.get("name") or metadata.get("generateName"):
+    # name
+    metadata = manifest.get("metadata")
+    if metadata and isinstance(metadata, dict):
+        name = metadata.get("name") or metadata.get("generateName")
+        if name and isinstance(name, str):
             output["name"] = name
-        if namespace := metadata.get("namespace"):
-            output["namespace"] = namespace
 
     return output
