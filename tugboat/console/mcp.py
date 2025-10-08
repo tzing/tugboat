@@ -73,9 +73,8 @@ async def analyze_stream(
         str,
         _Docstring(
             """
-            Path to the manifest file.
-            The file MUST be a valid, plain Kubernetes manifest file in YAML format.
-            Any manifest template (e.g. Helm) should be pre-processed before being passed to this tool.
+            Absolute or relative path to the Argo Workflows manifest on disk.
+            Provide plain YAML; if you only have a template, render it first or set `is_helm_template`.
             """
         ),
     ],
@@ -83,19 +82,21 @@ async def analyze_stream(
         bool,
         _Docstring(
             """
-            Whether the manifest file is a Helm template.
-            If `true`, the tool will try to render the Helm template before analyzing it.
-            If `false`, the tool will analyze the manifest file as-is.
+            Toggle Helm template rendering.
+            Set to `true` when the path points to an unrendered Helm template so the tool renders before linting.
             """
         ),
-    ],
+    ] = False,
 ) -> SuccessResult | ErrorResult:
     """
-    A linter to analyze a Argo Workflows manifest file for potential issues.
+    Run lint checks on an Argo Workflows manifest and surface any rule violations.
 
-    ## Example
+    Each reported issue includes the rule code, location, summary, suggested fix, and nearby source
+    context so you can update the manifest or produce a diff.
 
-    Given the input manifest path `/path/to/manifest.yaml`, which contains:
+    ### Example
+
+    Manifest at `/path/to/whalesay.yaml`:
 
     ```yaml
     apiVersion: argoproj.io/v1alpha1
@@ -103,24 +104,29 @@ async def analyze_stream(
     metadata:
       generateName: demo-
     spec:
+      entrypoint: ducksay
       templates:
         - name: whalesay
-          inputs:
-            parameters:
-              - name: message
-                value: Hello Argo!
           container:
             image: docker/whalesay:latest
-            command: [cowsay]
-            args:
-              - "{{ inputs.parameter.message }}"
     ```
 
-    This tool will analyze the manifest and return a JSON object with the following structure:
+    Analyzer output:
 
     ```json
-    {"count":2,"issues":[{"line":6,"column":3,"type":"failure","code":"M101","loc":["spec","entrypoint"],"summary":"Missing required field 'entrypoint'","msg":"Field 'entrypoint' is required in the 'spec' section but missing.","input":null,"fix":null,"extras":{"file":{"filepath":"/path/to/manifest.yaml"},"manifest":{"kind":"workflow.argoproj.io","name":"demo-"}},"sourceNearby":"spec:\n  templates:\n    - name: whalesay\n      inputs:"},{"line":16,"column":11,"type":"failure","code":"VAR002","loc":["spec","templates",0,"container","args",0],"summary":"Invalid reference","msg":"The parameter reference 'inputs.parameter.message' used in template 'whalesay' is invalid.","input":"{{ inputs.parameter.message }}","fix":"{{ inputs.parameters.message }}","extras":{"file":{"filepath":"/path/to/manifest.yaml"},"manifest":{"kind":"workflow.argoproj.io","name":"demo-"}},"sourceNearby":"        args:\n          - \"{{ inputs.parameter.message }}\""}]}
+    {"count":1,"issues":[{"code":"WF201","summary":"Invalid entrypoint","msg":"Entrypoint 'ducksay' is not defined in any template.","fix":"whalesay"}]}
     ```
+
+    Suggested remediation:
+
+    - Update `spec.entrypoint` to reference an existing template (here: `whalesay`).
+    - Example patch:
+
+      ```patch
+      @@
+      -  entrypoint: ducksay
+      +  entrypoint: whalesay
+      ```
     """
     # resolve the manifest path
     manifest = Path(manifest_path).resolve()
