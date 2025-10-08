@@ -145,8 +145,8 @@ For more information on how to use Tugboat, runs its help command:
 .. toctree::
    :hidden:
 
-   user/violations
    user/configuration
+   user/violations
    user/junit
    user/mcp
 

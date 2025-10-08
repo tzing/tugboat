@@ -1,17 +1,17 @@
 Configurations
 ==============
 
-Tugboat can be configured in a few different ways.
-The most common way is to use a configuration file, but you can also use environment variables or command line arguments.
+Tugboat reads settings from configuration files, environment variables, and command-line flags.
+Most teams rely on a shared config file, with env vars or flags layered on top when they need overrides.
 
 
-Config file discovery
+Config File Discovery
 ---------------------
 
-Tugboat searches for the closest configuration file named ``.tugboat.toml`` or ``pyproject.toml`` in the current directory and all parent directories.
+Starting from the working directory, Tugboat walks up each parent folder until it finds a ``.tugboat.toml`` or ``pyproject.toml``.
 
-Both files utilize the `TOML`_ format and share the same configuration options.
-The distinction is that the ``pyproject.toml`` file adheres to :pep:`518`, requiring all configurations to be placed under the ``tool.tugboat`` section.
+Both files use the `TOML`_ format and expose the same settings.
+When you use ``pyproject.toml``, follow :pep:`518` and place the keys under ``tool.tugboat``.
 
 Here is an example configuration file:
 
@@ -46,26 +46,30 @@ Here is an example configuration file:
 .. _TOML: https://toml.io/en/
 
 
-Environment variables
+Environment Variables
 ---------------------
 
-Configuration options can also be set using environment variables.
+Set any configuration with an environment variable.
 
-These environment variables are prefixed with ``TUGBOAT_``, and the configuration keys are case-insensitive.
-For example, the :confval:`output_format` configuration can be set using:
+Basics:
+
+* Prefix the variable name with ``TUGBOAT_``.
+* Configuration keys ignore case.
+
+For example, set :confval:`output_format` with:
 
 .. code-block:: bash
 
    export tugboat_output_format=junit
 
-For nested configuration keys, use double underscores (``__``) to separate the keys.
-For example, the :confval:`snippet_lines_ahead` configuration is under the `console_output section`_, so it can be set using:
+Nested configuration keys use double underscores (``__``) between each level.
+Because :confval:`snippet_lines_ahead` lives in the `console_output section`_, you can set it with:
 
 .. code-block:: bash
 
    export TUGBOAT_CONSOLE_OUTPUT__SNIPPET_LINES_AHEAD=5
 
-Some configuration options request a list of values. In this case, the value should be JSON-formatted:
+When an option expects a list, provide the value as JSON:
 
 .. code-block:: bash
 
@@ -75,7 +79,7 @@ Some configuration options request a list of values. In this case, the value sho
 Settings
 --------
 
-Here is a list of all available settings, their default values and descriptions.
+Here are the available settings, their default values, and what they control.
 
 Top-level
 ~~~~~~~~~
@@ -83,73 +87,52 @@ Top-level
 .. confval:: color
    :default: ``null``
 
-   Colorize the output.
+   Controls whether Tugboat colorizes its output.
 
-   - If set to ``true``, the output is always colorized.
-   - If set to ``false``, the output is not colorized.
-   - If set to ``null``, the output is colorized only when directed to a terminal.
+   - ``true``: always use color.
+   - ``false``: never use color.
+   - ``null``: use color only when writing to a terminal.
 
-   This option is only utilized when the output format supports colorization.
-   Currently, only the ``console`` output format supports colorization.
+   Color is currently supported only when :confval:`output_format` is ``console``.
+
+   Tugboat respects both `NO_COLOR`_ and `FORCE_COLOR`_ environment variables. These may override the :confval:`color` setting.
+
+   .. _NO_COLOR: https://no-color.org/
+   .. _FORCE_COLOR: https://force-color.org/
 
 .. confval:: exclude
    :default: ``[]``
 
-   A list of file paths, directory paths, or patterns to exclude from the check.
+   Skip files, folders, or glob patterns by listing them here.
 
-   Files or directories matching these paths or patterns will be ignored.
-   If a file matches both the :confval:`include` and :confval:`exclude` patterns, it will be excluded.
-
-   For details on pattern matching, refer to the documentation for the :confval:`include` option.
+   If a path matches both :confval:`include` and :confval:`exclude`, exclusion wins.
+   See `path globbing`_ for details on pattern syntax.
 
 .. confval:: include
    :default: ``["."]`` (all YAML files in the current directory)
 
-   A list of file paths, directory paths, or patterns to include in the check.
+   Choose which files Tugboat checks.
 
-   * **File paths:** Specific files will be included in the check.
-   * **Directory paths:** All YAML files in the specified directories will be included.
-   * **Patterns:** Used to match files. Refer to the pattern matching section for details.
+   * **File paths:** select specific files.
+   * **Directory paths:** include all YAML files under the directory.
+   * **Patterns:** glob-style patterns (see `path globbing`_).
 
    .. important::
 
-      If a file matches both the :confval:`include` and :confval:`exclude` patterns, it will be excluded from the check.
-
-   Tugboat uses Python's `pattern language`_ to evaluate file paths.
-   Supported wildcards in patterns include:
-
-   ``**`` (entire segment)
-      Matches any number of file or directory segments, including zero.
-
-   ``*`` (entire segment)
-      Matches one file or directory segment.
-
-   ``*`` (part of a segment)
-      Matches any number of non-separator characters, including zero.
-
-   ``?``
-      Matches one non-separator character.
-
-   ``[seq]``
-      Matches one character in seq.
-
-   ``[!seq]``
-      Matches one character not in seq.
-
-   .. _pattern language: https://docs.python.org/3.13/library/pathlib.html#pathlib-pattern-language
+      If a file matches both :confval:`include` and :confval:`exclude`, the file is excluded.
 
 .. confval:: follow_symlinks
    :default: ``false``
 
-   Follow symbolic links when searching for files.
+   Follow symbolic links when scanning for files.
 
 .. confval:: output_format
    :default: ``console``
 
-   The output serialization format can be specified using the following options:
+   Choose how Tugboat formats its results:
 
-   - ``console``: Outputs in a human-readable text format.
-   - ``junit``: Outputs in JUnit XML format, suitable for use with CI/CD systems. For more information, see :doc:`junit`.
+   - ``console``: human-friendly text.
+   - ``junit``: JUnit XML for CI systems; see :doc:`junit` for details.
 
 
 ``console_output`` section
@@ -164,3 +147,33 @@ Top-level
    :default: ``2``
 
    The number of lines to include after the diff snippet.
+
+Path Globbing
+-------------
+
+Tugboat reuses Python's `pattern language`_ for matching file paths. Supported wildcards include:
+
+``**`` (entire segment)
+   Matches zero or more path segments.
+
+``*`` (entire segment)
+   Matches exactly one path segment.
+
+``*`` (part of a segment)
+   Matches any number of non-separator characters.
+
+``?``
+   Matches a single non-separator character.
+
+``[seq]``
+   Matches a single character from ``seq``.
+
+``[!seq]``
+   Matches a single character not in ``seq``.
+
+Here are some examples:
+
+* ``*.yaml`` matches all YAML files in the current directory.
+* ``**/*.yaml`` matches all YAML files in the current directory and all subdirectories.
+
+.. _pattern language: https://docs.python.org/3.13/library/pathlib.html#pathlib-pattern-language
