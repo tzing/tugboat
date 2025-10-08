@@ -187,11 +187,18 @@ class FilesystemMetadata(BaseModel):
 class ManifestMetadata(BaseModel):
     """Metadata describing the manifest that produced the diagnosis."""
 
+    group: Annotated[
+        str,
+        Field(
+            description="Kubernetes API group (e.g., `argoproj.io` or ``). The empty string represents the core API group.",
+        ),
+    ]
+
     kind: Annotated[
         str,
         Field(
-            description="Fully qualified Kubernetes kind (API group and kind).",
-            examples=["pod", "workflow.argoproj.io"],
+            description="Kubernetes kind.",
+            examples=["Pod", "Workflow"],
         ),
     ]
 

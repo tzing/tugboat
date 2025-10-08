@@ -48,6 +48,7 @@ class TestDiagnosisModel:
                 "msg": "",
                 "extras": {
                     "manifest": {
+                        "group": "example.com",
                         "kind": "Test",
                         "name": "test-",
                     }
@@ -94,7 +95,8 @@ class TestAnalyzeYamlStream:
                             "filepath": "/path/to/file.yaml",
                         },
                         "manifest": {
-                            "kind": "debug.tugboat.example.com",
+                            "group": "tugboat.example.com",
+                            "kind": "Debug",
                             "name": "test-",
                         },
                     },
@@ -117,7 +119,8 @@ class TestAnalyzeYamlStream:
                         "msg": "This is a test diagnosis.",
                         "ctx": {
                             "manifest": {
-                                "kind": "mock",
+                                "group": "example.com",
+                                "kind": "Mock",
                                 "name": "test-",
                             }
                         },
@@ -162,7 +165,8 @@ class TestAnalyzeYamlStream:
                         "msg": "",
                         "ctx": {
                             "manifest": {
-                                "kind": "mock",
+                                "group": "example.com",
+                                "kind": "Mock",
                                 "name": "test-",
                             }
                         },

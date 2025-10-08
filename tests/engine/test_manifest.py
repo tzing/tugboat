@@ -1,11 +1,10 @@
+import re
+
+import pytest
 from dirty_equals import IsPartialDict
 
 from tugboat.core import hookimpl
-from tugboat.engine.mainfest import (
-    analyze_manifest,
-    get_manifest_metadata,
-    is_kubernetes_manifest,
-)
+from tugboat.engine.mainfest import analyze_manifest, get_manifest_metadata
 
 
 def test_analyze_manifest_no_issue():
@@ -46,7 +45,8 @@ def test_analyze_manifest_picked(plugin_manager):
             "msg": "Test 1",
             "ctx": {
                 "manifest": {
-                    "kind": "debug.tugboat.example.com",
+                    "group": "tugboat.example.com",
+                    "kind": "Debug",
                     "name": "test",
                 }
             },
@@ -56,7 +56,8 @@ def test_analyze_manifest_picked(plugin_manager):
             "loc": ("spec",),
             "ctx": {
                 "manifest": {
-                    "kind": "debug.tugboat.example.com",
+                    "group": "tugboat.example.com",
+                    "kind": "Debug",
                     "name": "test",
                 }
             },
@@ -78,7 +79,7 @@ def test_analyze_manifest_not_k8s():
             "code": "M001",
             "loc": (),
             "summary": "Not a Kubernetes manifest",
-            "msg": "The input does not look like a Kubernetes manifest",
+            "msg": "Missing apiVersion. The input does not look like a Kubernetes manifest.",
         }
     ]
 
@@ -104,7 +105,8 @@ def test_analyze_manifest_manifest_validation_failed():
             "type": "failure",
             "ctx": {
                 "manifest": {
-                    "kind": "debug.tugboat.example.com",
+                    "group": "tugboat.example.com",
+                    "kind": "Debug",
                     "name": "test",
                 }
             },
@@ -151,9 +153,10 @@ def test_analyze_manifest_unknown_manifest():
             {
                 "type": "warning",
                 "code": "M002",
-                "loc": (),
+                "loc": ("kind",),
                 "summary": "Unsupported manifest kind",
-                "msg": "Manifest kind unknown.example.com is not supported",
+                "msg": "Manifest kind Unknown is not supported",
+                "input": "Unknown",
             }
         )
     ]
@@ -236,16 +239,6 @@ class TestAnalyzeManifest:
         }
 
 
-class TestIsKubernetesManifest:
-
-    def test(self):
-        assert is_kubernetes_manifest({"apiVersion": "v1", "kind": "Pod"})
-        assert not is_kubernetes_manifest({"apiVersion": "v1"})
-        assert not is_kubernetes_manifest({"kind": "Pod"})
-        assert not is_kubernetes_manifest({})
-        assert not is_kubernetes_manifest({"foo": "bar"})
-
-
 class TestGetManifestMetadata:
 
     def test_1(self):
@@ -257,9 +250,9 @@ class TestGetManifestMetadata:
             }
         )
         assert metadata == {
-            "kind": "workflow.argoproj.io",
+            "group": "argoproj.io",
+            "kind": "Workflow",
             "name": "my-workflow",
-            "namespace": "my-namespace",
         }
 
     def test_2(self):
@@ -267,12 +260,24 @@ class TestGetManifestMetadata:
             {"apiVersion": "v1", "kind": "Pod", "metadata": {"generateName": "my-pod-"}}
         )
         assert metadata == {
-            "kind": "pod",
+            "group": "",
+            "kind": "Pod",
             "name": "my-pod-",
         }
 
-    def test_fallback(self):
-        metadata = get_manifest_metadata({"apiVersion": "", "kind": ""})
-        assert metadata == {
-            "kind": "unknown.unknown",
-        }
+    def test_invalid_api_version(self):
+        with pytest.raises(ValueError, match=re.escape("Invalid apiVersion format")):
+            get_manifest_metadata({"apiVersion": "INVALID"})
+
+        with pytest.raises(ValueError, match=re.escape("Missing apiVersion")):
+            get_manifest_metadata({})
+        with pytest.raises(ValueError, match=re.escape("Missing apiVersion")):
+            get_manifest_metadata({"apiVersion": 1})
+
+    def test_invalid_kind(self):
+        with pytest.raises(ValueError, match=re.escape("kind is missing")):
+            get_manifest_metadata({"apiVersion": "v1"})
+        with pytest.raises(ValueError, match=re.escape("kind is missing")):
+            get_manifest_metadata({"apiVersion": "v1", "kind": 1})
+        with pytest.raises(ValueError, match=re.escape("kind is missing")):
+            get_manifest_metadata({"apiVersion": "v1", "kind": ""})

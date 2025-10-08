@@ -30,7 +30,8 @@ class TestConsoleFormatter:
                                 "filepath": "/path/to/sample-workflow.yaml",
                             },
                             "manifest": {
-                                "kind": "workflow.argoproj.io",
+                                "group": "example.com",
+                                "kind": "Workflow",
                                 "name": "hello-world-",
                             },
                         },
@@ -81,7 +82,8 @@ class TestConsoleFormatter:
                                 "filepath": "/path/to/sample-workflow.yaml",
                             },
                             "manifest": {
-                                "kind": "workflow.argoproj.io",
+                                "group": "argoproj.io",
+                                "kind": "Workflow",
                                 "name": "hello-",
                             },
                         },

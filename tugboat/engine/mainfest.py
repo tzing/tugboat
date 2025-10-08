@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 import itertools
 import logging
 import typing
@@ -37,29 +36,30 @@ def analyze_manifest(manifest: dict) -> list[Diagnosis]:
     list[Diagnosis]
         The diagnoses reported by the analyzers.
     """
-    pm = get_plugin_manager()
-
-    # early exit if the manifest is not a Kubernetes manifest
-    if not is_kubernetes_manifest(manifest):
+    # get manifest metadata
+    try:
+        metadata = get_manifest_metadata(manifest)
+    except ValueError as e:
         return [
             {
                 "type": "warning",
                 "code": "M001",
                 "loc": (),
                 "summary": "Not a Kubernetes manifest",
-                "msg": "The input does not look like a Kubernetes manifest",
+                "msg": f"{e}. The input does not look like a Kubernetes manifest.",
             }
         ]
 
-    # get manifest metadata
-    metadata = get_manifest_metadata(manifest)
     logger.debug(
-        "Starting analysis of manifest '%s' (Kind %s)",
-        metadata.get("name", "<unknown>"),
+        "Starting analysis of manifest %s.%s/%s",
+        metadata["group"],
         metadata["kind"],
+        metadata.get("name", "<unnamed>"),
     )
 
     # parse the manifest
+    pm = get_plugin_manager()
+
     try:
         manifest_obj = pm.hook.parse_manifest(manifest=manifest)
     except ValidationError as e:
@@ -92,9 +92,10 @@ def analyze_manifest(manifest: dict) -> list[Diagnosis]:
             {
                 "type": "warning",
                 "code": "M002",
-                "loc": (),
+                "loc": ("kind",),
                 "summary": "Unsupported manifest kind",
                 "msg": f"Manifest kind {metadata['kind']} is not supported",
+                "input": metadata["kind"],
                 "ctx": {"manifest": metadata},
             }
         ]
@@ -155,42 +156,35 @@ def analyze_manifest(manifest: dict) -> list[Diagnosis]:
     return diagnoses
 
 
-def is_kubernetes_manifest(d: dict) -> bool:
-    """Returns True if the dictionary *looks like* a Kubernetes manifest."""
-    return isinstance(d.get("apiVersion"), str) and isinstance(d.get("kind"), str)
-
-
 def get_manifest_metadata(manifest: dict) -> dict[str, str]:
     """Safely extract metadata from the manifest."""
-    # full qualified kind
-    with io.StringIO() as buf:
-        # kind
-        if kind := manifest.get("kind"):
-            buf.write(kind.lower())
-        else:
-            buf.write("unknown")
+    output: dict[str, str] = {}
 
-        # API group
-        api_version = manifest.get("apiVersion")
+    # API group
+    api_version = manifest.get("apiVersion")
+    if api_version and isinstance(api_version, str):
         if api_version == "v1":
-            ...  # core group, do nothing
-        elif api_version and "/" in api_version:
+            output["group"] = ""  # core group
+        elif "/" in api_version:
             group, _ = api_version.split("/", 1)
-            buf.write(f".{group}")
+            output["group"] = group
         else:
-            buf.write(".unknown")
+            raise ValueError("Invalid apiVersion format")
+    else:
+        raise ValueError("Missing apiVersion")
 
-        fqk = buf.getvalue()
+    # kind
+    kind = manifest.get("kind")
+    if kind and isinstance(kind, str):
+        output["kind"] = kind
+    else:
+        raise ValueError("kind is missing")
 
-    output = {
-        "kind": fqk,
-    }
-
-    # name / namespace
-    if metadata := manifest.get("metadata"):
-        if name := metadata.get("name") or metadata.get("generateName"):
+    # name
+    metadata = manifest.get("metadata")
+    if metadata and isinstance(metadata, dict):
+        name = metadata.get("name") or metadata.get("generateName")
+        if name and isinstance(name, str):
             output["name"] = name
-        if namespace := metadata.get("namespace"):
-            output["namespace"] = namespace
 
     return output
