@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 import itertools
 import logging
 import typing
@@ -37,29 +36,30 @@ def analyze_manifest(manifest: dict) -> list[Diagnosis]:
     list[Diagnosis]
         The diagnoses reported by the analyzers.
     """
-    pm = get_plugin_manager()
-
-    # early exit if the manifest is not a Kubernetes manifest
-    if not is_kubernetes_manifest(manifest):
+    # get manifest metadata
+    try:
+        metadata = get_manifest_metadata(manifest)
+    except ValueError as e:
         return [
             {
                 "type": "warning",
                 "code": "M001",
                 "loc": (),
                 "summary": "Not a Kubernetes manifest",
-                "msg": "The input does not look like a Kubernetes manifest",
+                "msg": f"{e}. The input does not look like a Kubernetes manifest.",
             }
         ]
 
-    # get manifest metadata
-    metadata = get_manifest_metadata(manifest)
     logger.debug(
-        "Starting analysis of manifest '%s' (Kind %s)",
-        metadata.get("name", "<unknown>"),
+        "Starting analysis of manifest %s.%s/%s",
+        metadata["group"],
         metadata["kind"],
+        metadata.get("name", "<unnamed>"),
     )
 
     # parse the manifest
+    pm = get_plugin_manager()
+
     try:
         manifest_obj = pm.hook.parse_manifest(manifest=manifest)
     except ValidationError as e:
@@ -92,9 +92,10 @@ def analyze_manifest(manifest: dict) -> list[Diagnosis]:
             {
                 "type": "warning",
                 "code": "M002",
-                "loc": (),
+                "loc": ("kind",),
                 "summary": "Unsupported manifest kind",
                 "msg": f"Manifest kind {metadata['kind']} is not supported",
+                "input": metadata["kind"],
                 "ctx": {"manifest": metadata},
             }
         ]
@@ -170,7 +171,7 @@ def get_manifest_metadata(manifest: dict) -> dict[str, str]:
         else:
             raise ValueError("Invalid apiVersion format")
     else:
-        raise ValueError("apiVersion is missing or not a string")
+        raise ValueError("Missing apiVersion")
 
     # kind
     kind = manifest.get("kind")
