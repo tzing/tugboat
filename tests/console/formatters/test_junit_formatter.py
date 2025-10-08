@@ -42,7 +42,8 @@ class TestJUnitFormatter:
                                     filepath="manifest.yaml",
                                 ),
                                 manifest=ManifestMetadata(
-                                    kind="demo.example.com",
+                                    group="example.com",
+                                    kind="Demo",
                                     name="diagnoses",
                                 ),
                             ),
@@ -60,7 +61,8 @@ class TestJUnitFormatter:
                                 filepath="another-manifest.yaml",
                             ),
                             manifest=ManifestMetadata(
-                                kind="demo.example.com",
+                                group="example.com",
+                                kind="Demo",
                                 name="diagnoses",
                             ),
                         ),
@@ -75,7 +77,8 @@ class TestJUnitFormatter:
                                 filepath="manifest.yaml",
                             ),
                             manifest=ManifestMetadata(
-                                kind="demo.example.com",
+                                group="example.com",
+                                kind="Demo",
                                 name="other-diagnoses",
                             ),
                         ),
@@ -90,7 +93,8 @@ class TestJUnitFormatter:
                                 filepath="manifest.yaml",
                             ),
                             manifest=ManifestMetadata(
-                                kind="demo.example.com",
+                                group="example.com",
+                                kind="Demo",
                                 name="diagnoses",
                             ),
                         ),
@@ -105,7 +109,8 @@ class TestJUnitFormatter:
                                 filepath="manifest.yaml",
                             ),
                             manifest=ManifestMetadata(
-                                kind="another.demo.example.com",
+                                group="example.com",
+                                kind="Another",
                                 name="diagnoses",
                             ),
                         ),
@@ -159,9 +164,9 @@ class TestJUnitFormatter:
               </testsuite>
 
               <!-- GROUP D: different manifest kind -->
-              <testsuite name="another.demo.example.com/diagnoses" file="manifest.yaml" failures="1">
+              <testsuite name="another.example.com/diagnoses" file="manifest.yaml" failures="1">
                 <properties>
-                  <property name="string:manifest-kind" value="another.demo.example.com"/>
+                  <property name="string:manifest-kind" value="another.example.com"/>
                   <property name="string:manifest-name" value="diagnoses"/>
                 </properties>
                 <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
@@ -182,7 +187,7 @@ class TestElementTestSuite:
 
     def test_1(self):
         elem = ElementTestSuite(
-            manifest=ManifestMetadata(kind="demo.example.com", name="test"),
+            manifest=ManifestMetadata(group="example.com", kind="Demo", name="test"),
             filesystem=FilesystemMetadata(filepath="/path/to/file"),
         )
         elem.append(
@@ -215,7 +220,7 @@ class TestElementTestSuite:
 
     def test_2(self):
         elem = ElementTestSuite(
-            manifest=ManifestMetadata(kind="demo.example.com", name=None),
+            manifest=ManifestMetadata(group="example.com", kind="Demo", name=None),
         )
         assert elem == IsElementEqual(
             """

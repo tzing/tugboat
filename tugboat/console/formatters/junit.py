@@ -33,9 +33,7 @@ class JUnitFormatter(OutputFormatter):
 
             manifest_name = None
             if diagnosis.extras.manifest:
-                manifest_name = (
-                    f"{diagnosis.extras.manifest.kind}/{diagnosis.extras.manifest.name}"
-                )
+                manifest_name = f"{diagnosis.extras.manifest.fqk}/{diagnosis.extras.manifest.name!r}"
 
             key = (file_path, manifest_name)
             if key not in self.testsuites:
@@ -92,10 +90,10 @@ class ElementTestSuite(Element):
         }
 
         if manifest:
-            if manifest.name:
-                attrib["name"] = f"{manifest.kind}/{manifest.name}"
-            else:
-                attrib["name"] = f"{manifest.kind}/<unnamed>"
+            try:
+                attrib["name"] = manifest.fqkn
+            except ValueError:
+                attrib["name"] = f"{manifest.fqk}/<unnamed>"
 
         if filesystem:
             attrib["file"] = filesystem.filepath
@@ -114,7 +112,7 @@ class ElementTestSuite(Element):
                 "property",
                 {
                     "name": "string:manifest-kind",
-                    "value": manifest.kind,
+                    "value": manifest.fqk,
                 },
             )
             if manifest.name:
