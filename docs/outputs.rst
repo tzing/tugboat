@@ -22,6 +22,25 @@ The console formatter produces richly formatted summaries that highlight the aff
 The snippet window is controlled by :confval:`snippet_lines_ahead` and :confval:`snippet_lines_behind`.
 
 
+GitHub Actions
+--------------
+
+output format
+   ``github``
+
+Emits `workflow commands <https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions>`_ that GitHub Actions parses into annotations on the pull request or in the workflow summary.
+
+.. dropdown:: Example Annotation
+
+   .. figure:: /_static/images/gha-annotation-light.png
+      :figclass: light-only
+      :align: center
+
+   .. figure:: /_static/images/gha-annotation-dark.png
+      :figclass: dark-only
+      :align: center
+
+
 JUnit XML
 ---------
 
