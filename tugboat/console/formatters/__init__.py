@@ -13,6 +13,10 @@ def get_output_formatter() -> OutputFormatter:
             from tugboat.console.formatters.console import ConsoleFormatter
             return ConsoleFormatter()
 
+        case "github":
+            from tugboat.console.formatters.github import GitHubFormatter
+            return GitHubFormatter()
+
         case "junit":
             from tugboat.console.formatters.junit import JUnitFormatter
             return JUnitFormatter()
