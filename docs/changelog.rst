@@ -13,6 +13,7 @@ Unreleased
 ++++++++++++++++++++++++++++
 
 * Improve the looks of the console output.
+* Tweak the attribute name in JUnit XML reports to be more compatible with various tools.
 * Support `FORCE_COLOR <https://force-color.org/>`_ and `NO_COLOR <https://no-color.org/>`_ environment variables to control color output.
 
 Prior to 0.6
