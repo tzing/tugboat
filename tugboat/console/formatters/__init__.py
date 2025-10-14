@@ -13,4 +13,8 @@ def get_output_formatter() -> OutputFormatter:
             from tugboat.console.formatters.console import ConsoleFormatter
             return ConsoleFormatter()
 
+        case "junit":
+            from tugboat.console.formatters.junit import JUnitFormatter
+            return JUnitFormatter()
+
     raise RuntimeError(f"Unsupported output format: {fmt}")

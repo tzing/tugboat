@@ -212,5 +212,20 @@ class ManifestMetadata(BaseModel):
         ),
     ]
 
+    @property
+    def fqk(self) -> str:
+        """Return the fully qualified kind."""
+        kind = self.kind.lower()
+        if self.group:
+            return f"{kind}.{self.group}"
+        return kind
+
+    @property
+    def fqkn(self) -> str:
+        """Return the fully qualified kind and name."""
+        if not self.name:
+            raise ValueError("name is not set")
+        return f"{self.fqk}/{self.name}"
+
 
 DiagnosisModel.model_rebuild()  # required for subclassing

@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import textwrap
 from pathlib import Path
 
@@ -34,11 +35,22 @@ class TestDiagnosisModel:
                 "code": "T01",
                 "loc": ("foo", "bar"),
                 "msg": "Test 2 with \nnew line.",
+                "extras": {
+                    "manifest": {
+                        "group": "",
+                        "kind": "Pod",
+                        "name": "my-pod",
+                    }
+                },
             }
         )
 
         assert diagnosis.summary == "Test 2 with"
         assert diagnosis.loc_path == ".foo.bar"
+
+        assert diagnosis.extras.manifest
+        assert diagnosis.extras.manifest.fqk == "pod"
+        assert diagnosis.extras.manifest.fqkn == "pod/my-pod"
 
     def test_3(self):
         diagnosis = DiagnosisModel.model_validate(
@@ -56,11 +68,32 @@ class TestDiagnosisModel:
             }
         )
 
-        assert diagnosis.extras.manifest
-        assert diagnosis.extras.manifest.kind == "Test"
-        assert diagnosis.extras.manifest.name == "test-"
-
         assert diagnosis.loc_path == "."
+
+        assert diagnosis.extras.manifest
+        assert diagnosis.extras.manifest.fqk == "test.example.com"
+        assert diagnosis.extras.manifest.fqkn == "test.example.com/test-"
+
+    def test_4(self):
+        diagnosis = DiagnosisModel.model_validate(
+            {
+                "code": "T01",
+                "loc": (),
+                "msg": "",
+                "extras": {
+                    "manifest": {
+                        "group": "example.com",
+                        "kind": "Test",
+                    }
+                },
+            }
+        )
+
+        assert diagnosis.extras.manifest
+        assert diagnosis.extras.manifest.fqk == "test.example.com"
+
+        with pytest.raises(ValueError, match=re.escape("name is not set")):
+            assert diagnosis.extras.manifest.fqkn
 
 
 class TestAnalyzeYamlStream:
