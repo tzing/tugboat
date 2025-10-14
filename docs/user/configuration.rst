@@ -131,8 +131,8 @@ Top-level
 
    Choose how Tugboat formats its results:
 
-   - ``console``: human-friendly text.
-   - ``junit``: JUnit XML for CI systems; see :doc:`junit` for details.
+   - ``console``: Human-friendly text
+   - ``junit``: JUnit XML for CI systems
 
 
 ``console_output`` section
