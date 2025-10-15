@@ -116,11 +116,17 @@ class TestJUnitFormatter:
                         ),
                     }
                 ),
-                # GROUP E: missing path and manifest
+                # GROUP E: no path and manifest (stdin must be ignored)
                 DiagnosisModel.model_validate(
                     {
                         **diagnosis_data,
                         "type": "error",
+                        "extras": Extras(
+                            file=FilesystemMetadata(
+                                filepath="<stdin>",
+                            ),
+                            manifest=None,
+                        ),
                     }
                 ),
             ],

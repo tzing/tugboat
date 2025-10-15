@@ -28,7 +28,7 @@ class JUnitFormatter(OutputFormatter):
         for diagnosis in diagnoses:
             # find or create the appropriate testsuite element
             file_path = None
-            if diagnosis.extras.file:
+            if diagnosis.extras.file and not diagnosis.extras.file.is_stdin:
                 file_path = diagnosis.extras.file.filepath
 
             manifest_name = None
@@ -95,7 +95,7 @@ class ElementTestSuite(Element):
             except ValueError:
                 attrib["name"] = f"{manifest.fqk}/<unnamed>"
 
-        if filesystem:
+        if filesystem and not filesystem.is_stdin:
             attrib["file"] = filesystem.filepath
 
         super().__init__("testsuite", attrib)
@@ -145,7 +145,7 @@ class ElementTestCase(Element):
             "line": str(diagnosis.line),
         }
 
-        if diagnosis.extras.file:
+        if diagnosis.extras.file and not diagnosis.extras.file.is_stdin:
             attrib["file"] = diagnosis.extras.file.filepath
 
         super().__init__("testcase", attrib)
