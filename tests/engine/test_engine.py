@@ -7,93 +7,82 @@ from pathlib import Path
 import pytest
 
 from tests.dirty_equals import IsPartialModel
-from tugboat.engine import DiagnosisModel, analyze_yaml_stream
+from tugboat.engine import DiagnosisModel, ManifestMetadata, analyze_yaml_stream
 
 logger = logging.getLogger(__name__)
 
 
 class TestDiagnosisModel:
 
-    def test_1(self):
+    def test_minimal(self):
         diagnosis = DiagnosisModel.model_validate(
             {
                 "code": "t01",
-                "loc": ("foo", 0, "bar"),
+                "loc": (),
                 "msg": "Test 1. Some extra message.",
             }
         )
 
         assert diagnosis.code == "T01"
         assert diagnosis.summary == "Test 1"
+        assert diagnosis.loc_path == "."
         assert diagnosis.extras.manifest is None
 
-        assert diagnosis.loc_path == ".foo[0].bar"
-
-    def test_2(self):
+    def test_full(self):
         diagnosis = DiagnosisModel.model_validate(
             {
                 "code": "T01",
-                "loc": ("foo", "bar"),
+                "loc": ("foo", 0, "bar"),
                 "msg": "Test 2 with \nnew line.",
                 "extras": {
+                    "file": {
+                        "filepath": "/path/to/file.yaml",
+                    },
                     "manifest": {
-                        "group": "",
-                        "kind": "Pod",
-                        "name": "my-pod",
-                    }
+                        "group": "example.com",
+                        "kind": "Test",
+                        "name": "test-",
+                    },
                 },
             }
         )
 
         assert diagnosis.summary == "Test 2 with"
-        assert diagnosis.loc_path == ".foo.bar"
+        assert diagnosis.loc_path == ".foo[0].bar"
 
-        assert diagnosis.extras.manifest
-        assert diagnosis.extras.manifest.fqk == "pod"
-        assert diagnosis.extras.manifest.fqkn == "pod/my-pod"
-
-    def test_3(self):
-        diagnosis = DiagnosisModel.model_validate(
-            {
-                "code": "T01",
-                "loc": (),
-                "msg": "",
-                "extras": {
-                    "manifest": {
-                        "group": "example.com",
-                        "kind": "Test",
-                        "name": "test-",
-                    }
-                },
-            }
-        )
-
-        assert diagnosis.loc_path == "."
+        assert diagnosis.extras.file
+        assert diagnosis.extras.file.filepath == "/path/to/file.yaml"
 
         assert diagnosis.extras.manifest
         assert diagnosis.extras.manifest.fqk == "test.example.com"
         assert diagnosis.extras.manifest.fqkn == "test.example.com/test-"
 
-    def test_4(self):
-        diagnosis = DiagnosisModel.model_validate(
-            {
-                "code": "T01",
-                "loc": (),
-                "msg": "",
-                "extras": {
-                    "manifest": {
-                        "group": "example.com",
-                        "kind": "Test",
-                    }
-                },
-            }
-        )
+    class TestManifestMetadata:
 
-        assert diagnosis.extras.manifest
-        assert diagnosis.extras.manifest.fqk == "test.example.com"
+        def test_core_api_group(self):
+            metadata = ManifestMetadata.model_validate(
+                {
+                    "group": "",
+                    "kind": "Pod",
+                    "name": "my-pod",
+                }
+            )
 
-        with pytest.raises(ValueError, match=re.escape("name is not set")):
-            assert diagnosis.extras.manifest.fqkn
+            assert metadata.fqk == "pod"
+            assert metadata.fqkn == "pod/my-pod"
+
+        def test_missing_name(self):
+            metadata = ManifestMetadata.model_validate(
+                {
+                    "group": "example.com",
+                    "kind": "Test",
+                }
+            )
+
+            assert metadata.fqk == "test.example.com"
+
+            with pytest.raises(ValueError, match=re.escape("name is not set")):
+                _ = metadata.fqkn
 
 
 class TestAnalyzeYamlStream:
