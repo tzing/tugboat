@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import os
 import textwrap
 from typing import TYPE_CHECKING, Annotated, Any, Literal
 
@@ -182,6 +183,14 @@ class FilesystemMetadata(BaseModel):
             description="Filesystem path that supplied the manifest.",
         ),
     ]
+
+    @property
+    def is_stdin(self) -> bool:
+        if self.filepath == "<stdin>":
+            return True
+        if os.path.realpath(self.filepath) == os.path.realpath("/dev/stdin"):
+            return True
+        return False
 
 
 class ManifestMetadata(BaseModel):

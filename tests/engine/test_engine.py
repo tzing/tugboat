@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 import textwrap
 from pathlib import Path
@@ -7,7 +8,12 @@ from pathlib import Path
 import pytest
 
 from tests.dirty_equals import IsPartialModel
-from tugboat.engine import DiagnosisModel, ManifestMetadata, analyze_yaml_stream
+from tugboat.engine import (
+    DiagnosisModel,
+    FilesystemMetadata,
+    ManifestMetadata,
+    analyze_yaml_stream,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -52,10 +58,27 @@ class TestDiagnosisModel:
 
         assert diagnosis.extras.file
         assert diagnosis.extras.file.filepath == "/path/to/file.yaml"
+        assert not diagnosis.extras.file.is_stdin
 
         assert diagnosis.extras.manifest
         assert diagnosis.extras.manifest.fqk == "test.example.com"
         assert diagnosis.extras.manifest.fqkn == "test.example.com/test-"
+
+    class TestFilesystemMetadata:
+
+        def test_stdin_1(self):
+            metadata = FilesystemMetadata.model_validate({"filepath": "<stdin>"})
+            assert metadata.is_stdin
+
+        @pytest.mark.skipif(
+            os.name != "posix", reason="Only relevant on Unix-like systems"
+        )
+        def test_stdin_2(self, tmp_path: Path):
+            filepath = tmp_path / "manifest.yaml"
+            filepath.symlink_to("/dev/stdin")
+
+            metadata = FilesystemMetadata.model_validate({"filepath": str(filepath)})
+            assert metadata.is_stdin
 
     class TestManifestMetadata:
 
