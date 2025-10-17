@@ -201,17 +201,6 @@ class Style(enum.StrEnum):
         obj.underline = underline
         return obj
 
-    DoYouMean = enum.auto(), "cyan"
-    Error = enum.auto(), "red", None, True
-    LineNumber = enum.auto(), None, None, None, True
-    Location = enum.auto(), "cyan"
-    LocationDelimiter = enum.auto(), None, None, None, True
-    ManifestName = enum.auto(), "blue"
-    PathDelimiter = enum.auto(), "cyan"
-    Suggestion = enum.auto(), None, None, None, None, True
-    Summary = enum.auto(), None, None, True
-    Warn = enum.auto(), "yellow", None, True
-
     def fmt(self, text: Any) -> str:
         return click.style(
             str(text),
@@ -221,6 +210,19 @@ class Style(enum.StrEnum):
             dim=self.dim,
             underline=self.underline,
         )
+
+    # fmt: off
+    #                   value------- fg------  bg--- bold- dim-- underline
+    DoYouMean =         enum.auto(), "cyan"
+    Error =             enum.auto(), "red",    None, True
+    LineNumber =        enum.auto(), None,     None, None, True
+    Location =          enum.auto(), "cyan"
+    LocationDelimiter = enum.auto(), None,     None, None, True
+    ManifestName =      enum.auto(), "blue"
+    PathDelimiter =     enum.auto(), "cyan"
+    Suggestion =        enum.auto(), None,     None, None, None, True
+    Summary =           enum.auto(), None,     None, True
+    Warn =              enum.auto(), "yellow", None, True
 
 
 def get_lines_near(content: list[str], focus_line: int) -> Iterator[tuple[int, str]]:
