@@ -12,9 +12,20 @@ from tugboat.settings import settings
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
-    from typing import Any, TextIO
+    from typing import Any, Literal, TextIO
 
     from tugboat.engine import DiagnosisModel
+
+    type Color = Literal[
+        "black",
+        "red",
+        "green",
+        "yellow",
+        "blue",
+        "magenta",
+        "cyan",
+        "white",
+    ]
 
 
 class ConsoleFormatter(OutputFormatter):
@@ -166,8 +177,8 @@ class ConsoleFormatter(OutputFormatter):
 
 class Style(enum.Enum):
 
-    fg: str | None
-    bg: str | None
+    fg: Color | None
+    bg: Color | None
     bold: bool | None
     dim: bool | None
     underline: bool | None
@@ -175,8 +186,8 @@ class Style(enum.Enum):
     def __new__(
         cls,
         value: str,
-        fg: str | None = None,
-        bg: str | None = None,
+        fg: Color | None = None,
+        bg: Color | None = None,
         bold: bool | None = None,
         dim: bool | None = None,
         underline: bool | None = None,
