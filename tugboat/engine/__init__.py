@@ -7,6 +7,7 @@ from __future__ import annotations
 __all__ = [
     "DiagnosisModel",
     "FilesystemMetadata",
+    "HelmMetadata",
     "ManifestMetadata",
     "analyze_manifest",
     "analyze_yaml_document",
@@ -29,7 +30,12 @@ from tugboat.engine.helpers import (
     translate_marked_yaml_error,
 )
 from tugboat.engine.mainfest import analyze_manifest
-from tugboat.engine.types import DiagnosisModel, FilesystemMetadata, ManifestMetadata
+from tugboat.engine.types import (
+    DiagnosisModel,
+    FilesystemMetadata,
+    HelmMetadata,
+    ManifestMetadata,
+)
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator

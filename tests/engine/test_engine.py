@@ -44,6 +44,10 @@ class TestDiagnosisModel:
                     "file": {
                         "filepath": "/path/to/file.yaml",
                     },
+                    "helm": {
+                        "chart": "my-chart",
+                        "template": "templates/workflow.yaml",
+                    },
                     "manifest": {
                         "group": "example.com",
                         "kind": "Test",
@@ -59,6 +63,10 @@ class TestDiagnosisModel:
         assert diagnosis.extras.file
         assert diagnosis.extras.file.filepath == "/path/to/file.yaml"
         assert not diagnosis.extras.file.is_stdin
+
+        assert diagnosis.extras.helm
+        assert diagnosis.extras.helm.chart == "my-chart"
+        assert diagnosis.extras.helm.template == "templates/workflow.yaml"
 
         assert diagnosis.extras.manifest
         assert diagnosis.extras.manifest.fqk == "test.example.com"
