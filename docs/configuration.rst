@@ -109,7 +109,7 @@ Top-level
    See `path globbing`_ for details on pattern syntax.
 
 .. confval:: include
-   :default: ``["."]`` (all YAML files in the current directory)
+   :default: ``["."]`` (All YAML files in the current directory)
 
    Choose which files Tugboat checks.
 
@@ -129,10 +129,12 @@ Top-level
 .. confval:: output_format
    :default: ``console``
 
-   Choose how Tugboat formats its results:
+   Choose how Tugboat formats its results. See :doc:`outputs` for details on each format.
 
-   - ``console``: Human-friendly text
-   - ``junit``: JUnit XML for CI systems
+   Available options:
+
+   - ``console``: human-readable output in the terminal.
+   - ``junit``: JUnit XML format for CI systems.
 
 
 ``console_output`` section
