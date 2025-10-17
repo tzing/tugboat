@@ -175,7 +175,7 @@ class ConsoleFormatter(OutputFormatter):
         self.buf.write("\n")  # separate entries with a blank line
 
 
-class Style(enum.Enum):
+class Style(enum.StrEnum):
 
     fg: Color | None
     bg: Color | None
@@ -192,7 +192,7 @@ class Style(enum.Enum):
         dim: bool | None = None,
         underline: bool | None = None,
     ):
-        obj = object.__new__(cls)
+        obj = str.__new__(cls)
         obj._value_ = value
         obj.fg = fg
         obj.bg = bg
@@ -201,16 +201,16 @@ class Style(enum.Enum):
         obj.underline = underline
         return obj
 
-    DoYouMean = "do-you-mean", "cyan"
-    Error = "error", "red", None, True
-    LineNumber = "line:number", None, None, None, True
-    Location = "location", "cyan"
-    LocationDelimiter = "location:delimiter", None, None, None, True
-    ManifestName = "manifest:name", "blue"
-    PathDelimiter = "path:delimiter", "cyan"
-    Suggestion = "suggestion", None, None, None, None, True
-    Summary = "summary", None, None, True
-    Warn = "warning", "yellow", None, True
+    DoYouMean = enum.auto(), "cyan"
+    Error = enum.auto(), "red", None, True
+    LineNumber = enum.auto(), None, None, None, True
+    Location = enum.auto(), "cyan"
+    LocationDelimiter = enum.auto(), None, None, None, True
+    ManifestName = enum.auto(), "blue"
+    PathDelimiter = enum.auto(), "cyan"
+    Suggestion = enum.auto(), None, None, None, None, True
+    Summary = enum.auto(), None, None, True
+    Warn = enum.auto(), "yellow", None, True
 
     def fmt(self, text: Any) -> str:
         return click.style(
