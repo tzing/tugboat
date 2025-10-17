@@ -12,6 +12,7 @@ from tugboat.engine import (
     DiagnosisModel,
     FilesystemMetadata,
     ManifestMetadata,
+    analyze_yaml_document,
     analyze_yaml_stream,
     extract_helm_metadata,
     yaml_parser,
@@ -166,96 +167,6 @@ class TestAnalyzeYamlStream:
             )
         ]
 
-    class TestAnalyzeYamlDocument:
-        # NOTE: use `analyze_yaml_stream` so i don't need to parse YAML manually
-
-        def test(self, monkeypatch: pytest.MonkeyPatch):
-            # this is a mocked test case
-            monkeypatch.setattr(
-                "tugboat.engine.analyze_manifest",
-                lambda _: [
-                    {
-                        "code": "T01",
-                        "loc": ["spec", "foo"],
-                        "summary": "Test diagnosis",
-                        "msg": "This is a test diagnosis.",
-                        "ctx": {
-                            "manifest": {
-                                "group": "example.com",
-                                "kind": "Mock",
-                                "name": "test-",
-                            }
-                        },
-                    }
-                ],
-            )
-
-            diagnoses = analyze_yaml_stream(
-                textwrap.dedent(
-                    """
-                    apiVersion: v1
-                    kind: Test
-                    metadata:
-                      generateName: test-
-                    spec:
-                      foo: bar
-                    """
-                )
-            )
-
-            assert diagnoses == [
-                IsPartialModel(
-                    line=7,
-                    column=8,
-                    type="failure",
-                    code="T01",
-                    loc=("spec", "foo"),
-                    summary="Test diagnosis",
-                    msg="This is a test diagnosis.",
-                )
-            ]
-
-        def test_suppression(
-            self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
-        ):
-            monkeypatch.setattr(
-                "tugboat.engine.analyze_manifest",
-                lambda _: [
-                    {
-                        "code": "T01",
-                        "loc": ("spec", "foo"),
-                        "msg": "",
-                        "ctx": {
-                            "manifest": {
-                                "group": "example.com",
-                                "kind": "Mock",
-                                "name": "test-",
-                            }
-                        },
-                    }
-                ],
-            )
-
-            with caplog.at_level("DEBUG"):
-                diagnoses = analyze_yaml_stream(
-                    textwrap.dedent(
-                        """
-                        apiVersion: v1
-                        kind: Test
-                        metadata:
-                            generateName: test-
-                        spec:
-                            foo: bar  # noqa: T01
-                        """
-                    )
-                )
-
-            assert diagnoses == []
-            assert (
-                "Diagnosis T01 (<no summary>) at test-:.spec.foo is suppressed by comment"
-                in caplog.text
-            )
-
     def test_empty_yaml(self):
         diagnoses = analyze_yaml_stream(
             textwrap.dedent(
@@ -354,6 +265,100 @@ class TestAnalyzeYamlStream:
             if any(diagnoses):
                 logger.critical("diagnoses: %s", json.dumps(diagnoses, indent=2))
                 pytest.fail(f"Found issue with {file_path}")
+
+
+class TestAnalyzeYamlDocument:
+
+    def test(self, monkeypatch: pytest.MonkeyPatch):
+        # this is a mocked test case
+        monkeypatch.setattr(
+            "tugboat.engine.analyze_manifest",
+            lambda _: [
+                {
+                    "code": "T01",
+                    "loc": ["spec", "foo"],
+                    "summary": "Test diagnosis",
+                    "msg": "This is a test diagnosis.",
+                    "ctx": {
+                        "manifest": {
+                            "group": "example.com",
+                            "kind": "Mock",
+                            "name": "test-",
+                        }
+                    },
+                }
+            ],
+        )
+
+        diagnoses = analyze_yaml_document(
+            yaml_parser.load(
+                textwrap.dedent(
+                    """
+                    apiVersion: v1
+                    kind: Test
+                    metadata:
+                      generateName: test-
+                    spec:
+                      foo: bar
+                    """
+                )
+            )
+        )
+
+        assert list(diagnoses) == [
+            IsPartialModel(
+                line=7,
+                column=8,
+                type="failure",
+                code="T01",
+                loc=("spec", "foo"),
+                summary="Test diagnosis",
+                msg="This is a test diagnosis.",
+            )
+        ]
+
+    def test_suppression(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ):
+        monkeypatch.setattr(
+            "tugboat.engine.analyze_manifest",
+            lambda _: [
+                {
+                    "code": "T01",
+                    "loc": ("spec", "foo"),
+                    "msg": "",
+                    "ctx": {
+                        "manifest": {
+                            "group": "example.com",
+                            "kind": "Mock",
+                            "name": "test-",
+                        }
+                    },
+                }
+            ],
+        )
+
+        with caplog.at_level("DEBUG"):
+            diagnoses = analyze_yaml_document(
+                yaml_parser.load(
+                    textwrap.dedent(
+                        """
+                        apiVersion: v1
+                        kind: Test
+                        metadata:
+                          generateName: test-
+                        spec:
+                          foo: bar  # noqa: T01
+                        """
+                    )
+                )
+            )
+            assert list(diagnoses) == []
+
+        assert (
+            "Diagnosis T01 (<no summary>) at test-:.spec.foo is suppressed by comment"
+            in caplog.text
+        )
 
 
 class TestExtractHelmMetadata:
