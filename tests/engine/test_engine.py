@@ -13,6 +13,8 @@ from tugboat.engine import (
     FilesystemMetadata,
     ManifestMetadata,
     analyze_yaml_stream,
+    extract_helm_metadata,
+    yaml_parser,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,6 +34,8 @@ class TestDiagnosisModel:
         assert diagnosis.code == "T01"
         assert diagnosis.summary == "Test 1"
         assert diagnosis.loc_path == "."
+        assert diagnosis.extras.file is None
+        assert diagnosis.extras.helm is None
         assert diagnosis.extras.manifest is None
 
     def test_full(self):
@@ -122,6 +126,7 @@ class TestAnalyzeYamlStream:
         diagnoses = analyze_yaml_stream(
             textwrap.dedent(
                 """
+                # Source: my-chart/templates/debug.yaml
                 apiVersion: tugboat.example.com/v1
                 kind: Debug
                 metadata:
@@ -135,7 +140,7 @@ class TestAnalyzeYamlStream:
         assert diagnoses == [
             DiagnosisModel.model_validate(
                 {
-                    "line": 7,
+                    "line": 8,
                     "column": 3,
                     "type": "failure",
                     "code": "M102",
@@ -146,6 +151,10 @@ class TestAnalyzeYamlStream:
                     "extras": {
                         "file": {
                             "filepath": "/path/to/file.yaml",
+                        },
+                        "helm": {
+                            "chart": "my-chart",
+                            "template": "templates/debug.yaml",
                         },
                         "manifest": {
                             "group": "tugboat.example.com",
@@ -276,6 +285,7 @@ class TestAnalyzeYamlStream:
                 summary="Malformed YAML document",
                 extras={
                     "file": None,
+                    "helm": None,
                     "manifest": None,
                 },
             )
@@ -344,3 +354,68 @@ class TestAnalyzeYamlStream:
             if any(diagnoses):
                 logger.critical("diagnoses: %s", json.dumps(diagnoses, indent=2))
                 pytest.fail(f"Found issue with {file_path}")
+
+
+class TestExtractHelmMetadata:
+
+    def test_success(self):
+        doc = yaml_parser.load(
+            textwrap.dedent(
+                """
+                # Source: my-chart/templates/pod.yaml
+                apiVersion: v1
+                kind: Pod
+                """
+            )
+        )
+
+        metadata = extract_helm_metadata(doc)
+        assert metadata == {
+            "chart": "my-chart",
+            "template": "templates/pod.yaml",
+        }
+
+    def test_missing_comment_1(self):
+        doc = yaml_parser.load(
+            textwrap.dedent(
+                """
+                apiVersion: v1
+                kind: Pod
+                """
+            )
+        )
+        assert extract_helm_metadata(doc) is None
+
+    def test_missing_comment_2(self):
+        doc = yaml_parser.load(
+            textwrap.dedent(
+                """
+                [] # Source: my-chart/templates/pod.yaml (not at the top)
+                """
+            )
+        )
+        assert extract_helm_metadata(doc) is None
+
+    def test_unrelated_comment_1(self):
+        doc = yaml_parser.load(
+            textwrap.dedent(
+                """
+                  # Source: my-chart/templates/pod.yaml (slightly indented)
+                apiVersion: v1
+                kind: Pod
+                """
+            )
+        )
+        assert extract_helm_metadata(doc) is None
+
+    def test_unrelated_comment_2(self):
+        doc = yaml_parser.load(
+            textwrap.dedent(
+                """
+                # Hello world!
+                apiVersion: v1
+                kind: Pod
+                """
+            )
+        )
+        assert extract_helm_metadata(doc) is None
