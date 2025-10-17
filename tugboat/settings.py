@@ -84,7 +84,7 @@ class Settings(BaseSettings):
     follow_symlinks: bool = False
     """Follow symbolic links when checking directories."""
 
-    output_format: Literal["console", "junit"] = "console"
+    output_format: Literal["console", "junit", "github"] = "console"
     """Output serialization format."""
 
     @field_validator("color")

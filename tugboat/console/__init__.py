@@ -65,7 +65,7 @@ logger = logging.getLogger(__name__)
     ),
     cloup.option(
         "--output-format",
-        type=cloup.Choice(["console", "junit"]),
+        type=cloup.Choice(["console", "junit", "github"]),
         help="Output serialization format. [default: console]",
     ),
     cloup.option(
