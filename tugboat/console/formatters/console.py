@@ -50,7 +50,9 @@ class ConsoleFormatter(OutputFormatter):
             nl=False,
         )
 
-    def append(self, *, content_lines: list[str], diagnosis: DiagnosisModel) -> None:
+    def append(  # noqa: C901
+        self, *, content_lines: list[str], diagnosis: DiagnosisModel
+    ) -> None:
         """
         Formats and appends a diagnosis to the internal buffer.
 
