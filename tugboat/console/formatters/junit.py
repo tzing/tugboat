@@ -12,7 +12,12 @@ if typing.TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import TextIO
 
-    from tugboat.engine import DiagnosisModel, FilesystemMetadata, ManifestMetadata
+    from tugboat.engine import (
+        DiagnosisModel,
+        FilesystemMetadata,
+        HelmMetadata,
+        ManifestMetadata,
+    )
 
 
 logger = logging.getLogger(__name__)
@@ -38,8 +43,9 @@ class JUnitFormatter(OutputFormatter):
             key = (file_path, manifest_name)
             if key not in self.testsuites:
                 self.testsuites[key] = ElementTestSuite(
-                    manifest=diagnosis.extras.manifest,
                     filesystem=diagnosis.extras.file,
+                    helm=diagnosis.extras.helm,
+                    manifest=diagnosis.extras.manifest,
                 )
 
             testsuite = self.testsuites[key]
@@ -80,8 +86,10 @@ class ElementTestSuite(Element):
 
     def __init__(
         self,
-        manifest: ManifestMetadata | None = None,
+        *,
         filesystem: FilesystemMetadata | None = None,
+        helm: HelmMetadata | None = None,
+        manifest: ManifestMetadata | None = None,
     ):
         # create <testsuite> element
         now = datetime.datetime.now().astimezone()
@@ -104,26 +112,18 @@ class ElementTestSuite(Element):
         self.counter = collections.Counter()
 
         # create <properties> element
-        properties = SubElement(self, "properties")
+        properties = ElementProperties()
+        self.append(properties)
+
+        if helm:
+            properties.add_property("string:helm-chart", helm.chart)
+            properties.add_property("string:helm-template", helm.template)
 
         if manifest:
-            SubElement(
-                properties,
-                "property",
-                {
-                    "name": "string:manifest-kind",
-                    "value": manifest.fqk,
-                },
-            )
+            properties.add_property("string:manifest-kind", manifest.fqk)
+
             if manifest.name:
-                SubElement(
-                    properties,
-                    "property",
-                    {
-                        "name": "string:manifest-name",
-                        "value": manifest.name,
-                    },
-                )
+                properties.add_property("string:manifest-name", manifest.name)
 
     def append(self, subelement):
         if isinstance(subelement, ElementTestCase):
@@ -132,6 +132,16 @@ class ElementTestSuite(Element):
                 self.attrib[stat_name] = str(count)
 
         return super().append(subelement)
+
+
+class ElementProperties(Element):
+    """<properties> element"""
+
+    def __init__(self):
+        super().__init__("properties")
+
+    def add_property(self, name: str, value: str):
+        SubElement(self, "property", {"name": name, "value": value})
 
 
 class ElementTestCase(Element):

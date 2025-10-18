@@ -165,6 +165,14 @@ class Extras(BaseModel):
         ),
     ]
 
+    helm: Annotated[
+        HelmMetadata | None,
+        Field(
+            default=None,
+            description="Helm metadata (chart name and template path) for the manifest. Present only when Helm rendered the manifest.",
+        ),
+    ]
+
     manifest: Annotated[
         ManifestMetadata | None,
         Field(
@@ -191,6 +199,28 @@ class FilesystemMetadata(BaseModel):
         if os.path.realpath(self.filepath) == os.path.realpath("/dev/stdin"):
             return True
         return False
+
+
+class HelmMetadata(BaseModel):
+    """Metadata describing the Helm chart that produced the manifest."""
+
+    chart: Annotated[
+        str,
+        Field(
+            description="Name of the Helm chart that rendered this manifest.",
+            examples=["my-chart"],
+        ),
+    ]
+
+    template: Annotated[
+        str,
+        Field(
+            description="Relative path in the chart to the template that emitted the manifest.",
+            examples=[
+                "templates/workflow.yaml",
+            ],
+        ),
+    ]
 
 
 class ManifestMetadata(BaseModel):

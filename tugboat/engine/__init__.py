@@ -7,6 +7,7 @@ from __future__ import annotations
 __all__ = [
     "DiagnosisModel",
     "FilesystemMetadata",
+    "HelmMetadata",
     "ManifestMetadata",
     "analyze_manifest",
     "analyze_yaml_document",
@@ -16,12 +17,15 @@ __all__ = [
 import hashlib
 import io
 import logging
+import os
+import re
 import typing
 from typing import cast
 
 import ruamel.yaml
 import ruamel.yaml.error
 from ruamel.yaml.comments import CommentedBase, CommentedMap
+from ruamel.yaml.tokens import CommentToken
 
 from tugboat.engine.helpers import (
     get_line_column,
@@ -29,7 +33,12 @@ from tugboat.engine.helpers import (
     translate_marked_yaml_error,
 )
 from tugboat.engine.mainfest import analyze_manifest
-from tugboat.engine.types import DiagnosisModel, FilesystemMetadata, ManifestMetadata
+from tugboat.engine.types import (
+    DiagnosisModel,
+    FilesystemMetadata,
+    HelmMetadata,
+    ManifestMetadata,
+)
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
@@ -147,12 +156,16 @@ def analyze_yaml_document(doc: CommentedMap) -> Iterator[DiagnosisModel]:
     This function wraps the :py:func:`analyze_manifest` function and transforms
     the :py:class:`tugboat.types.Diagnosis` objects into :py:class:`DiagnosisModel` objects.
     """
+    helm_metadata = extract_helm_metadata(doc)
+
     for diagnosis in analyze_manifest(doc):
         diagnosis = cast("dict[str, Any]", diagnosis)
         diagnosis.setdefault("extras", {})
 
         if manifest_metadata := diagnosis.get("ctx", {}).get("manifest"):
             diagnosis["extras"]["manifest"] = manifest_metadata
+
+        diagnosis["extras"]["helm"] = helm_metadata
 
         model = DiagnosisModel.model_validate(diagnosis)
 
@@ -178,3 +191,29 @@ def analyze_yaml_document(doc: CommentedMap) -> Iterator[DiagnosisModel]:
         model.column = column + 1
 
         yield model
+
+
+def extract_helm_metadata(doc: CommentedMap) -> dict[str, str] | None:
+    """
+    Extract Helm chart and template path from a YAML document's leading comment.
+    """
+    # find the leading comments in the document
+    if not doc.ca or not doc.ca.comment:
+        return None
+
+    _, pre_comments = doc.ca.comment
+    if not pre_comments:
+        return None
+
+    # it should be the first comment and start with '# Source: '
+    if isinstance(fc := pre_comments[0], CommentToken) and fc.column == 0:
+        if m := re.match(
+            r"# Source: (?P<chart>.+?)/(?P<template>templates/.+)",
+            fc.value,
+        ):
+            return {
+                "chart": os.path.basename(m.group("chart")),
+                "template": m.group("template"),
+            }
+
+    return None
