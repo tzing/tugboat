@@ -59,6 +59,7 @@ class ConsoleFormatter(OutputFormatter):
         ```none
         T01 Example error message
           @manifest.yaml:16:11 (demo-)
+          @Template:templates/workflow.yaml
 
           14 |         command: [cowsay]
           15 |         args:
@@ -90,7 +91,10 @@ class ConsoleFormatter(OutputFormatter):
         # > @manifest.yaml:16:11 (demo-)
         self.buf.write(Style.PathDelimiter.fmt("  @"))
         if diagnosis.extras.file:
-            self.buf.write(diagnosis.extras.file.filepath)
+            if diagnosis.extras.file.is_stdin:
+                self.buf.write(Style.LocationStdin.fmt("<stdin>"))
+            else:
+                self.buf.write(diagnosis.extras.file.filepath)
 
         self.buf.write(Style.PathDelimiter.fmt(":"))
         self.buf.write(str(diagnosis.line))
@@ -102,7 +106,15 @@ class ConsoleFormatter(OutputFormatter):
                 Style.ManifestName.fmt(f" ({diagnosis.extras.manifest.name})")
             )
 
-        self.buf.write("\n\n")
+        self.buf.write("\n")
+
+        # > @Template:templates/workflow.yaml
+        if diagnosis.extras.helm:
+            self.buf.write(Style.PathDelimiter.fmt("  @Template:"))
+            self.buf.write(diagnosis.extras.helm.template)
+            self.buf.write("\n")
+
+        self.buf.write("\n")
 
         # ---------------------------------------------------------------------
         # :PART: code snippet
@@ -218,6 +230,7 @@ class Style(enum.StrEnum):
     LineNumber =        enum.auto(), None,     None, None, True
     Location =          enum.auto(), "cyan"
     LocationDelimiter = enum.auto(), None,     None, None, True
+    LocationStdin =     enum.auto(), None,     None, True, True
     ManifestName =      enum.auto(), "blue"
     PathDelimiter =     enum.auto(), "cyan"
     Suggestion =        enum.auto(), None,     None, None, None, True

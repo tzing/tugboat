@@ -2,18 +2,23 @@ import io
 import textwrap
 from pathlib import Path
 
+import pytest
 from dirty_equals import DirtyEquals
 
+import tugboat.settings
+from tugboat.console.formatters import get_output_formatter
 from tugboat.console.formatters.console import ConsoleFormatter, calc_highlight_range
 from tugboat.engine import DiagnosisModel
 
 
 class TestConsoleFormatter:
 
-    def test_1(self, fixture_dir: Path):
+    def test_1(self, monkeypatch: pytest.MonkeyPatch, fixture_dir: Path):
+        monkeypatch.setattr(tugboat.settings.settings, "output_format", "console")
+
         manifest_path = fixture_dir / "sample-workflow.yaml"
 
-        formatter = ConsoleFormatter()
+        formatter = get_output_formatter()
         formatter.update(
             content=manifest_path.read_text(),
             diagnoses=[
@@ -28,6 +33,10 @@ class TestConsoleFormatter:
                         "extras": {
                             "file": {
                                 "filepath": "/path/to/sample-workflow.yaml",
+                            },
+                            "helm": {
+                                "chart": "my-chart",
+                                "template": "templates/workflow.yaml",
                             },
                             "manifest": {
                                 "group": "example.com",
@@ -48,6 +57,7 @@ class TestConsoleFormatter:
             """\
             T01 Test error message
               @/path/to/sample-workflow.yaml:1:1 (hello-world-)
+              @Template:templates/workflow.yaml
 
               1 | apiVersion: argoproj.io/v1alpha1
                 | └ T01 at .
