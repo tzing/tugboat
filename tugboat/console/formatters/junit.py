@@ -104,26 +104,14 @@ class ElementTestSuite(Element):
         self.counter = collections.Counter()
 
         # create <properties> element
-        properties = SubElement(self, "properties")
+        properties = ElementProperties()
+        self.append(properties)
 
         if manifest:
-            SubElement(
-                properties,
-                "property",
-                {
-                    "name": "string:manifest-kind",
-                    "value": manifest.fqk,
-                },
-            )
+            properties.add_property("string:manifest-kind", manifest.fqk)
+
             if manifest.name:
-                SubElement(
-                    properties,
-                    "property",
-                    {
-                        "name": "string:manifest-name",
-                        "value": manifest.name,
-                    },
-                )
+                properties.add_property("string:manifest-name", manifest.name)
 
     def append(self, subelement):
         if isinstance(subelement, ElementTestCase):
@@ -132,6 +120,16 @@ class ElementTestSuite(Element):
                 self.attrib[stat_name] = str(count)
 
         return super().append(subelement)
+
+
+class ElementProperties(Element):
+    """<properties> element"""
+
+    def __init__(self):
+        super().__init__("properties")
+
+    def add_property(self, name: str, value: str):
+        SubElement(self, "property", {"name": name, "value": value})
 
 
 class ElementTestCase(Element):
