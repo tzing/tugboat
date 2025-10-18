@@ -12,7 +12,12 @@ if typing.TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import TextIO
 
-    from tugboat.engine import DiagnosisModel, FilesystemMetadata, ManifestMetadata
+    from tugboat.engine import (
+        DiagnosisModel,
+        FilesystemMetadata,
+        HelmMetadata,
+        ManifestMetadata,
+    )
 
 
 logger = logging.getLogger(__name__)
@@ -38,8 +43,9 @@ class JUnitFormatter(OutputFormatter):
             key = (file_path, manifest_name)
             if key not in self.testsuites:
                 self.testsuites[key] = ElementTestSuite(
-                    manifest=diagnosis.extras.manifest,
                     filesystem=diagnosis.extras.file,
+                    helm=diagnosis.extras.helm,
+                    manifest=diagnosis.extras.manifest,
                 )
 
             testsuite = self.testsuites[key]
@@ -80,8 +86,10 @@ class ElementTestSuite(Element):
 
     def __init__(
         self,
-        manifest: ManifestMetadata | None = None,
+        *,
         filesystem: FilesystemMetadata | None = None,
+        helm: HelmMetadata | None = None,
+        manifest: ManifestMetadata | None = None,
     ):
         # create <testsuite> element
         now = datetime.datetime.now().astimezone()
@@ -106,6 +114,10 @@ class ElementTestSuite(Element):
         # create <properties> element
         properties = ElementProperties()
         self.append(properties)
+
+        if helm:
+            properties.add_property("string:helm-chart", helm.chart)
+            properties.add_property("string:helm-template", helm.template)
 
         if manifest:
             properties.add_property("string:manifest-kind", manifest.fqk)

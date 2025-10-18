@@ -10,7 +10,12 @@ from tugboat.console.formatters.junit import (
     ElementTestSuite,
     JUnitFormatter,
 )
-from tugboat.engine import DiagnosisModel, FilesystemMetadata, ManifestMetadata
+from tugboat.engine import (
+    DiagnosisModel,
+    FilesystemMetadata,
+    ManifestMetadata,
+    HelmMetadata,
+)
 from tugboat.engine.types import Extras
 
 logger = logging.getLogger(__name__)
@@ -41,6 +46,10 @@ class TestJUnitFormatter:
                                 file=FilesystemMetadata(
                                     filepath="manifest.yaml",
                                 ),
+                                helm=HelmMetadata(
+                                    chart="my-chart",
+                                    template="templates/diagnoses.yaml",
+                                ),
                                 manifest=ManifestMetadata(
                                     group="example.com",
                                     kind="Demo",
@@ -60,6 +69,7 @@ class TestJUnitFormatter:
                             file=FilesystemMetadata(
                                 filepath="another-manifest.yaml",
                             ),
+                            helm=None,
                             manifest=ManifestMetadata(
                                 group="example.com",
                                 kind="Demo",
@@ -76,6 +86,7 @@ class TestJUnitFormatter:
                             file=FilesystemMetadata(
                                 filepath="manifest.yaml",
                             ),
+                            helm=None,
                             manifest=ManifestMetadata(
                                 group="example.com",
                                 kind="Demo",
@@ -92,6 +103,7 @@ class TestJUnitFormatter:
                             file=FilesystemMetadata(
                                 filepath="manifest.yaml",
                             ),
+                            helm=None,
                             manifest=ManifestMetadata(
                                 group="example.com",
                                 kind="Demo",
@@ -108,6 +120,7 @@ class TestJUnitFormatter:
                             file=FilesystemMetadata(
                                 filepath="manifest.yaml",
                             ),
+                            helm=None,
                             manifest=ManifestMetadata(
                                 group="example.com",
                                 kind="Another",
@@ -125,6 +138,7 @@ class TestJUnitFormatter:
                             file=FilesystemMetadata(
                                 filepath="<stdin>",
                             ),
+                            helm=None,
                             manifest=None,
                         ),
                     }
@@ -143,6 +157,8 @@ class TestJUnitFormatter:
               <!-- GROUP A: three exactly same diagnoses -->
               <testsuite name="demo.example.com/diagnoses" file="manifest.yaml" failures="3">
                 <properties>
+                  <property name="string:helm-chart" value="my-chart"/>
+                  <property name="string:helm-template" value="templates/diagnoses.yaml"/>
                   <property name="string:manifest-kind" value="demo.example.com"/>
                   <property name="string:manifest-name" value="diagnoses"/>
                 </properties>
