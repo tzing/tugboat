@@ -13,8 +13,8 @@ from tugboat.console.formatters.junit import (
 from tugboat.engine import (
     DiagnosisModel,
     FilesystemMetadata,
-    ManifestMetadata,
     HelmMetadata,
+    ManifestMetadata,
 )
 from tugboat.engine.types import Extras
 
