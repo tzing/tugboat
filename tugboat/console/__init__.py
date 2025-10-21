@@ -25,7 +25,6 @@ if typing.TYPE_CHECKING:
     from typing import Any, NoReturn, TextIO
 
     from pydantic import FilePath
-    from pydantic_core import ErrorDetails
 
 logger = logging.getLogger(__name__)
 
@@ -139,18 +138,7 @@ def main(
         tugboat.console.anchor.print_anchor()
 
     # update and validate settings
-    update_settings(
-        color=color,
-        exclude=exclude,
-        follow_symlinks=follow_symlinks,
-        manifest=manifest,
-        output_format=output_format,
-    )
-
-    logger.debug(
-        "Current settings: %s",
-        tugboat.settings.settings.model_dump_json(indent=2),
-    )
+    update_settings(**locals())
 
     # special case: MCP
     if mcp:
@@ -204,6 +192,7 @@ def update_settings(
     follow_symlinks: bool | None,
     color: bool | None,
     output_format: str | None,
+    **sink,
 ):
     """
     Update settings using command line arguments.
@@ -226,13 +215,10 @@ def update_settings(
     if output_format is not None:
         update_args["output_format"] = output_format
 
-    # inplace update
-    # https://docs.pydantic.dev/latest/concepts/pydantic_settings/#in-place-reloading
-    try:
+    # update settings
+    with reraise_usage_error():
+        # https://docs.pydantic.dev/latest/concepts/pydantic_settings/#in-place-reloading
         tugboat.settings.settings.__init__(**update_args)
-    except ValidationError as e:
-        err, *_ = e.errors()
-        _raise_usage_error(err)
 
     # special case: stdin
     if manifest == () and not sys.stdin.isatty() and not sys.stdin.closed:
@@ -240,25 +226,40 @@ def update_settings(
         path = typing.cast("FilePath", Stdin())
         tugboat.settings.settings.include = [path]
 
+    # log current settings
+    logger.debug(
+        "Current settings: %s",
+        tugboat.settings.settings.model_dump_json(indent=2),
+    )
 
-def _raise_usage_error(err: ErrorDetails) -> NoReturn:
-    field, *_ = err["loc"]
-    value = err["input"]
-    message = err["msg"]
 
-    match field:
-        case "include":
-            raise click.UsageError(f"Invalid path for 'manifest' ({value}): {message}")
-        case "exclude":
-            raise click.UsageError(f"Invalid path for '--exclude' ({value}): {message}")
-        case "color":
-            raise click.UsageError(f"Invalid value for '--color': {message}")
-        case "follow_symlinks":
-            raise click.UsageError(f"Invalid value for '--follow-symlinks': {message}")
-        case "output_format":
-            raise click.UsageError(f"Invalid value for '--output-format': {message}")
+@contextlib.contextmanager
+def reraise_usage_error():
+    try:
+        yield
+    except ValidationError as e:
+        # only use the first error
+        err, *_ = e.errors()
 
-    raise RuntimeError("Unknown validation error")  # pragma: no cover
+        match setting_name := err["loc"][0]:
+            case "include":
+                option_name = "manifest"
+            case "exclude":
+                option_name = "--exclude"
+            case "color":
+                option_name = "--color"
+            case "follow_symlinks":
+                option_name = "--follow-symlinks"
+            case "output_format":
+                option_name = "--output-format"
+            case _:
+                option_name = setting_name  # pragma: no cover
+
+        value = err["input"]
+        message = err["msg"]
+        raise click.UsageError(
+            f"Invalid value for '{option_name}': {message} (input= {value})"
+        ) from None
 
 
 def lint(output_stream: TextIO) -> NoReturn:
