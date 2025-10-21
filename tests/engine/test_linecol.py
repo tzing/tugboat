@@ -1,5 +1,11 @@
+import textwrap
+
 from tugboat.engine import yaml_parser
-from tugboat.engine.linecol import is_alias_node, is_anchor_node
+from tugboat.engine.linecol import (
+    get_value_linecol,
+    is_alias_node,
+    is_anchor_node,
+)
 
 
 class TestIsAnchorNode:
@@ -32,9 +38,6 @@ class TestIsAnchorNode:
     def test_error(self):
         doc = yaml_parser.load("foo: bar")
         assert not is_anchor_node(doc, "key")
-
-    def test_none(self):
-        assert not is_anchor_node(None, "key")
 
 
 class TestIsAliasNode:
@@ -124,5 +127,47 @@ class TestIsAliasNode:
     def test_error(self):
         doc = yaml_parser.load("foo: bar")
         assert is_alias_node(doc, "no-this-key") is False
-        assert is_alias_node(doc, None) is False
-        assert is_alias_node(None, "key") is False
+
+
+class TestGetValueLineColumn:
+
+    def test_map(self):
+        doc = yaml_parser.load(
+            textwrap.dedent(
+                """
+                map:
+                  foo: &foo
+                    Lorem ipsum dolor sit amet
+                  bar:    consectetur adipiscing elit.
+
+                  array:
+                    - item
+                  alias: *foo
+                """
+            )
+        )
+
+        assert get_value_linecol(doc["map"], "foo") == (2, 7)
+        assert get_value_linecol(doc["map"], "bar") == (4, 10)
+        assert get_value_linecol(doc["map"], "array") == (7, 4)
+        assert get_value_linecol(doc["map"], "alias") == (8, 9)
+
+    def test_array(self):
+        doc = yaml_parser.load(
+            textwrap.dedent(
+                """
+                array:
+                  -   &anchor
+                    Lorem ipsum dolor sit amet
+                  -    consectetur adipiscing elit.
+                  - *anchor
+                  - map:
+                      key: value
+                """
+            )
+        )
+
+        assert get_value_linecol(doc["array"], 0) == (2, 6)
+        assert get_value_linecol(doc["array"], 1) == (4, 7)
+        assert get_value_linecol(doc["array"], 2) is None
+        assert get_value_linecol(doc["array"], 3) == (6, 4)

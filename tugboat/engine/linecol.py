@@ -3,13 +3,10 @@ from __future__ import annotations
 import typing
 from typing import cast
 
-from ruamel.yaml.comments import CommentedBase, CommentedMap
-
-from tugboat.types import Field
+from ruamel.yaml.comments import CommentedBase, CommentedMap, CommentedSeq
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
-    from typing import Any
+    from collections.abc import Callable
 
     from ruamel.yaml.mergevalue import MergeValue
 
@@ -17,13 +14,6 @@ if typing.TYPE_CHECKING:
 def is_anchor_node(parent_node: CommentedBase | None, key: int | str | None) -> bool:
     """
     Check if a child node is an anchor (&anchor).
-
-    Parameters
-    ----------
-    parent_node : CommentedBase | None
-        The parent node.
-    key : int | str | None
-        The key in the parent node.
 
     Returns
     -------
@@ -42,16 +32,9 @@ def is_anchor_node(parent_node: CommentedBase | None, key: int | str | None) -> 
     return False
 
 
-def is_alias_node(parent_node: CommentedBase | None, key: int | str | None) -> bool:
+def is_alias_node(parent_node: CommentedBase | None, key: int | str) -> bool:
     """
     Check if a child node is an alias (*anchor).
-
-    Parameters
-    ----------
-    parent_node : CommentedBase | None
-        The parent node.
-    key : int | str | None
-        The key in the parent node.
 
     Returns
     -------
@@ -89,3 +72,26 @@ def is_alias_node(parent_node: CommentedBase | None, key: int | str | None) -> b
                 return True
 
     return False
+
+
+def get_value_linecol(
+    parent_node: CommentedBase, key: int | str | None
+) -> tuple[int, int] | None:
+    """Find the start of the field value. Returns 0-based line and column numbers."""
+    if isinstance(parent_node, CommentedMap):
+        key = cast("str", key)
+        if is_alias_node(parent_node, key):
+            line, col = parent_node.lc.key(key)
+            # adjust to point after the key name and colon
+            col += len(str(key)) + 2
+            return (line, col)
+        else:
+            return parent_node.lc.value(key)
+
+    elif isinstance(parent_node, CommentedSeq):
+        key = cast("int", key)
+        # NOTE when the value is an alias, ruamel.yaml returns the line/col of the anchor
+        if not is_alias_node(parent_node, key):
+            return parent_node.lc.key(key)
+
+    return None
