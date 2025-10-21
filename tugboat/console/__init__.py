@@ -139,14 +139,7 @@ def main(
         tugboat.console.anchor.print_anchor()
 
     # update and validate settings
-    update_settings(
-        color=color,
-        exclude=exclude,
-        follow_symlinks=follow_symlinks,
-        manifest=manifest,
-        output_format=output_format,
-    )
-
+    update_settings(**locals())
     logger.debug(
         "Current settings: %s",
         tugboat.settings.settings.model_dump_json(indent=2),
@@ -204,6 +197,7 @@ def update_settings(
     follow_symlinks: bool | None,
     color: bool | None,
     output_format: str | None,
+    **sink,
 ):
     """
     Update settings using command line arguments.
