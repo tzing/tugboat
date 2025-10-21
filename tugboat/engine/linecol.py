@@ -14,6 +14,34 @@ if typing.TYPE_CHECKING:
     from ruamel.yaml.mergevalue import MergeValue
 
 
+def is_anchor_node(parent_node: CommentedBase | None, key: int | str | None) -> bool:
+    """
+    Check if a child node is an anchor (&anchor).
+
+    Parameters
+    ----------
+    parent_node : CommentedBase | None
+        The parent node.
+    key : int | str | None
+        The key in the parent node.
+
+    Returns
+    -------
+    bool
+        True if this is an anchor node, False otherwise.
+    """
+    try:
+        target_node = parent_node[key]  # type: ignore[reportIndexIssue]
+    except (KeyError, IndexError, TypeError):
+        return False
+
+    anchor: Callable | None = getattr(target_node, "yaml_anchor", None)
+    if anchor and anchor() and not is_alias_node(parent_node, key):
+        return True
+
+    return False
+
+
 def is_alias_node(parent_node: CommentedBase | None, key: int | str | None) -> bool:
     """
     Check if a child node is an alias (*anchor).

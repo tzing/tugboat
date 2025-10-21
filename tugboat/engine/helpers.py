@@ -14,7 +14,7 @@ from ruamel.yaml.scalarstring import (
 )
 from ruamel.yaml.tokens import CommentToken
 
-from tugboat.engine.linecol import is_alias_node
+from tugboat.engine.linecol import is_alias_node, is_anchor_node
 from tugboat.engine.types import DiagnosisModel
 from tugboat.types import Field
 
@@ -250,35 +250,6 @@ def _calculate_substring_position(
         return (value_line, value_col)
 
     return None
-
-
-def is_anchor_node(parent_node: CommentedBase | None, key: int | str | None) -> bool:
-    """
-    Check if a child node is an anchor (&anchor).
-
-    Parameters
-    ----------
-    parent_node : CommentedBase | None
-        The parent node.
-    key : int | str | None
-        The key in the parent node.
-
-    Returns
-    -------
-    bool
-        True if this is an anchor node, False otherwise.
-    """
-    try:
-        target_node = parent_node[key]  # type: ignore[reportIndexIssue]
-    except (KeyError, IndexError, TypeError):
-        return False
-
-    anchor: Callable | None = getattr(target_node, "yaml_anchor", None)
-    if anchor and anchor() and not is_alias_node(parent_node, key):
-        return True
-    # TODO handle the anchor in a list item
-
-    return False
 
 
 def get_suppression_codes(doc: CommentedMap, loc: Sequence[int | str]) -> Iterator[str]:

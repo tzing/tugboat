@@ -9,7 +9,6 @@ from tests.dirty_equals import IsMatch, IsPartialModel
 from tugboat.engine.helpers import (
     get_line_column,
     get_suppression_codes,
-    is_anchor_node,
     parse_noqa_codes,
     translate_marked_yaml_error,
 )
@@ -269,34 +268,6 @@ class TestGetLineColumn:
     def test_error(self, parser: ruamel.yaml.YAML):
         doc = parser.load("foo: bar")
         assert get_line_column(doc, ("no-this-key",), "bar") == (0, 0)
-
-
-class TestIsAnchorNode:
-
-    def test_dict(self, parser: ruamel.yaml.YAML):
-        doc = parser.load(
-            """
-            foo: &foo
-              Lorem ipsum dolor sit amet
-
-            bar: *foo
-
-            baz:
-              Leorem ipsum dolor sit amet,
-              consectetur adipiscing elit.
-            """
-        )
-
-        assert is_anchor_node(doc, "foo")
-        assert not is_anchor_node(doc, "bar")
-        assert not is_anchor_node(doc, "baz")
-
-    def test_error(self, parser: ruamel.yaml.YAML):
-        doc = parser.load("foo: bar")
-        assert not is_anchor_node(doc, "key")
-
-    def test_none(self, parser: ruamel.yaml.YAML):
-        assert not is_anchor_node(None, "key")
 
 
 class TestGetSuppressionCodes:
