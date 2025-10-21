@@ -139,10 +139,6 @@ def main(
 
     # update and validate settings
     update_settings(**locals())
-    logger.debug(
-        "Current settings: %s",
-        tugboat.settings.settings.model_dump_json(indent=2),
-    )
 
     # special case: MCP
     if mcp:
@@ -229,6 +225,12 @@ def update_settings(
         logger.debug("Detected stdin. Using it as input.")
         path = typing.cast("FilePath", Stdin())
         tugboat.settings.settings.include = [path]
+
+    # log current settings
+    logger.debug(
+        "Current settings: %s",
+        tugboat.settings.settings.model_dump_json(indent=2),
+    )
 
 
 @contextlib.contextmanager
