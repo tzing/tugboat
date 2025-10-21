@@ -14,6 +14,7 @@ from ruamel.yaml.scalarstring import (
 )
 from ruamel.yaml.tokens import CommentToken
 
+from tugboat.engine.linecol import is_alias_node
 from tugboat.engine.types import DiagnosisModel
 from tugboat.types import Field
 
@@ -276,52 +277,6 @@ def is_anchor_node(parent_node: CommentedBase | None, key: int | str | None) -> 
     if anchor and anchor() and not is_alias_node(parent_node, key):
         return True
     # TODO handle the anchor in a list item
-
-    return False
-
-
-def is_alias_node(parent_node: CommentedBase | None, key: int | str | None) -> bool:
-    """
-    Check if a child node is an alias (*anchor).
-
-    Parameters
-    ----------
-    parent_node : CommentedBase | None
-        The parent node.
-    key : int | str | None
-        The key in the parent node.
-
-    Returns
-    -------
-    bool
-        True if this is an alias node, False otherwise.
-    """
-    if not isinstance(parent_node, CommentedBase):
-        return False
-
-    try:
-        lc_data = parent_node.lc.data[key]
-    except (AttributeError, KeyError, IndexError):
-        return False
-
-    if isinstance(parent_node, dict):
-        key_line, _key_col, value_line, _value_col = lc_data
-
-        if key_line != value_line:
-            # heuristic: check if the value appears to be a multi-line string
-            # if the value contains patterns that suggest multi-line content
-            # and the value_line is adjacent to key_line, it's likely multi-line content, not alias
-            value = parent_node[key]
-            if isinstance(value, str) and value_line == key_line + 1:
-                return False
-
-            return True
-
-    elif isinstance(parent_node, list):
-        value_line, _value_col = lc_data
-        if value_line < parent_node.lc.line:
-            return True
-        # TODO need to handle the case where it references an item in a list
 
     return False
 

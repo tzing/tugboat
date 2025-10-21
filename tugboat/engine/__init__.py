@@ -47,6 +47,7 @@ if typing.TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 yaml_parser = ruamel.yaml.YAML(typ="rt")
+yaml_parser.preserve_quotes = True
 
 
 def analyze_yaml_stream(
