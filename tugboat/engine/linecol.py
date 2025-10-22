@@ -103,7 +103,7 @@ def calculate_substring_linecol(
     current_node: str,
     key: int | str,
     substring: str,
-    assume_indent_size: int,
+    indent_size: int,
 ) -> tuple[int, int] | None:
     """
     Calculate the line and column position of a substring within a scalar value.
@@ -118,7 +118,7 @@ def calculate_substring_linecol(
         The key in the parent node.
     substring: str
         The substring to find within the text.
-    assume_indent_size: int
+    indent_size: int
         The assumed indentation size for the current node.
 
     Returns
@@ -150,8 +150,20 @@ def calculate_substring_linecol(
                 current_node=current_node,
                 key=cast("str", key),
                 substring=substring,
-                indent_size=assume_indent_size,
+                indent_size=indent_size,
             )
+
+    if isinstance(current_node, FoldedScalarString):
+        # folded scalar (>) merges adjacent lines
+        # so we can't tell the position of the substring reliably
+        return None
+
+    if isinstance(current_node, PlainScalarString):
+        # plain scalar string type is found when the field contains anchor or alias
+        # this breaks the logic of line/column calculation
+        return None
+
+    return None
 
 
 def calculate_literal_substring_linecol_in_map(
