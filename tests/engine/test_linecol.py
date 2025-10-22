@@ -171,3 +171,47 @@ class TestGetValueLineColumn:
         assert get_value_linecol(doc["array"], 1) == (4, 7)
         assert get_value_linecol(doc["array"], 2) is None
         assert get_value_linecol(doc["array"], 3) == (6, 4)
+
+
+class TestCalculateSubstringLineCol:
+
+    class TestLiteralScalarString:
+
+        def test_1(self):
+            doc = yaml_parser.load(
+                textwrap.dedent(
+                    """
+                    foo: |-
+                      Lorem ipsum dolor sit amet,
+                      consectetur adipiscing elit.
+                    """
+                )
+            )
+            assert get_line_column(doc, ("foo",), "Lorem") == (2, 2)
+            assert get_line_column(doc, ("foo",), "adipiscing") == (3, 14)
+
+        def test_2(self):
+            doc = yaml_parser.load(
+                textwrap.dedent(
+                    """
+                    foo:
+                        bar: &foo |-
+                            Lorem ipsum dolor sit amet.
+                    """
+                )
+            )
+            assert get_line_column(doc, ("foo", "bar"), "Lorem") == (3, 8)
+            assert get_line_column(doc, ("foo", "bar"), "sit") == (3, 26)
+
+        def test_3(self):
+            doc = yaml_parser.load(
+                textwrap.dedent(
+                    """
+                    - |+
+                      Lorem ipsum dolor sit amet,
+                      consectetur adipiscing elit.
+                    """
+                )
+            )
+            assert get_line_column(doc, (0,), "Lorem") == (2, 2)
+            assert get_line_column(doc, (0,), "adipiscing") == (3, 14)

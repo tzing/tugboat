@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
     from ruamel.yaml.mergevalue import MergeValue
 
 
-def is_anchor_node(parent_node: CommentedBase | None, key: int | str | None) -> bool:
+def is_anchor_node(parent_node: CommentedBase, key: int | str) -> bool:
     """
     Check if a child node is an anchor (&anchor).
 
@@ -32,7 +32,7 @@ def is_anchor_node(parent_node: CommentedBase | None, key: int | str | None) -> 
     return False
 
 
-def is_alias_node(parent_node: CommentedBase | None, key: int | str) -> bool:
+def is_alias_node(parent_node: CommentedBase, key: int | str) -> bool:
     """
     Check if a child node is an alias (*anchor).
 
@@ -95,3 +95,120 @@ def get_value_linecol(
             return parent_node.lc.key(key)
 
     return None
+
+
+def calculate_substring_linecol(
+    *,
+    parent_node: CommentedBase,
+    current_node: str,
+    key: int | str,
+    substring: str,
+    assume_indent_size: int,
+) -> tuple[int, int] | None:
+    """
+    Calculate the line and column position of a substring within a scalar value.
+
+    Parameters
+    ----------
+    parent_node : CommentedBase
+        The parent node for enhanced positioning.
+    current_node : str
+        The current node containing the text.
+    key : int | str
+        The key in the parent node.
+    substring: str
+        The substring to find within the text.
+    assume_indent_size: int
+        The assumed indentation size for the current node.
+
+    Returns
+    -------
+    tuple[int, int] | None
+        Line and column numbers (0-based), or None if substring not found or is alias.
+    """
+    # early exits
+    if not substring:
+        return None
+    if is_alias_node(parent_node, key):
+        return None
+    if substring not in current_node:
+        return None
+
+    # dispatch based on scalar type
+    if isinstance(current_node, LiteralScalarString):
+        # literal block scalar (|)
+        if isinstance(parent_node, CommentedSeq):
+            return calculate_literal_substring_linecol_in_array(
+                parent_node=cast("CommentedSeq", parent_node),
+                current_node=current_node,
+                key=cast("int", key),
+                substring=substring,
+            )
+        if isinstance(parent_node, CommentedMap):
+            return calculate_literal_substring_linecol_in_map(
+                parent_node=cast("CommentedMap", parent_node),
+                current_node=current_node,
+                key=cast("str", key),
+                substring=substring,
+                indent_size=assume_indent_size,
+            )
+
+
+def calculate_literal_substring_linecol_in_map(
+    *,
+    parent_node: CommentedMap,
+    current_node: LiteralScalarString,
+    key: str,
+    substring: str,
+    indent_size: int,
+) -> tuple[int, int]:
+    """
+    ```yaml
+    foo: |-
+      Lorem ipsum dolor sit amet,
+      consectetur adipiscing elit.
+    ```
+
+    * key line/col points to the position of `foo:`
+    * value line/col points to the position of indicator `|-`
+    """
+    _, key_col, value_line, _ = cast("IntTuple", parent_node.lc.data[key])
+
+    idx_substring = current_node.find(substring)
+    cnt_lines_before = current_node.count("\n", 0, idx_substring)
+    idx_last_newline = current_node.rfind("\n", 0, idx_substring)
+    offset_col = idx_substring - idx_last_newline - 1
+
+    return (
+        value_line + cnt_lines_before + 1,
+        key_col + indent_size + offset_col,
+    )
+
+
+def calculate_literal_substring_linecol_in_array(
+    *,
+    parent_node: CommentedSeq,
+    current_node: LiteralScalarString,
+    key: int,
+    substring: str,
+) -> tuple[int, int]:
+    """
+    ```yaml
+    - |-
+      Lorem ipsum dolor sit amet,
+      consectetur adipiscing elit.
+    ```
+
+    * key line/col points to the position of indicator `|-`
+    """
+    value_line, value_col = cast("IntTuple", parent_node.lc.key(key))
+
+    idx_substring = current_node.find(substring)
+    cnt_lines_before = current_node.count("\n", 0, idx_substring)
+    idx_last_newline = current_node.rfind("\n", 0, idx_substring)
+    offset_col = idx_substring - idx_last_newline - 1
+
+    return (
+        value_line + cnt_lines_before + 1,
+        value_col + offset_col,
+    )
