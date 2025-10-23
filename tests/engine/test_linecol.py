@@ -9,9 +9,25 @@ from tugboat.engine.linecol import (
     is_alias_node,
     is_anchor_node,
 )
+from tugboat.types import Field
 
 
 class TestGetLineColumn:
+
+    def test_field(self):
+        doc = yaml_parser.load(
+            textwrap.dedent(
+                """
+                foo:
+                  - bar: bar
+                """
+            )
+        )
+
+        assert get_line_column(doc, ("foo",), Field("foo")) == (1, 0)
+        assert get_line_column(doc, ("foo", 0), Field(0)) == (2, 4)
+        assert get_line_column(doc, ("foo", 0, "bar"), Field("bar")) == (2, 4)
+        assert get_line_column(doc, ("foo", 0, "bar"), "bar") == (2, 9)
 
     class TestLiteralScalarString:
 
@@ -158,6 +174,23 @@ class TestGetLineColumn:
             assert get_line_column(doc, (0,), "ipsum") == (2, 9)
 
             assert get_line_column(doc, (0,), "adipiscing") == (2, 2)  # fallback
+
+    def test_error(self):
+        doc = yaml_parser.load(
+            textwrap.dedent(
+                """
+                foo:
+                  - bar: qux
+                """
+            )
+        )
+
+        assert get_line_column(doc, ("no-this-field",), "") == (1, 0)
+        assert get_line_column(doc, ("foo", "no-this-field"), "") == (2, 2)
+        assert get_line_column(doc, ("foo", 99), "") == (2, 2)
+
+        assert get_line_column(doc, ("foo", 0, "bar"), "") == (2, 9)
+        assert get_line_column(doc, ("foo", 0, "bar", "no-this-field"), "") == (2, 9)
 
 
 class TestIsAnchorNode:
@@ -321,5 +354,7 @@ class TestGetValueLineColumn:
 
         assert get_value_linecol(doc["array"], 0) == (2, 6)
         assert get_value_linecol(doc["array"], 1) == (4, 7)
-        assert get_value_linecol(doc["array"], 2) is None
         assert get_value_linecol(doc["array"], 3) == (6, 4)
+
+        with pytest.raises(KeyError):
+            get_value_linecol(doc["array"], 2)

@@ -19,7 +19,7 @@ from tugboat.engine.types import DiagnosisModel
 from tugboat.types import Field
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Iterator, Sequence
     from typing import Any
 
     from ruamel.yaml.error import MarkedYAMLError

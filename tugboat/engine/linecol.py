@@ -1,14 +1,102 @@
 from __future__ import annotations
 
+import contextlib
 import typing
 from typing import cast
 
 from ruamel.yaml.comments import CommentedBase, CommentedMap, CommentedSeq
+from ruamel.yaml.scalarstring import (
+    DoubleQuotedScalarString,
+    FoldedScalarString,
+    LiteralScalarString,
+    PlainScalarString,
+    SingleQuotedScalarString,
+)
+
+from tugboat.types import Field
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
+    from typing import Any
 
     from ruamel.yaml.mergevalue import MergeValue
+
+    type IntTuple = tuple[int, ...]
+
+
+def get_line_column(
+    doc: CommentedMap, loc: Sequence[int | str], value: Any | Field | None
+) -> tuple[int, int]:
+    """
+    Get the line and column number for a given location in the YAML document.
+
+    Parameters
+    ----------
+    doc : CommentedMap
+        The parsed YAML document.
+    loc : Sequence[int | str]
+        Path to the location in the document.
+    value : Any | Field | None
+        Value to locate a more specific position, if applicable. If a Field is
+        provided, this function will attempt to find the position of the key in
+        the map. Otherwise, it will search for the value in the field.
+
+    Returns
+    -------
+    tuple[int, int]
+        Line and column numbers (0-based).
+    """
+    # navigate through the path
+    parent_node = None
+    current_node = doc
+    key = None
+    fallback_position = (0, 0)
+    assume_indent_size = 2
+
+    for key in loc:
+        parent_node = current_node
+
+        try:
+            current_node = current_node[key]  # type: ignore[reportIndexIssue]
+        except (KeyError, IndexError, TypeError):
+            # navigation failed, use fallback position from parent
+            if isinstance(parent_node, CommentedBase):
+                fallback_position = (parent_node.lc.line, parent_node.lc.col)
+            break
+
+        if isinstance(current_node, CommentedBase):
+            fallback_position = (current_node.lc.line, current_node.lc.col)
+            assume_indent_size = current_node.lc.col - parent_node.lc.col
+
+        if not isinstance(current_node, CommentedSeq | CommentedMap):
+            break  # prevent navigation further
+
+    assert key is not None
+
+    # if the value is 'Field' type, return the position of the key
+    if isinstance(value, Field):
+        parent_node = cast("CommentedMap", parent_node)
+        try:
+            return parent_node.lc.key(value)
+        except (KeyError, AttributeError):
+            return fallback_position
+
+    # for the rest of the cases, default to the start of the field value
+    with contextlib.suppress(KeyError):
+        fallback_position = get_value_linecol(parent_node, key)
+
+    # when the value is a string, try to find its exact position
+    if isinstance(current_node, str) and isinstance(value, str):
+        if linecol := calculate_substring_linecol(
+            parent_node=parent_node,
+            current_node=current_node,
+            key=key,
+            substring=value,
+            indent_size=assume_indent_size,
+        ):
+            return linecol
+
+    return fallback_position
 
 
 def is_anchor_node(parent_node: CommentedBase, key: int | str) -> bool:
@@ -74,9 +162,7 @@ def is_alias_node(parent_node: CommentedBase, key: int | str) -> bool:
     return False
 
 
-def get_value_linecol(
-    parent_node: CommentedBase, key: int | str | None
-) -> tuple[int, int] | None:
+def get_value_linecol(parent_node: CommentedBase, key: int | str) -> tuple[int, int]:
     """Find the start of the field value. Returns 0-based line and column numbers."""
     if isinstance(parent_node, CommentedMap):
         key = cast("str", key)
@@ -94,7 +180,7 @@ def get_value_linecol(
         if not is_alias_node(parent_node, key):
             return parent_node.lc.key(key)
 
-    return None
+    raise KeyError
 
 
 def calculate_substring_linecol(
