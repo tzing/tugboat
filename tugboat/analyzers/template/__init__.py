@@ -79,6 +79,29 @@ def check_steps(
 
 
 @hookimpl(specname="analyze_template")
+def check_dag(template: Template, workflow: WorkflowCompatible) -> Iterable[Diagnosis]:
+    if not template.dag:
+        return
+
+    # check for duplicate task names
+    task_names = collections.defaultdict(list)
+    for idx, task in enumerate(template.dag.tasks or ()):
+        if task.name:
+            task_names[task.name].append(("dag", "tasks", idx, "name"))
+
+    for name, locs in task_names.items():
+        if len(locs) > 1:
+            for loc in locs:
+                yield {
+                    "code": "DAG101",
+                    "loc": loc,
+                    "summary": "Duplicate task name",
+                    "msg": f"Task name '{name}' is duplicated.",
+                    "input": name,
+                }
+
+
+@hookimpl(specname="analyze_template")
 def check_metrics(
     template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
