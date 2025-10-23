@@ -1,8 +1,6 @@
-import textwrap
 
 import pytest
 import ruamel.yaml
-from ruamel.yaml.comments import CommentedBase
 from ruamel.yaml.error import MarkedYAMLError
 
 from tests.dirty_equals import IsMatch, IsPartialModel
@@ -11,7 +9,6 @@ from tugboat.engine.helpers import (
     parse_noqa_codes,
     translate_marked_yaml_error,
 )
-from tugboat.types import Field
 
 
 @pytest.fixture

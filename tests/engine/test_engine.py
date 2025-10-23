@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import re
@@ -6,6 +5,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+from pydantic import TypeAdapter
 
 from tests.dirty_equals import IsPartialModel
 from tugboat.engine import (
@@ -248,6 +248,8 @@ class TestAnalyzeYamlStream:
             workflow_binding_dir / "github-path-filter-workflowtemplate.yaml",
         }
 
+        ta = TypeAdapter(list[DiagnosisModel])
+
         for file_path in argo_example_dir.glob("**/*.yaml"):
             # skip known false positives
             if file_path in EXCLUDES:
@@ -263,7 +265,15 @@ class TestAnalyzeYamlStream:
 
             # fail on errors
             if any(diagnoses):
-                logger.critical("diagnoses: %s", json.dumps(diagnoses, indent=2))
+                logger.critical(
+                    "diagnoses: %s",
+                    ta.dump_json(
+                        diagnoses,
+                        indent=2,
+                        exclude_none=True,
+                        exclude_unset=True,
+                    ).decode(),
+                )
                 pytest.fail(f"Found issue with {file_path}")
 
 
