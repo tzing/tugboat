@@ -27,11 +27,8 @@ import ruamel.yaml.error
 from ruamel.yaml.comments import CommentedBase, CommentedMap
 from ruamel.yaml.tokens import CommentToken
 
-from tugboat.engine.helpers import (
-    get_line_column,
-    get_suppression_codes,
-    translate_marked_yaml_error,
-)
+from tugboat.engine.helpers import get_suppression_codes, translate_marked_yaml_error
+from tugboat.engine.linecol import get_line_column
 from tugboat.engine.mainfest import analyze_manifest
 from tugboat.engine.types import (
     DiagnosisModel,
@@ -47,6 +44,7 @@ if typing.TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 yaml_parser = ruamel.yaml.YAML(typ="rt")
+yaml_parser.preserve_quotes = True
 
 
 def analyze_yaml_stream(
