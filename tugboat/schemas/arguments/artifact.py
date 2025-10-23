@@ -31,6 +31,7 @@ if os.getenv("DOCUTILSCONFIG"):
         "OAuth2Auth",
         "OssArtifact",
         "OssLifecycleRule",
+        "PluginArtifact",
         "RawArtifact",
         "RelaxedArtifact",
         "S3Artifact",
@@ -68,6 +69,7 @@ class Artifact(_BaseModel):
     optional: bool = False
     oss: OssArtifact | None = None
     path: str | None = None
+    plugin: PluginArtifact | None = None
     raw: RawArtifact | None = None
     recurseMode: bool | None = None
     s3: S3Artifact | None = None
@@ -237,6 +239,22 @@ class OssArtifact(_BaseModel):
 class OssLifecycleRule(_BaseModel):
     markDeletionAfterDays: int | None = None
     markInfrequentAccessAfterDays: int | None = None
+
+
+# ----------------------------------------------------------------------------
+# plugin
+# ----------------------------------------------------------------------------
+class PluginArtifact(_BaseModel):
+    """
+    `PluginArtifact`_ is the location of an artifact plugin.
+
+    .. _PluginArtifact: https://argo-workflows.readthedocs.io/en/latest/fields/#pluginartifact
+    """
+
+    configuration: str | None = None
+    connectionTimeoutSeconds: int | None = None
+    key: str | None = None
+    name: str | None
 
 
 # ----------------------------------------------------------------------------
