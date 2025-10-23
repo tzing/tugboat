@@ -100,6 +100,15 @@ def check_dag(template: Template, workflow: WorkflowCompatible) -> Iterable[Diag
                     "input": name,
                 }
 
+    # investigate tasks
+    pm = get_plugin_manager()
+
+    for idx, task in enumerate(template.dag.tasks or ()):
+        yield from prepend_loc.from_iterables(
+            ["dag", "tasks", idx],
+            pm.hook.analyze_task(task=task, template=template, workflow=workflow),
+        )
+
 
 @hookimpl(specname="analyze_template")
 def check_metrics(

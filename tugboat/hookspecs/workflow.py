@@ -15,7 +15,7 @@ from tugboat.hookspecs.core import hookspec
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from tugboat.schemas import Step, Template, Workflow, WorkflowTemplate
+    from tugboat.schemas import DagTask, Step, Template, Workflow, WorkflowTemplate
     from tugboat.types import Diagnosis
 
 
@@ -81,6 +81,28 @@ def analyze_step(
         The step to analyze.
     template : Template
         The template that the step is part of.
+    workflow : Workflow | WorkflowTemplate
+        The workflow that the template is part of.
+    """
+
+
+@hookspec
+def analyze_task(
+    task: DagTask, template: Template, workflow: Workflow | WorkflowTemplate
+) -> Iterable[Diagnosis]:  # type: ignore[reportReturnType]
+    """
+    Analyze a DAG template task.
+
+    For issues reported by this hook, the ``loc`` attribute of the diagnosis
+    should start from the ``task`` object itself. The framework will manage
+    the outer structure and its location path.
+
+    Parameters
+    ----------
+    task : DagTask
+        The task to analyze.
+    template : Template
+        The template that the task is part of.
     workflow : Workflow | WorkflowTemplate
         The workflow that the template is part of.
     """
