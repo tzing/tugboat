@@ -100,6 +100,65 @@ class TestGetLineColumn:
             )
             assert get_line_column(doc, (0,), "Lorem") == (1, 4)
 
+    class TestSimpleString:
+
+        def test_1(self):
+            doc = yaml_parser.load(
+                textwrap.dedent(
+                    """
+                    foo: Lorem ipsum dolor sit amet
+                    """
+                )
+            )
+            assert get_line_column(doc, ("foo",), "Lorem") == (1, 5)
+            assert get_line_column(doc, ("foo",), "ipsum") == (1, 11)
+
+        def test_2(self):
+            doc = yaml_parser.load(
+                textwrap.dedent(
+                    """
+                    -
+                      Lorem ipsum dolor sit amet
+                    """
+                )
+            )
+            assert get_line_column(doc, (0,), "Lorem") == (2, 2)
+            assert get_line_column(doc, (0,), "ipsum") == (2, 8)
+
+        def test_3(self):
+            doc = yaml_parser.load(
+                textwrap.dedent(
+                    """
+                    foo:
+                      'Lorem ipsum dolor sit amet,
+
+                      consectetur adipiscing elit.'
+                    """
+                )
+            )
+
+            assert get_line_column(doc, ("foo",), "Lorem") == (2, 3)
+            assert get_line_column(doc, ("foo",), "ipsum") == (2, 9)
+
+            assert get_line_column(doc, ("foo",), "adipiscing") == (2, 2)  # fallback
+
+        def test_4(self):
+            doc = yaml_parser.load(
+                textwrap.dedent(
+                    """
+                    -
+                      "Lorem ipsum dolor sit amet,
+
+                      consectetur adipiscing elit."
+                    """
+                )
+            )
+
+            assert get_line_column(doc, (0,), "Lorem") == (2, 3)
+            assert get_line_column(doc, (0,), "ipsum") == (2, 9)
+
+            assert get_line_column(doc, (0,), "adipiscing") == (2, 2)  # fallback
+
 
 class TestIsAnchorNode:
 

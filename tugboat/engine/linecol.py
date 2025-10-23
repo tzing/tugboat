@@ -163,6 +163,15 @@ def calculate_substring_linecol(
         # this breaks the logic of line/column calculation
         return None
 
+    # default
+    if linecol := calculate_simple_substring_linecol(
+        parent_node=parent_node,
+        current_node=current_node,
+        key=key,
+        substring=substring,
+    ):
+        return linecol
+
     return None
 
 
@@ -223,4 +232,43 @@ def calculate_literal_substring_linecol_in_array(
     return (
         value_line + cnt_lines_before + 1,
         value_col + offset_col,
+    )
+
+
+def calculate_simple_substring_linecol(
+    *,
+    parent_node: CommentedBase,
+    current_node: str,
+    key: int | str,
+    substring: str,
+) -> tuple[int, int] | None:
+    """
+    Calculate substring line/col if the current node *looks like* a simple string.
+
+    ```yaml
+    foo: Lorem ipsum dolor sit amet
+    ```
+    """
+    # find the start of the field value
+    if isinstance(parent_node, CommentedMap):
+        value_line, value_col = cast("IntTuple", parent_node.lc.value(key))
+    elif isinstance(parent_node, CommentedSeq):
+        value_line, value_col = cast("IntTuple", parent_node.lc.key(key))
+    else:
+        return None  # unknown parent node type
+
+    # adjust for quoted strings
+    additional_offset = 0
+    if isinstance(current_node, DoubleQuotedScalarString | SingleQuotedScalarString):
+        additional_offset = 1
+
+    # calculate substring position
+    idx_substring = current_node.find(substring)
+    if current_node.find("\n", 0, idx_substring) != -1:
+        # substring spans multiple lines
+        return None
+
+    return (
+        value_line,
+        value_col + additional_offset + idx_substring,
     )
