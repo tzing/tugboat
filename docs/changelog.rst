@@ -7,7 +7,7 @@ Changelog
 :octicon:`rocket` New
 +++++++++++++++++++++
 
-* Support :doc:`user/mcp` for better integration with IDEs and coding agents.
+* Support :doc:`mcp` for better integration with IDEs and coding agents.
 * Parse Helm's leading ``# Source:`` comments to provide more context in reports.
 
 :octicon:`plug` Enhancements
