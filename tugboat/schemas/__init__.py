@@ -20,6 +20,7 @@ if there are any incompatible fields in the input data.
 """
 
 __all__ = [
+    "Arguments",
     "Artifact",
     "ContainerNode",
     "ContainerTemplate",
@@ -35,7 +36,7 @@ __all__ = [
 ]
 
 from tugboat.core import hookimpl
-from tugboat.schemas.arguments import Artifact, Parameter
+from tugboat.schemas.arguments import Arguments, Artifact, Parameter
 from tugboat.schemas.cron_workflow import CronWorkflow
 from tugboat.schemas.debug import DebugManifest
 from tugboat.schemas.manifest import Manifest
