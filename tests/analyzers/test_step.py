@@ -71,7 +71,8 @@ def test_check_argument_parameters(diagnoses_logger):
 
     # STP301: Invalid reference
     assert (
-        IsPartialModel({"code": "STP301", "loc": (*loc_prefix, 1, "value")}) in diagnoses
+        IsPartialModel({"code": "STP301", "loc": (*loc_prefix, 1, "value")})
+        in diagnoses
     )
 
 
@@ -97,6 +98,68 @@ spec:
                 - name: param-3
                   value:
                     foo: bar # M103
+"""
+
+
+def test_check_argument_parameters_usage(diagnoses_logger):
+    diagnoses = analyze_yaml_stream(MANIFEST_INVALID_PARAMETER_USAGE)
+    diagnoses_logger(diagnoses)
+
+    loc_steps = ("spec", "templates", 0, "steps")
+
+    # STP304: unexpected parameter
+    assert (
+        IsPartialModel(
+            code="STP304",
+            loc=(*loc_steps, 0, 1, "arguments", "parameters", 1, "name"),
+        )
+        in diagnoses
+    )
+
+    # STP305: missing parameter
+    assert (
+        IsPartialModel(
+            code="STP305",
+            loc=(*loc_steps, 0, 0, "arguments", "parameters"),
+        )
+        in diagnoses
+    )
+    assert (
+        IsPartialModel(
+            code="STP305",
+            loc=(*loc_steps, 0, 1, "arguments", "parameters"),
+        )
+        in diagnoses
+    )
+
+
+MANIFEST_INVALID_PARAMETER_USAGE = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  entrypoint: main
+  templates:
+    - name: main
+      steps:
+        - - name: hello
+            template: print-message
+          - name: hello
+            template: print-message
+            arguments:
+              parameters:
+                - name: role
+                  value: admin
+                - name: extra-param
+                  value: blah
+
+    - name: print-message
+      inputs:
+        parameters:
+          - name: message
+          - name: role
+            default: user
 """
 
 
@@ -155,6 +218,68 @@ spec:
                   from: workflow.invalid # STP302
                 - name: artifact-3
                   value: foo # M102
+"""
+
+
+def test_check_argument_artifact_usage(diagnoses_logger):
+    diagnoses = analyze_yaml_stream(MANIFEST_INVALID_ARTIFACT_USAGE)
+    diagnoses_logger(diagnoses)
+
+    loc_steps = ("spec", "templates", 0, "steps")
+
+    # STP306: unexpected artifact
+    assert (
+        IsPartialModel(
+            code="STP306",
+            loc=(*loc_steps, 0, 1, "arguments", "artifacts", 1, "name"),
+        )
+        in diagnoses
+    )
+
+    # STP307: missing artifact
+    assert (
+        IsPartialModel(
+            code="STP307",
+            loc=(*loc_steps, 0, 0, "arguments", "artifacts"),
+        )
+        in diagnoses
+    )
+    assert (
+        IsPartialModel(
+            code="STP307",
+            loc=(*loc_steps, 0, 1, "arguments", "artifacts"),
+        )
+        in diagnoses
+    )
+
+
+MANIFEST_INVALID_ARTIFACT_USAGE = """
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: test-
+spec:
+  entrypoint: main
+  templates:
+    - name: main
+      steps:
+        - - name: hello
+            template: print-message
+          - name: hello
+            template: print-message
+            arguments:
+              artifacts:
+                - name: role
+                  from: "{{ workflow.artifact-role }}"
+                - name: extra-artifact
+                  from: "{{ workflow.artifact-extra }}"
+
+    - name: print-message
+      inputs:
+        artifacts:
+          - name: message
+          - name: role
+            optional: true
 """
 
 
@@ -234,12 +359,15 @@ def test_check_fields_references(diagnoses_logger):
     diagnoses = analyze_yaml_stream(MANIFEST_FIELDS_REFERENCES)
     diagnoses_logger(diagnoses)
 
-    assert IsPartialModel(
-        {
-            "code": "VAR002",
-            "loc": ("spec", "templates", 0, "steps", 0, 0, "when"),
-        }
-    ) in diagnoses
+    assert (
+        IsPartialModel(
+            {
+                "code": "VAR002",
+                "loc": ("spec", "templates", 0, "steps", 0, 0, "when"),
+            }
+        )
+        in diagnoses
+    )
 
 
 MANIFEST_FIELDS_REFERENCES = """

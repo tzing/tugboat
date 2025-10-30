@@ -14,6 +14,7 @@ from tugboat.constraints import (
 )
 from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_step_context
+from tugboat.schemas import Arguments
 from tugboat.types import Field
 from tugboat.utils import (
     check_model_fields_references,
@@ -21,6 +22,7 @@ from tugboat.utils import (
     critique_relaxed_artifact,
     critique_relaxed_parameter,
     find_duplicate_names,
+    join_with_and,
     join_with_or,
     prepend_loc,
 )
@@ -85,11 +87,12 @@ def check_argument_parameters(
 
     for idx, param in enumerate(step.arguments.parameters or ()):
         yield from prepend_loc(
-            ("arguments", "parameters", idx), _check_argument_parameter(param, ctx)
+            ("arguments", "parameters", idx),
+            _check_argument_parameter_fields(param, ctx),
         )
 
 
-def _check_argument_parameter(
+def _check_argument_parameter_fields(
     param: RelaxedParameter, context: Context
 ) -> Iterable[Diagnosis]:
     yield from require_non_empty(
@@ -140,6 +143,72 @@ def _check_argument_parameter(
 
 
 @hookimpl(specname="analyze_step")
+def check_argument_parameters_usage(
+    step: Step, workflow: WorkflowCompatible
+) -> Iterable[Diagnosis]:
+    # early exit: referenced template not found
+    ref_template = _get_template_by_ref(step, workflow)
+    if not ref_template:
+        return
+
+    # prepare arguments in case not provided
+    if step.arguments:
+        arguments = step.arguments
+    else:
+        arguments = Arguments()
+
+    # check for redundant parameters
+    if ref_template.inputs:
+        expected_params = set(ref_template.inputs.parameter_dict)
+    else:
+        expected_params = set()
+
+    for idx, param in enumerate(arguments.parameters or ()):
+        if param.name and param.name not in expected_params:
+            suggestion = None
+            if result := extractOne(param.name, expected_params):
+                suggestion, _, _ = result
+
+            yield {
+                "type": "warning",  # redundant parameter does not break the workflow
+                "code": "STP304",
+                "loc": ("arguments", "parameters", idx, "name"),
+                "summary": "Unexpected parameter",
+                "msg": f"Parameter '{param.name}' is not expected by the template '{ref_template.name}'.",
+                "input": param.name,
+                "fix": suggestion,
+            }
+
+    # check for missing parameters
+    if ref_template.inputs:
+        required_params = set()
+        for name, model in ref_template.inputs.parameter_dict.items():
+            if model.default is None and model.value is None:
+                required_params.add(name)
+
+        missing_parameters = required_params.difference(arguments.parameter_dict)
+        if missing_parameters:
+            names = join_with_and(sorted(missing_parameters))
+            yield {
+                "code": "STP305",
+                "loc": ("arguments", "parameters"),
+                "summary": "Missing parameters",
+                "msg": (
+                    f"Parameters {names} are required by the template '{ref_template.name}' but are not provided."
+                ),
+                "input": Field("parameters"),
+            }
+
+
+def _get_template_by_ref(step: Step, workflow: WorkflowCompatible) -> Template | None:
+    if step.template:
+        return workflow.template_dict.get(step.template)
+    if step.templateRef and step.templateRef.name == workflow.metadata.name:
+        return workflow.template_dict.get(step.templateRef.template)
+    return None
+
+
+@hookimpl(specname="analyze_step")
 def check_argument_artifacts(
     step: Step, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
@@ -161,11 +230,12 @@ def check_argument_artifacts(
 
     for idx, artifact in enumerate(step.arguments.artifacts or []):
         yield from prepend_loc(
-            ("arguments", "artifacts", idx), _check_argument_artifact(artifact, ctx)
+            ("arguments", "artifacts", idx),
+            _check_argument_artifact_fields(artifact, ctx),
         )
 
 
-def _check_argument_artifact(
+def _check_argument_artifact_fields(
     artifact: RelaxedArtifact, context: Context
 ) -> Iterable[Diagnosis]:
     yield from require_non_empty(
@@ -259,6 +329,79 @@ def _check_argument_artifact(
 
 
 @hookimpl(specname="analyze_step")
+def check_argument_artifact_usage(
+    step: Step, workflow: WorkflowCompatible
+) -> Iterable[Diagnosis]:
+    # early exit: referenced template not found
+    ref_template = _get_template_by_ref(step, workflow)
+    if not ref_template:
+        return
+
+    # prepare arguments in case not provided
+    if step.arguments:
+        arguments = step.arguments
+    else:
+        arguments = Arguments()
+
+    # check for redundant artifacts
+    if ref_template.inputs:
+        expected_artifacts = set(ref_template.inputs.artifact_dict)
+    else:
+        expected_artifacts = set()
+
+    for idx, artifact in enumerate(arguments.artifacts or ()):
+        if artifact.name and artifact.name not in expected_artifacts:
+            suggestion = None
+            if result := extractOne(artifact.name, expected_artifacts):
+                suggestion, _, _ = result
+
+            yield {
+                "type": "warning",  # redundant artifact does not break the workflow
+                "code": "STP306",
+                "loc": ("arguments", "artifacts", idx, "name"),
+                "summary": "Unexpected artifact",
+                "msg": f"Artifact '{artifact.name}' is not expected by the template '{ref_template.name}'.",
+                "input": artifact.name,
+                "fix": suggestion,
+            }
+
+    # check for missing artifacts
+    if ref_template.inputs:
+        required_artifacts = set()
+        for name, model in ref_template.inputs.artifact_dict.items():
+            if (
+                False
+                # -- optional artifact --
+                or model.optional
+                # -- defined in template --
+                or model.artifactory
+                or model.azure
+                or model.gcs
+                or model.git
+                or model.hdfs
+                or model.http
+                or model.oss
+                or model.raw
+                or model.s3
+            ):
+                continue
+            required_artifacts.add(name)
+
+        missing_artifacts = required_artifacts.difference(arguments.artifact_dict)
+        if missing_artifacts:
+            names = join_with_and(sorted(missing_artifacts))
+            yield {
+                "code": "STP307",
+                "loc": ("arguments", "artifacts"),
+                "summary": "Missing artifacts",
+                "msg": (
+                    f"Artifacts {names} are required by the template '{ref_template.name}' but are not provided."
+                ),
+                "input": Field("artifacts"),
+            }
+
+
+@hookimpl(specname="analyze_step")
 def check_referenced_template(
     step: Step, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
@@ -269,7 +412,7 @@ def check_referenced_template(
         )
 
     elif step.templateRef:
-        if step.templateRef.name == workflow.name:
+        if step.templateRef.name == workflow.metadata.name:
             yield from prepend_loc(
                 ("templateRef", "template"),
                 _check_referenced_template(
