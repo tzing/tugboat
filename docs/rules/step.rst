@@ -244,7 +244,7 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
    The step is missing required input parameters defined in the referenced template.
 
    .. code-block:: yaml
-      :emphasize-lines: 16
+      :emphasize-lines: 10-11
 
       apiVersion: argoproj.io/v1alpha1
       kind: Workflow
@@ -262,8 +262,67 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
             inputs:
               parameters:
                 - name: message
-            container:
-              image: alpine:latest
+
+   .. note::
+
+      This rule only applied on the step that references a template in the same workflow.
+
+.. rule:: STP306 Unexpected argument artifacts
+
+   The step provides input artifacts that are not defined in the referenced template.
+
+   .. code-block:: yaml
+      :emphasize-lines: 14
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: test-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  template: print-message
+                  arguments:
+                    artifacts:
+                      - name: unexpected-artifact
+                        raw:
+                          data: hello
+
+          - name: print-message
+            inputs:
+              artifacts:
+                - name: message
+
+   .. note::
+
+      This rule only applied on the step that references a template in the same workflow.
+
+.. rule:: STP307 Missing required argument artifacts
+
+   The step is missing required input artifacts defined in the referenced template.
+
+   .. code-block:: yaml
+      :emphasize-lines: 10-11
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: test-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  template: print-message
+
+          - name: print-message
+            inputs:
+              artifacts:
+                - name: message
 
    .. note::
 
