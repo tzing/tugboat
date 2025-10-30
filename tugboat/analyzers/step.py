@@ -14,6 +14,7 @@ from tugboat.constraints import (
 )
 from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_step_context
+from tugboat.schemas import Arguments
 from tugboat.types import Field
 from tugboat.utils import (
     check_model_fields_references,
@@ -21,6 +22,7 @@ from tugboat.utils import (
     critique_relaxed_artifact,
     critique_relaxed_parameter,
     find_duplicate_names,
+    join_with_and,
     join_with_or,
     prepend_loc,
 )
@@ -138,6 +140,71 @@ def _check_argument_parameter_fields(
                         f"The parameter reference '{ref}' used in parameter '{param.name}' is invalid."
                     )
         yield diag
+
+
+@hookimpl(specname="analyze_step")
+def check_argument_parameters_usage(
+    step: Step, workflow: WorkflowCompatible
+) -> Iterable[Diagnosis]:
+    # early return if referenced template is not found
+    ref_template = _get_template_by_ref(step, workflow)
+    if not ref_template:
+        return
+
+    # prepare arguments
+    if step.arguments:
+        arguments = step.arguments
+    else:
+        arguments = Arguments()
+
+    # check for redundant parameters
+    if ref_template.inputs:
+        expected_params = set(ref_template.inputs.parameter_dict)
+    else:
+        expected_params = set()
+
+    for idx, param in enumerate(arguments.parameters or ()):
+        if param.name and param.name not in expected_params:
+            suggestion = None
+            if result := extractOne(param.name, expected_params):
+                suggestion, _, _ = result
+
+            yield {
+                "type": "warning",  # redundant parameter does not break the workflow
+                "code": "STP304",
+                "loc": ("arguments", "parameters", idx, "name"),
+                "summary": "Unexpected parameter",
+                "msg": f"Parameter '{param.name}' is not expected by the template '{ref_template.name}'.",
+                "input": param.name,
+                "fix": suggestion,
+            }
+
+    # check for missing parameters
+    if ref_template.inputs:
+        required_params = set()
+        for name, model in ref_template.inputs.parameter_dict.items():
+            if model.default is None and model.value is None:
+                required_params.add(name)
+
+        missing_parameters = required_params.difference(arguments.parameter_dict)
+        if missing_parameters:
+            names = join_with_and(sorted(missing_parameters))
+            yield {
+                "code": "STP305",
+                "loc": ("arguments", "parameters"),
+                "summary": "Missing parameters",
+                "msg": (
+                    f"Parameters {names} are required by the template '{ref_template.name}' but are not provided."
+                ),
+            }
+
+
+def _get_template_by_ref(step: Step, workflow: WorkflowCompatible) -> Template | None:
+    if step.template:
+        return workflow.template_dict.get(step.template)
+    if step.templateRef and step.templateRef.name == workflow.metadata.name:
+        return workflow.template_dict.get(step.templateRef.template)
+    return None
 
 
 @hookimpl(specname="analyze_step")
@@ -271,7 +338,7 @@ def check_referenced_template(
         )
 
     elif step.templateRef:
-        if step.templateRef.name == workflow.name:
+        if step.templateRef.name == workflow.metadata.name:
             yield from prepend_loc(
                 ("templateRef", "template"),
                 _check_referenced_template(

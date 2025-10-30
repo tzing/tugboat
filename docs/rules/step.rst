@@ -139,11 +139,11 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
 
       This rule verifies the presence of a template within the same workflow.
 
-      If the template is defined in a different workflow and referenced using ``templateRef``, this rule will not detect it.
+      If the template is defined in a different workflow and referenced using :py:attr:`~tugboat.schemas.Step.templateRef`, this rule will not detect it.
       Tugboat does not currently support cross-workflow checks, even if the referenced workflow is included in the same run.
 
 
-.. STP3xx variable reference issues
+.. STP3xx argument reference issues
 
 .. rule:: STP301 Invalid parameter reference
 
@@ -206,6 +206,68 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
                         raw:
                           data: |-
                             {{ inputs.artifacts.any }}
+
+.. rule:: STP304 Unexpected argument parameters
+
+   The step provides input parameters that are not defined in the referenced template.
+
+   .. code-block:: yaml
+      :emphasize-lines: 14
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: test-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  template: print-message
+                  arguments:
+                    parameters:
+                      - name: unexpected-param
+                        value: hello
+
+          - name: print-message
+            inputs:
+              parameters:
+                - name: message
+
+   .. note::
+
+      This rule only applied on the step that references a template in the same workflow.
+
+.. rule:: STP305 Missing required argument parameters
+
+   The step is missing required input parameters defined in the referenced template.
+
+   .. code-block:: yaml
+      :emphasize-lines: 16
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: test-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            steps:
+              - - name: hello
+                  template: print-message
+
+          - name: print-message
+            inputs:
+              parameters:
+                - name: message
+            container:
+              image: alpine:latest
+
+   .. note::
+
+      This rule only applied on the step that references a template in the same workflow.
 
 
 .. STP4xx definition issues
