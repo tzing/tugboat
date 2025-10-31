@@ -70,10 +70,13 @@ class Diagnosis(TypedDict):
     """
 
     input: NotRequired[Any]
-    """The input that caused the issue."""
+    """
+    The input that caused the issue.
+    Use :py:class:`Field` to indicate a specific field rather than a value.
+    """
 
     fix: NotRequired[str | None]
-    """Possible fix for the issue."""
+    """Possible alternative value to fix the issue."""
 
     ctx: NotRequired[dict[str, Bundle]]
     """

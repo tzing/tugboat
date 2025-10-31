@@ -49,7 +49,7 @@ def analyze_template(template: Template, workflow: Workflow | WorkflowTemplate) 
     Analyze a template.
 
     This hook is called for each template in a workflow or workflow template,
-    but not including the 'templateDefaults'.
+    but not including the :py:attr:`~tugboat.schemas.workflow.WorkflowSpec.templateDefaults`.
 
     For issues reported by this hook, the ``loc`` attribute of the diagnosis
     should start from the ``template`` object itself. The framework will manage
