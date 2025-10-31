@@ -8,11 +8,12 @@ analyzers.
 This package exposes only the core components of the framework:
 
 - :class:`Diagnosis`: The primary structure for a diagnosis.
+- :class:`Field`: A special type to indicate a field in the manifest.
 - :data:`hookimpl`: The hook implementation marker for the Tugboat framework.
 
 Other components are available in the subpackages of the framework but are not
 automatically imported here; they are intended to be imported explicitly by
-the user.
+the developers as needed.
 """
 
 __all__ = [
