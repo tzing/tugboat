@@ -167,5 +167,6 @@ For more information on how to use Tugboat, runs its help command:
    :hidden:
    :caption: Development
 
+   plugin/index
    api/index
    changelog
