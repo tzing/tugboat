@@ -346,6 +346,7 @@ def test_check_output_artifacts(diagnoses_logger):
         spec:
           templates:
             - name: main
+              steps: []
               outputs:
                 artifacts:
                   - name: data # TPL105
@@ -362,6 +363,7 @@ def test_check_output_artifacts(diagnoses_logger):
     assert IsPartialModel(code="TPL105", loc=(*loc, 1, "name")) in diagnoses
 
     assert IsPartialModel(code="M101", loc=(*loc, 0, "archive")) in diagnoses
+    assert IsPartialModel(code="M102", loc=(*loc, 0, "path")) in diagnoses
     assert IsPartialModel(code="VAR002", loc=(*loc, 1, "from")) in diagnoses
 
 

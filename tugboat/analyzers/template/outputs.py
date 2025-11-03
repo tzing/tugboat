@@ -127,24 +127,18 @@ def check_output_artifacts(
 
     for idx, artifact in enumerate(template.outputs.artifacts or ()):
         yield from prepend_loc(
-            ("outputs", "artifacts", idx), _check_output_artifact(artifact, context)
+            ("outputs", "artifacts", idx),
+            _check_output_artifact(template, artifact, context),
         )
 
 
-def _check_output_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
+def _check_output_artifact(
+    template: Template, artifact: Artifact, context: Context
+) -> Iterable[Diagnosis]:
     yield from require_non_empty(
         model=artifact,
         loc=(),
         fields=["name"],
-    )
-    yield from require_exactly_one(
-        model=artifact,
-        loc=(),
-        fields=[
-            "from_",
-            "fromExpression",
-            "path",
-        ],
     )
     yield from mutually_exclusive(
         model=artifact,
@@ -159,14 +153,17 @@ def _check_output_artifact(artifact: Artifact, context: Context) -> Iterable[Dia
             "s3",
         ],
     )
-    yield from accept_none(
-        model=artifact,
-        loc=(),
-        fields=[
-            "git",
-            "raw",
-        ],
-    )
+
+    accept_source_fields = ["from_", "fromExpression"]
+    reject_source_fields = ["git", "raw"]
+
+    if template.type in ("container", "containerSet", "data", "script"):
+        accept_source_fields.append("path")
+    else:
+        reject_source_fields.append("path")
+
+    yield from require_exactly_one(model=artifact, loc=(), fields=accept_source_fields)
+    yield from accept_none(model=artifact, loc=(), fields=reject_source_fields)
 
     if artifact.archive:
         yield from require_exactly_one(
