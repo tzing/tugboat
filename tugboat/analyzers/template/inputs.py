@@ -152,8 +152,8 @@ def check_input_artifacts(
         yield {
             "code": "TPL103",
             "loc": ("inputs", "artifacts", idx, "name"),
-            "summary": "Duplicate parameter name",
-            "msg": f"Parameter name '{name}' is duplicated.",
+            "summary": "Duplicate artifact name",
+            "msg": f"Artifact name '{name}' is duplicated.",
             "input": name,
         }
 
