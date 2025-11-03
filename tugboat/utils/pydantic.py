@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections
+import json
 import typing
 from collections.abc import Mapping, Sequence
 
@@ -175,6 +176,15 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
         * - Any other error
           - :rule:`m003`
 
+    Below are some custom error types defined in Tugboat:
+
+    .. list-table::
+
+        * - Custom Error Type
+          - Tugboat Code
+        * - ``artifact_prohibited_value_field``
+          - :rule:`m102`
+
     Parameters
     ----------
     error : ~pydantic_core.ErrorDetails
@@ -341,6 +351,23 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                 "msg": "\n".join(_compose_string_error_message(field, error["input"])),
                 "input": error["input"],
             }
+
+        case "artifact_prohibited_value_field":
+            diagnosis: Diagnosis = {
+                "type": "failure",
+                "code": "M102",
+                "loc": error["loc"],
+                "summary": "Invalid field for artifact",
+                "msg": error["msg"],
+                "input": Field("value"),
+            }
+
+            try:
+                diagnosis["fix"] = json.dumps({"raw": {"data": error["input"]}})
+            except Exception:
+                ...
+
+            return diagnosis
 
     return {
         "type": "failure",

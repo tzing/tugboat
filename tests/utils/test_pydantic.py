@@ -12,6 +12,7 @@ from pydantic import (
 )
 from pydantic_core import ErrorDetails
 
+from tugboat.schemas import Artifact
 from tugboat.schemas.basic import Array, Dict
 from tugboat.types import Field
 from tugboat.utils.pydantic import (
@@ -298,6 +299,23 @@ class TestTranslatePydanticError:
             "summary": "Input should be a valid integer",
             "msg": "Expected a integer for field <unnamed>, but received a string.",
             "input": "foo",
+        }
+
+    def test_artifact_prohibited_value_field(self):
+        error = get_validation_error(
+            Artifact, {"name": "my-artifact", "value": "foobar"}
+        )
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M102",
+            "loc": ("value",),
+            "summary": "Invalid field for artifact",
+            "msg": (
+                "Field 'value' is not a valid field for artifact. "
+                "Use 'raw' artifact type instead."
+            ),
+            "input": "value",
+            "fix": '{"raw": {"data": "foobar"}}',
         }
 
 
