@@ -117,3 +117,23 @@ Code ``DAG`` is used for errors related to the `DAG`_ in a `template`_.
               tasks:
                 - name: process
                   template: main
+
+.. rule:: DAG202 Reference to a non-existent template
+
+   The task references a template that does not exist in the workflow.
+
+   .. code-block:: yaml
+      :emphasize-lines: 12
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: dag-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            dag:
+              tasks:
+                - name: process
+                  template: not-exist-template

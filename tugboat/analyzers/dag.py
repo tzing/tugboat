@@ -143,3 +143,25 @@ def _check_referenced_template(
             "msg": "Self-referencing may cause infinite recursion.",
             "input": target_template_name,
         }
+
+    if target_template_name not in workflow.template_dict:
+        templates = set(workflow.template_dict)
+        templates -= {template.name}
+
+        suggestion = None
+        if result := extractOne(target_template_name, templates):
+            suggestion, _, _ = result
+
+        yield {
+            "code": "DAG202",
+            "loc": (),
+            "summary": "Template not found",
+            "msg": (
+                f"""
+                Template '{target_template_name}' does not exist in the workflow.
+                Available templates: {join_with_or(templates)}
+                """
+            ),
+            "input": target_template_name,
+            "fix": suggestion,
+        }

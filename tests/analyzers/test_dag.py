@@ -1,6 +1,6 @@
 import pytest
 
-from tests.dirty_equals import ContainsSubStrings, IsPartialModel
+from tests.dirty_equals import ContainsSubStrings, IsPartialModel, HasSubstring
 from tugboat.engine import analyze_yaml_stream
 
 
@@ -139,6 +139,28 @@ def test_check_referenced_template(caplog: pytest.LogCaptureFixture, diagnoses_l
             {
                 "code": "DAG201",
                 "loc": ("spec", "templates", 0, "dag", "tasks", 0, "template"),
+            }
+        )
+        in diagnoses
+    )
+    assert (
+        IsPartialModel(
+            {
+                "code": "DAG202",
+                "loc": (
+                    "spec",
+                    "templates",
+                    1,
+                    "dag",
+                    "tasks",
+                    0,
+                    "templateRef",
+                    "template",
+                ),
+                "msg": HasSubstring(
+                    "Template 'not-exist-template' does not exist in the workflow."
+                )
+                & HasSubstring("Available templates: 'another' or 'main'"),
             }
         )
         in diagnoses
