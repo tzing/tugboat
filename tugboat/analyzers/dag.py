@@ -102,3 +102,44 @@ def check_argument_artifacts(
             "msg": f"Artifact name '{name}' is duplicated.",
             "input": name,
         }
+
+
+@hookimpl(specname="analyze_task")
+def check_referenced_template(
+    task: DagTask, template: Template, workflow: WorkflowCompatible
+) -> Iterable[Diagnosis]:
+    if task.template:
+        yield from prepend_loc(
+            ("template",),
+            _check_referenced_template(task.template, template, workflow),
+        )
+
+    elif task.templateRef:
+        if task.templateRef.name == workflow.metadata.name:
+            yield from prepend_loc(
+                ("templateRef", "template"),
+                _check_referenced_template(
+                    task.templateRef.template, template, workflow
+                ),
+            )
+        else:
+            logger.debug(
+                "Task '%s': Referenced template '%s' is not the same as current workflow '%s'. Skipping.",
+                task.name,
+                task.templateRef.name,
+                workflow.name,
+            )
+
+
+def _check_referenced_template(
+    target_template_name: str, template: Template, workflow: WorkflowCompatible
+) -> Iterable[Diagnosis]:
+    if target_template_name == template.name:
+        yield {
+            "type": "warning",
+            "code": "DAG201",
+            "loc": (),
+            "summary": "Self-referencing",
+            "msg": "Self-referencing may cause infinite recursion.",
+            "input": target_template_name,
+        }

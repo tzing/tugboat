@@ -97,3 +97,53 @@ spec:
                   raw:
                     data: "some data"
 """
+
+
+def test_check_referenced_template(caplog: pytest.LogCaptureFixture, diagnoses_logger):
+    with caplog.at_level("DEBUG", "tugboat.analyzers.dag"):
+        diagnoses = analyze_yaml_stream(
+            """
+            apiVersion: argoproj.io/v1alpha1
+            kind: WorkflowTemplate
+            metadata:
+              name: demo
+            spec:
+              templates:
+                - name: main
+                  dag:
+                    tasks:
+                      - name: loop
+                        template: main
+
+                - name: invalid-reference
+                  dag:
+                    tasks:
+                      - name: missing
+                        templateRef:
+                          name: demo
+                          template: not-exist-template
+                      - name: external
+                        templateRef:
+                          name: another-workflow
+                          template: whatever
+
+                - name: another
+                  suspend: {}
+            """
+        )
+
+    diagnoses_logger(diagnoses)
+
+    assert (
+        IsPartialModel(
+            {
+                "code": "DAG201",
+                "loc": ("spec", "templates", 0, "dag", "tasks", 0, "template"),
+            }
+        )
+        in diagnoses
+    )
+    assert (
+        "Task 'external': Referenced template 'another-workflow' is not the same as current workflow 'demo'. Skipping."
+        in caplog.text
+    )

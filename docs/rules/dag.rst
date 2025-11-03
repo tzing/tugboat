@@ -93,3 +93,27 @@ Code ``DAG`` is used for errors related to the `DAG`_ in a `template`_.
                       - name: input-data
                         raw:
                           data: "data-2"
+
+.. DAG2xx template reference issues
+
+.. rule:: DAG201 Self-referencing task
+
+   The task references the current template in the ``template`` field. This may cause an infinite loop.
+
+   Since this can still be intentional, this rule defaults to warning level.
+
+   .. code-block:: yaml
+      :emphasize-lines: 12
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: dag-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            dag:
+              tasks:
+                - name: process
+                  template: main
