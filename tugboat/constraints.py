@@ -79,7 +79,7 @@ def mutually_exclusive(
         return
 
     get_alias_ = functools.partial(get_alias, model)
-    exclusive_fields = join_with_and(sorted(map(get_alias_, fields)))
+    exclusive_fields = join_with_and(map(get_alias_, fields))
     fields_with_values = sorted(map(get_alias_, fields_with_values))
 
     for field_alias in fields_with_values:
@@ -168,7 +168,7 @@ def require_exactly_one(
             break
 
     if not any_field_set:
-        required_fields = sorted(get_alias(model, field_name) for field_name in fields)
+        required_fields = map(functools.partial(get_alias, model), fields)
         yield {
             "type": "failure",
             "code": "M101",

@@ -20,7 +20,7 @@ def join_with_and(
     items: Iterable[Any],
     *,
     quote: bool = True,
-    sort: bool = False,
+    sort: bool = True,
     fallback_string: str = "(none)",
 ) -> str:
     """
@@ -51,7 +51,7 @@ def join_with_or(
     items: Iterable[Any],
     *,
     quote: bool = True,
-    sort: bool = False,
+    sort: bool = True,
     fallback_string: str = "(none)",
 ) -> str:
     """

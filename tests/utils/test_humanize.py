@@ -26,14 +26,14 @@ class TestJoin:
 
     def test_join_with_and(self):
         assert join_with_and(["foo"]) == "'foo'"
-        assert join_with_and(["foo", "bar"], quote=False) == "foo and bar"
-        assert join_with_and(["foo", "bar"], sort=True) == "'bar' and 'foo'"
+        assert join_with_and(["foo", "bar"], quote=False) == "bar and foo"
+        assert join_with_and(["foo", "bar"], sort=False) == "'foo' and 'bar'"
         assert join_with_and([]) == "(none)"
 
     def test_join_with_or(self):
         assert join_with_or(["foo"]) == "'foo'"
-        assert join_with_or(["foo", "bar"], quote=False) == "foo or bar"
-        assert join_with_or(["foo", "bar", "baz"], sort=True) == "'bar', 'baz' or 'foo'"
+        assert join_with_or(["foo", "bar"], quote=False) == "bar or foo"
+        assert join_with_or(["foo", "bar"], sort=False) == "'foo' or 'bar'"
         assert join_with_or([]) == "(none)"
 
 
