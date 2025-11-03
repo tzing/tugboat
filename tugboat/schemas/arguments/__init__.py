@@ -4,7 +4,7 @@ import functools
 
 from pydantic import BaseModel, ConfigDict
 
-from tugboat.schemas.arguments.artifact import Artifact, RelaxedArtifact
+from tugboat.schemas.arguments.artifact import Artifact
 from tugboat.schemas.arguments.parameter import Parameter, RelaxedParameter
 from tugboat.schemas.basic import Array
 
@@ -54,4 +54,3 @@ class RelaxedArguments(Arguments):
     """
 
     parameters: Array[RelaxedParameter] | None = None  # type: ignore[reportIncompatibleVariableOverride]
-    artifacts: Array[RelaxedArtifact] | None = None  # type: ignore[reportIncompatibleVariableOverride]

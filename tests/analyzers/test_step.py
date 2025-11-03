@@ -164,7 +164,31 @@ spec:
 
 
 def test_check_argument_artifacts(diagnoses_logger):
-    diagnoses = analyze_yaml_stream(MANIFEST_INVALID_INPUT_ARTIFACTS)
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          name: test-
+        spec:
+          entrypoint: main
+          templates:
+            - name: main
+              steps:
+                - - name: hello
+                    template: print-message
+                    arguments:
+                      artifacts:
+                        - name: message # STP103
+                          from: "{{ workflow.invalid }}" # STP302
+                        - name: message # STP103
+                          raw:
+                            data: "{{ workflow.invalid }}" # STP303
+                        - name: artifact-2
+                          from: workflow.invalid # STP302
+                        - name: artifact-3
+        """
+    )
     diagnoses_logger(diagnoses)
 
     loc_prefix = ("spec", "templates", 0, "steps", 0, 0, "arguments", "artifacts")
@@ -188,37 +212,6 @@ def test_check_argument_artifacts(diagnoses_logger):
     assert (
         IsPartialModel({"code": "STP302", "loc": (*loc_prefix, 2, "from")}) in diagnoses
     )
-
-    # M102: Found redundant field
-    assert (
-        IsPartialModel({"code": "M102", "loc": (*loc_prefix, 3, "value")}) in diagnoses
-    )
-
-
-MANIFEST_INVALID_INPUT_ARTIFACTS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  name: test-
-spec:
-  entrypoint: main
-  templates:
-    - name: main
-      steps:
-        - - name: hello
-            template: print-message
-            arguments:
-              artifacts:
-                - name: message # STP103
-                  from: "{{ workflow.invalid }}" # STP302
-                - name: message # STP103
-                  raw:
-                    data: "{{ workflow.invalid }}" # STP303
-                - name: artifact-2
-                  from: workflow.invalid # STP302
-                - name: artifact-3
-                  value: foo # M102
-"""
 
 
 def test_check_argument_artifact_usage(diagnoses_logger):

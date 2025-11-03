@@ -34,7 +34,6 @@ if os.getenv("DOCUTILSCONFIG"):
         "OssLifecycleRule",
         "PluginArtifact",
         "RawArtifact",
-        "RelaxedArtifact",
         "S3Artifact",
         "S3EncryptionOptions",
         "TarStrategy",
@@ -103,32 +102,6 @@ class Artifact(_BaseModel):
                 "artifact_prohibited_value_field",
                 "Field 'value' is not a valid field for artifact. Use 'raw' artifact type instead.",
             )
-
-
-class RelaxedArtifact(Artifact):
-    """
-    A relaxed version of :py:class:`Artifact` that allows some often misused fields.
-
-    Please refer to the original class for the full list of fields.
-    This class only shows the fields that are changed.
-    """
-
-    value: Any | None = None
-
-    def __hash__(self) -> int:
-        return hash(
-            (
-                self.artifactory,
-                self.azure,
-                self.gcs,
-                self.git,
-                self.hdfs,
-                self.http,
-                self.oss,
-                self.raw,
-                self.s3,
-            )
-        )
 
 
 # ----------------------------------------------------------------------------

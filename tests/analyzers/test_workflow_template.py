@@ -115,7 +115,26 @@ spec:
 
 
 def test_check_argument_artifacts(diagnoses_logger):
-    diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_ARTIFACTS)
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: WorkflowTemplate
+        metadata:
+          name: test
+        spec:
+          arguments:
+            artifacts:
+              - name: data  # WT102
+                raw:  # M201
+                  data: world
+                s3:  # M201
+                  key: my-file
+              - name: data  # WT102
+                raw:
+                  data: hello
+              - name: artifact-3
+        """
+    )
     diagnoses_logger(diagnoses)
 
     # WT102: Duplicated input artifact name
@@ -151,38 +170,6 @@ def test_check_argument_artifacts(diagnoses_logger):
         )
         in diagnoses
     )
-
-    # M102: Found redundant field
-    assert (
-        IsPartialModel(
-            {
-                "code": "M102",
-                "loc": ("spec", "arguments", "artifacts", 2, "value"),
-            }
-        )
-        in diagnoses
-    )
-
-
-MANIFEST_MALFORMED_ARTIFACTS = """
-apiVersion: argoproj.io/v1alpha1
-kind: WorkflowTemplate
-metadata:
-  name: test
-spec:
-  arguments:
-    artifacts:
-      - name: data  # WT102
-        raw:  # M201
-          data: world
-        s3:  # M201
-          key: my-file
-      - name: data  # WT102
-        raw:
-          data: hello
-      - name: artifact-3
-        value: foo  # M102
-"""
 
 
 def test_check_metrics(diagnoses_logger):

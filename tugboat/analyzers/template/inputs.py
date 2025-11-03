@@ -14,7 +14,6 @@ from tugboat.types import Field
 from tugboat.utils import (
     check_model_fields_references,
     check_value_references,
-    critique_relaxed_artifact,
     critique_relaxed_parameter,
     find_duplicate_names,
     prepend_loc,
@@ -204,7 +203,6 @@ def _check_input_artifact(
             "globalName",
         ],
     )
-    yield from critique_relaxed_artifact(artifact)
 
     # template type-specific: `path` should be present for container/script templates
     if template.type in ("container", "containerSet", "script"):
