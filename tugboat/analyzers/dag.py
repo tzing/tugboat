@@ -9,6 +9,7 @@ from rapidfuzz.process import extractOne
 from tugboat.analyzers.step import (
     check_argument_artifact_fields,
     check_argument_parameter_fields,
+    get_template_by_ref,
 )
 from tugboat.constraints import (
     accept_none,
@@ -18,6 +19,7 @@ from tugboat.constraints import (
 )
 from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_task_context
+from tugboat.schemas import Arguments
 from tugboat.types import Field
 from tugboat.utils import (
     check_model_fields_references,
@@ -146,6 +148,40 @@ def _check_argument_artifact_fields(
             case "STP303":
                 diag["code"] = "DAG303"
         yield diag
+
+
+@hookimpl(specname="analyze_task")
+def check_argument_parameters_usage(
+    task: DagTask, workflow: WorkflowCompatible
+) -> Iterable[Diagnosis]:
+    ref_template = get_template_by_ref(task, workflow)
+    if not ref_template:
+        return
+
+    arguments = task.arguments or Arguments()
+
+    if ref_template.inputs:
+        expected_params = set(ref_template.inputs.parameter_dict)
+    else:
+        expected_params = set()
+
+    for idx, param in enumerate(arguments.parameters or ()):
+        if param.name and param.name not in expected_params:
+            suggestion = None
+            if result := extractOne(param.name, expected_params):
+                suggestion, _, _ = result
+
+            yield {
+                "type": "warning",
+                "code": "DAG304",
+                "loc": ("arguments", "parameters", idx, "name"),
+                "summary": "Unexpected parameter",
+                "msg": (
+                    f"Parameter '{param.name}' is not expected by the template '{ref_template.name}'."
+                ),
+                "input": param.name,
+                "fix": suggestion,
+            }
 
 
 @hookimpl(specname="analyze_task")

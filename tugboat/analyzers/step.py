@@ -31,10 +31,11 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
     from tugboat.references import Context
-    from tugboat.schemas import Step, Template, Workflow, WorkflowTemplate
+    from tugboat.schemas import DagTask, Step, Template, Workflow, WorkflowTemplate
     from tugboat.schemas.arguments import RelaxedArtifact, RelaxedParameter
     from tugboat.types import Diagnosis
 
+    type TaskCompatible = DagTask | Step
     type WorkflowCompatible = Workflow | WorkflowTemplate
 
 logger = logging.getLogger(__name__)
@@ -147,7 +148,7 @@ def check_argument_parameters_usage(
     step: Step, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     # early exit: referenced template not found
-    ref_template = _get_template_by_ref(step, workflow)
+    ref_template = get_template_by_ref(step, workflow)
     if not ref_template:
         return
 
@@ -199,7 +200,9 @@ def check_argument_parameters_usage(
             }
 
 
-def _get_template_by_ref(step: Step, workflow: WorkflowCompatible) -> Template | None:
+def get_template_by_ref(
+    step: TaskCompatible, workflow: WorkflowCompatible
+) -> Template | None:
     if step.template:
         return workflow.template_dict.get(step.template)
     if step.templateRef and step.templateRef.name == workflow.metadata.name:
@@ -332,7 +335,7 @@ def check_argument_artifact_usage(
     step: Step, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     # early exit: referenced template not found
-    ref_template = _get_template_by_ref(step, workflow)
+    ref_template = get_template_by_ref(step, workflow)
     if not ref_template:
         return
 

@@ -115,6 +115,44 @@ def test_check_argument_parameter_fields(diagnoses_logger):
     assert IsPartialModel(code="M201", loc=(*loc_prefix, 4, "valueFrom")) in diagnoses
 
 
+def test_check_argument_parameters_usage(diagnoses_logger):
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: test-
+        spec:
+          entrypoint: main
+          templates:
+            - name: main
+              dag:
+                tasks:
+                  - name: hello
+                    template: print-message
+                    arguments:
+                      parameters:
+                        - name: role
+                          value: admin
+                        - name: extra-param
+                          value: blah
+            - name: print-message
+              inputs:
+                parameters:
+                  - name: message
+                  - name: role
+                    default: user
+        """
+    )
+    diagnoses_logger(diagnoses)
+
+    loc_prefix = ("spec", "templates", 0, "dag", "tasks", 0, "arguments", "parameters")
+    assert (
+        IsPartialModel(code="DAG304", loc=(*loc_prefix, 1, "name"))
+        in diagnoses
+    )
+
+
 def test_check_argument_artifacts(diagnoses_logger):
     diagnoses = analyze_yaml_stream(
         """

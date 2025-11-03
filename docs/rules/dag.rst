@@ -197,6 +197,40 @@ Code ``DAG`` is used for errors related to the `DAG`_ in a `template`_.
                         raw:
                           data: "{{ inputs.artifacts.any }}"
 
+.. rule:: DAG304 Unexpected argument parameters
+
+   The task provides parameters that the referenced template does not declare.
+   Remove the extra entries or update the target template so both sides align.
+
+   .. code-block:: yaml
+      :emphasize-lines: 17
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: dag-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            dag:
+              tasks:
+                - name: process
+                  template: print-message
+                  arguments:
+                    parameters:
+                      - name: message
+                        value: hello
+                      - name: extra-param
+                        value: ignored
+
+          - name: print-message
+            inputs:
+              parameters:
+                - name: message
+                - name: role
+                  default: user
+
 .. DAG9xx deprecated items
 
 .. rule:: DAG901 Deprecated Field: ``onExit``
