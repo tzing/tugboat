@@ -160,15 +160,17 @@ def check_input_artifacts(
     # check fields for each artifact;
     ctx = get_workflow_context(workflow)
 
-    for idx, artifact in enumerate(template.inputs.artifacts or []):
+    for idx, artifact in enumerate(template.inputs.artifacts or ()):
         yield from prepend_loc(
-            ("inputs", "artifacts", idx), _check_input_artifact(artifact, ctx)
+            ("inputs", "artifacts", idx),
+            _check_input_artifact(template, artifact, ctx),
         )
 
 
 def _check_input_artifact(
-    artifact: RelaxedArtifact, context: Context
+    template: Template, artifact: RelaxedArtifact, context: Context
 ) -> Iterable[Diagnosis]:
+    # generic checks for all artifacts
     yield from require_non_empty(
         model=artifact,
         loc=(),
@@ -204,6 +206,36 @@ def _check_input_artifact(
     )
     yield from critique_relaxed_artifact(artifact)
 
+    # template type-specific: `path` should be present for container/script templates
+    if template.type in ("container", "containerSet", "script"):
+        if artifact.path is None:
+            yield {
+                "code": "M101",
+                "loc": ("path",),
+                "summary": "Missing required field 'path'",
+                "msg": (
+                    f"""
+                    Field 'path' is required for artifact '{artifact.name}'.
+                    Template '{template.name}' is a {template.type} template and it requires 'path' to specify file location.
+                    """
+                ),
+            }
+    else:
+        if artifact.path is not None:
+            yield {
+                "code": "M102",
+                "loc": ("path",),
+                "summary": "Found redundant field 'path'",
+                "msg": (
+                    f"""
+                    Field 'path' is invalid for artifact '{artifact.name}'.
+                    Template '{template.name}' is a {template.type} template and does not accept 'path' field.
+                    """
+                ),
+                "input": Field("path"),
+            }
+
+    # field-specific checks
     if artifact.raw:
         for diag in prepend_loc(
             ("raw", "data"),

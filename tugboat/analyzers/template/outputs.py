@@ -53,11 +53,14 @@ def check_output_parameters(
 
     for idx, param in enumerate(template.outputs.parameters or ()):
         yield from prepend_loc(
-            ("outputs", "parameters", idx), _check_output_parameter(param, context)
+            ("outputs", "parameters", idx),
+            _check_output_parameter(template, param, context),
         )
 
 
-def _check_output_parameter(param: Parameter, context: Context) -> Iterable[Diagnosis]:
+def _check_output_parameter(
+    template: Template, param: Parameter, context: Context
+) -> Iterable[Diagnosis]:
     yield from require_non_empty(
         model=param,
         loc=(),
@@ -70,19 +73,23 @@ def _check_output_parameter(param: Parameter, context: Context) -> Iterable[Diag
     )
 
     if param.valueFrom:
+        accept_fields = ["configMapKeyRef", "expression", "parameter"]
+        match template.type:
+            case "container" | "containerSet" | "script":
+                accept_fields += ["path"]
+            case "resource":
+                accept_fields += ["jqFilter", "jsonPath"]
+            case "suspend":
+                accept_fields += ["supplied"]
+
+        reject_fields = {"event", "jqFilter", "jsonPath", "path", "supplied"}
+        reject_fields.difference_update(accept_fields)
+
         yield from require_exactly_one(
-            model=param.valueFrom,
-            loc=("valueFrom",),
-            fields=[
-                "configMapKeyRef",
-                "event",
-                "expression",
-                "jqFilter",
-                "jsonPath",
-                "parameter",
-                "path",
-                "supplied",
-            ],
+            model=param.valueFrom, loc=("valueFrom",), fields=accept_fields
+        )
+        yield from accept_none(
+            model=param.valueFrom, loc=("valueFrom",), fields=reject_fields
         )
 
         # TODO check expression
@@ -120,24 +127,18 @@ def check_output_artifacts(
 
     for idx, artifact in enumerate(template.outputs.artifacts or ()):
         yield from prepend_loc(
-            ("outputs", "artifacts", idx), _check_output_artifact(artifact, context)
+            ("outputs", "artifacts", idx),
+            _check_output_artifact(template, artifact, context),
         )
 
 
-def _check_output_artifact(artifact: Artifact, context: Context) -> Iterable[Diagnosis]:
+def _check_output_artifact(
+    template: Template, artifact: Artifact, context: Context
+) -> Iterable[Diagnosis]:
     yield from require_non_empty(
         model=artifact,
         loc=(),
         fields=["name"],
-    )
-    yield from require_exactly_one(
-        model=artifact,
-        loc=(),
-        fields=[
-            "from_",
-            "fromExpression",
-            "path",
-        ],
     )
     yield from mutually_exclusive(
         model=artifact,
@@ -152,14 +153,17 @@ def _check_output_artifact(artifact: Artifact, context: Context) -> Iterable[Dia
             "s3",
         ],
     )
-    yield from accept_none(
-        model=artifact,
-        loc=(),
-        fields=[
-            "git",
-            "raw",
-        ],
-    )
+
+    accept_source_fields = ["from_", "fromExpression"]
+    reject_source_fields = ["git", "raw"]
+
+    if template.type in ("container", "containerSet", "data", "script"):
+        accept_source_fields.append("path")
+    else:
+        reject_source_fields.append("path")
+
+    yield from require_exactly_one(model=artifact, loc=(), fields=accept_source_fields)
+    yield from accept_none(model=artifact, loc=(), fields=reject_source_fields)
 
     if artifact.archive:
         yield from require_exactly_one(

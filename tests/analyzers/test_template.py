@@ -241,6 +241,13 @@ def test_check_input_artifacts(diagnoses_logger):
                     value: foo # M102
               container:
                 image: alpine:latest
+
+            - name: steps
+              inputs:
+                artifacts:
+                  - name: item
+                    path: /tmp/item.txt
+              steps: []
         """
     )
     diagnoses_logger(diagnoses)
@@ -265,8 +272,21 @@ def test_check_input_artifacts(diagnoses_logger):
         in diagnoses
     )
 
+    # M101: missing required fields
+    assert IsPartialModel(code="M101", loc=(*loc, 0, "path")) in diagnoses
+    assert IsPartialModel(code="M101", loc=(*loc, 1, "path")) in diagnoses
+
     # M102: invalid fields
     assert IsPartialModel(code="M102", loc=(*loc, 1, "value")) in diagnoses
+
+    # 1-st template
+    # M102: invalid fields
+    assert (
+        IsPartialModel(
+            code="M102", loc=("spec", "templates", 1, "inputs", "artifacts", 0, "path")
+        )
+        in diagnoses
+    )
 
 
 def test_check_output_parameters(diagnoses_logger):
@@ -288,10 +308,19 @@ def test_check_output_parameters(diagnoses_logger):
                   - name: message # TPL104
                     valueFrom:
                       parameter: "{{ workflow.invalid}}" # VAR002
-        """
+
+            - name: main
+              suspend: {}
+              outputs:
+                parameters:
+                  - name: item
+                    valueFrom:
+                      path: /tmp/data.txt # M101
+          """
     )
     diagnoses_logger(diagnoses)
 
+    # 0-th template
     loc = ("spec", "templates", 0, "outputs", "parameters")
     assert IsPartialModel(code="TPL104", loc=(*loc, 0, "name")) in diagnoses
     assert IsPartialModel(code="TPL104", loc=(*loc, 1, "name")) in diagnoses
@@ -301,6 +330,10 @@ def test_check_output_parameters(diagnoses_logger):
         IsPartialModel(code="VAR002", loc=(*loc, 1, "valueFrom", "parameter"))
         in diagnoses
     )
+
+    # 1-th template
+    loc = ("spec", "templates", 1, "outputs", "parameters")
+    assert IsPartialModel(code="M102", loc=(*loc, 0, "valueFrom", "path")) in diagnoses
 
 
 def test_check_output_artifacts(diagnoses_logger):
@@ -313,6 +346,7 @@ def test_check_output_artifacts(diagnoses_logger):
         spec:
           templates:
             - name: main
+              steps: []
               outputs:
                 artifacts:
                   - name: data # TPL105
@@ -329,6 +363,7 @@ def test_check_output_artifacts(diagnoses_logger):
     assert IsPartialModel(code="TPL105", loc=(*loc, 1, "name")) in diagnoses
 
     assert IsPartialModel(code="M101", loc=(*loc, 0, "archive")) in diagnoses
+    assert IsPartialModel(code="M102", loc=(*loc, 0, "path")) in diagnoses
     assert IsPartialModel(code="VAR002", loc=(*loc, 1, "from")) in diagnoses
 
 

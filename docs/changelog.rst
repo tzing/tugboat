@@ -4,6 +4,13 @@ Changelog
 Unreleased
 ----------
 
+:octicon:`codescan-checkmark` Rules
++++++++++++++++++++++++++++++++++++
+
+* Enforce :py:attr:`~tugboat.schemas.Artifact.path` on input artifacts for container/script templates and flag it on incompatible templates.
+* Restrict output parameter :py:attr:`~tugboat.schemas.Parameter.valueFrom` fields by template type.
+* Require output artifacts to source data correctly, enforcing :py:attr:`~tugboat.schemas.Artifact.path` usage for container/script templates and forbidding it on others.
+
 :octicon:`plug` Enhancements
 ++++++++++++++++++++++++++++
 

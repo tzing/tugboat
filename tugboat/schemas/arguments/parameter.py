@@ -47,6 +47,12 @@ class RelaxedParameter(Parameter):
 
 
 class ValueFrom(_BaseModel):
+    """
+    `ValueFrom`_ describes a location in which to obtain the value to a parameter.
+
+    .. _ValueFrom: https://argo-workflows.readthedocs.io/en/latest/fields/#valuefrom
+    """
+
     configMapKeyRef: ConfigKeySelector | None = None
     default: str | None = None
     event: str | None = None

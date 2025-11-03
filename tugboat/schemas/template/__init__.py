@@ -11,7 +11,7 @@ __all__ = [
 import functools
 import itertools
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -24,6 +24,21 @@ from tugboat.schemas.template.container import (
     ContainerTemplate,
     ScriptTemplate,
 )
+
+if TYPE_CHECKING:
+    from typing import Literal
+
+    type TemplateType = Literal[
+        "container",
+        "containerSet",
+        "dag",
+        "data",
+        "http",
+        "resource",
+        "script",
+        "steps",
+        "suspend",
+    ]
 
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
@@ -88,6 +103,29 @@ class Template(_BaseModel):
 
     def __hash__(self):
         return hash((self.name, self.container, self.script, self.steps))
+
+    @functools.cached_property
+    def type(self) -> TemplateType | None:
+        """Return the template type as a string."""
+        if self.container is not None:
+            return "container"
+        if self.containerSet is not None:
+            return "containerSet"
+        if self.dag is not None:
+            return "dag"
+        if self.data is not None:
+            return "data"
+        if self.http is not None:
+            return "http"
+        if self.resource is not None:
+            return "resource"
+        if self.script is not None:
+            return "script"
+        if self.steps is not None:
+            return "steps"
+        if self.suspend is not None:
+            return "suspend"
+        return None
 
     @functools.cached_property
     def step_dict(self) -> dict[str, Step]:
