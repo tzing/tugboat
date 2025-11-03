@@ -1,4 +1,4 @@
-from tests.dirty_equals import ContainsSubStrings, IsPartialModel
+from tests.dirty_equals import HasSubstring, IsPartialModel
 from tugboat.engine import analyze_yaml_stream
 
 
@@ -149,97 +149,47 @@ spec:
 
 
 def test_check_input_parameters_1(diagnoses_logger):
-    diagnoses = analyze_yaml_stream(MANIFEST_INVALID_INPUT_PARAMETERS)
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: test-
+        spec:
+          entrypoint: test
+          templates:
+            - name: main
+              inputs:
+                parameters:
+                  - name: message # TPL102
+                    valueFrom:
+                      path: /malformed # M102
+                  - name: message # TPL102
+                    value: "{{ workflow.name " # VAR001
+                  - name: message-3
+                    value: "{{ workflow.invalid}}" #
+                  - name: message-4
+                    value:
+                      foo: bar # M103
+        """
+    )
     diagnoses_logger(diagnoses)
-    assert (
-        IsPartialModel(
-            {
-                "code": "TPL102",
-                "loc": ("spec", "templates", 0, "inputs", "parameters", 0, "name"),
-            }
-        )
-        in diagnoses
-    )
-    assert (
-        IsPartialModel(
-            {
-                "code": "TPL102",
-                "loc": ("spec", "templates", 0, "inputs", "parameters", 1, "name"),
-            }
-        )
-        in diagnoses
-    )
-    assert (
-        IsPartialModel(
-            {
-                "code": "M102",
-                "loc": (
-                    "spec",
-                    "templates",
-                    0,
-                    "inputs",
-                    "parameters",
-                    0,
-                    "valueFrom",
-                    "path",
-                ),
-            }
-        )
-        in diagnoses
-    )
-    assert (
-        IsPartialModel(
-            {
-                "code": "VAR001",
-                "loc": ("spec", "templates", 0, "inputs", "parameters", 1, "value"),
-            }
-        )
-        in diagnoses
-    )
-    assert (
-        IsPartialModel(
-            {
-                "code": "TPL201",
-                "loc": ("spec", "templates", 0, "inputs", "parameters", 2, "value"),
-                "msg": "The parameter reference 'workflow.invalid' used in parameter 'message-3' is invalid.",
-                "input": "{{ workflow.invalid}}",
-            }
-        )
-        in diagnoses
-    )
-    assert (
-        IsPartialModel(
-            {
-                "code": "M103",
-                "loc": ("spec", "templates", 0, "inputs", "parameters", 3, "value"),
-            }
-        )
-        in diagnoses
-    )
 
-
-MANIFEST_INVALID_INPUT_PARAMETERS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  entrypoint: test
-  templates:
-    - name: main
-      inputs:
-        parameters:
-          - name: message # TPL102
-            valueFrom:
-              path: /malformed # M102
-          - name: message # TPL102
-            value: "{{ workflow.name " # VAR001
-          - name: message-3
-            value: "{{ workflow.invalid}}" #
-          - name: message-4
-            value:
-              foo: bar # M103
-"""
+    loc = ("spec", "templates", 0, "inputs", "parameters")
+    assert IsPartialModel(code="TPL102", loc=(*loc, 0, "name")) in diagnoses
+    assert IsPartialModel(code="TPL102", loc=(*loc, 1, "name")) in diagnoses
+    assert IsPartialModel(code="M102", loc=(*loc, 0, "valueFrom", "path")) in diagnoses
+    assert IsPartialModel(code="VAR001", loc=(*loc, 1, "value")) in diagnoses
+    assert (
+        IsPartialModel(
+            code="TPL201",
+            loc=(*loc, 2, "value"),
+            msg="The parameter reference 'workflow.invalid' used in parameter 'message-3' is invalid.",
+            input="{{ workflow.invalid}}",
+        )
+        in diagnoses
+    )
+    assert IsPartialModel(code="M103", loc=(*loc, 3, "value")) in diagnoses
 
 
 def test_check_input_parameters_2(diagnoses_logger):
@@ -271,230 +221,115 @@ def test_check_input_parameters_2(diagnoses_logger):
 
 
 def test_check_input_artifacts(diagnoses_logger):
-    diagnoses = analyze_yaml_stream(MANIFEST_INVALID_INPUT_ARTIFACTS)
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: test-
+        spec:
+          entrypoint: test
+          templates:
+            - name: test
+              inputs:
+                artifacts:
+                  - name: data # TPL103
+                    raw:
+                      data:
+                        This is a message from {{ workflow.namee }}. # TPL202
+                  - name: data # TPL103
+                    value: foo # M102
+              container:
+                image: alpine:latest
+        """
+    )
     diagnoses_logger(diagnoses)
+
+    # 0-th template
+    loc = ("spec", "templates", 0, "inputs", "artifacts")
+
+    # TPL103: duplicate artifact names
+    assert IsPartialModel(code="TPL103", loc=(*loc, 0, "name")) in diagnoses
+    assert IsPartialModel(code="TPL103", loc=(*loc, 1, "name")) in diagnoses
+
+    # TPL202: improper use of raw artifact field
     assert (
         IsPartialModel(
-            {
-                "code": "TPL103",
-                "loc": ("spec", "templates", 0, "inputs", "artifacts", 0, "name"),
-            }
-        )
-        in diagnoses
-    )
-    assert (
-        IsPartialModel(
-            {
-                "code": "TPL103",
-                "loc": ("spec", "templates", 0, "inputs", "artifacts", 1, "name"),
-            }
-        )
-        in diagnoses
-    )
-    assert (
-        IsPartialModel(
-            {
-                "code": "TPL202",
-                "loc": (
-                    "spec",
-                    "templates",
-                    0,
-                    "inputs",
-                    "artifacts",
-                    0,
-                    "raw",
-                    "data",
-                ),
-                "msg": ContainsSubStrings(
-                    "The parameter reference 'workflow.namee' used in artifact 'data' is invalid.",
-                ),
-                "fix": "{{ workflow.name }}",
-            }
-        )
-        in diagnoses
-    )
-    assert (
-        IsPartialModel(
-            {
-                "code": "M102",
-                "loc": (
-                    "spec",
-                    "templates",
-                    0,
-                    "inputs",
-                    "artifacts",
-                    1,
-                    "value",
-                ),
-            }
+            code="TPL202",
+            loc=(*loc, 0, "raw", "data"),
+            msg=HasSubstring(
+                "The parameter reference 'workflow.namee' used in artifact 'data' is invalid."
+            ),
+            fix="{{ workflow.name }}",
         )
         in diagnoses
     )
 
-
-MANIFEST_INVALID_INPUT_ARTIFACTS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  entrypoint: test
-  templates:
-    - name: test
-      inputs:
-        artifacts:
-          - name: data # TPL103
-            raw:
-              data:
-                This is a message from {{ workflow.namee }}. # TPL202
-          - name: data # TPL103
-            value: foo # M102
-"""
+    # M102: invalid fields
+    assert IsPartialModel(code="M102", loc=(*loc, 1, "value")) in diagnoses
 
 
-class TestOutputRules:
+def test_check_output_parameters(diagnoses_logger):
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: test-
+        spec:
+          entrypoint: main
+          templates:
+            - name: main
+              container:
+                image: busybox:latest
+              outputs:
+                parameters:
+                  - name: message # TPL104
+                  - name: message # TPL104
+                    valueFrom:
+                      parameter: "{{ workflow.invalid}}" # VAR002
+        """
+    )
+    diagnoses_logger(diagnoses)
 
-    def test_check_output_parameters(self, diagnoses_logger):
-        diagnoses = analyze_yaml_stream(MANIFEST_INVALID_OUTPUT_PARAMETERS)
-        diagnoses_logger(diagnoses)
-        assert (
-            IsPartialModel(
-                {
-                    "code": "TPL104",
-                    "loc": ("spec", "templates", 0, "outputs", "parameters", 0, "name"),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialModel(
-                {
-                    "code": "TPL104",
-                    "loc": ("spec", "templates", 0, "outputs", "parameters", 1, "name"),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialModel(
-                {
-                    "code": "M101",
-                    "loc": (
-                        "spec",
-                        "templates",
-                        0,
-                        "outputs",
-                        "parameters",
-                        0,
-                        "valueFrom",
-                    ),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialModel(
-                {
-                    "code": "VAR002",
-                    "loc": (
-                        "spec",
-                        "templates",
-                        0,
-                        "outputs",
-                        "parameters",
-                        1,
-                        "valueFrom",
-                        "parameter",
-                    ),
-                }
-            )
-            in diagnoses
-        )
+    loc = ("spec", "templates", 0, "outputs", "parameters")
+    assert IsPartialModel(code="TPL104", loc=(*loc, 0, "name")) in diagnoses
+    assert IsPartialModel(code="TPL104", loc=(*loc, 1, "name")) in diagnoses
 
-    def test_check_output_artifacts(self, diagnoses_logger):
-        diagnoses = analyze_yaml_stream(MANIFEST_INVALID_OUTPUT_ARTIFACTS)
-        diagnoses_logger(diagnoses)
-        assert (
-            IsPartialModel(
-                {
-                    "code": "TPL105",
-                    "loc": ("spec", "templates", 0, "outputs", "artifacts", 0, "name"),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialModel(
-                {
-                    "code": "TPL105",
-                    "loc": ("spec", "templates", 0, "outputs", "artifacts", 1, "name"),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialModel(
-                {
-                    "code": "M101",
-                    "loc": (
-                        "spec",
-                        "templates",
-                        0,
-                        "outputs",
-                        "artifacts",
-                        0,
-                        "archive",
-                    ),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialModel(
-                {
-                    "code": "VAR002",
-                    "loc": ("spec", "templates", 0, "outputs", "artifacts", 1, "from"),
-                }
-            )
-            in diagnoses
-        )
+    assert IsPartialModel(code="M101", loc=(*loc, 0, "valueFrom")) in diagnoses
+    assert (
+        IsPartialModel(code="VAR002", loc=(*loc, 1, "valueFrom", "parameter"))
+        in diagnoses
+    )
 
 
-MANIFEST_INVALID_OUTPUT_PARAMETERS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  entrypoint: main
-  templates:
-    - name: main
-      container:
-        image: busybox:latest
-      outputs:
-        parameters:
-          - name: message # TPL104
-          - name: message # TPL104
-            valueFrom:
-              parameter: "{{ workflow.invalid}}" # VAR002
-"""
+def test_check_output_artifacts(diagnoses_logger):
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: test-
+        spec:
+          templates:
+            - name: main
+              outputs:
+                artifacts:
+                  - name: data # TPL105
+                    path: /data
+                    archive: {} # M101
+                  - name: data # TPL105
+                    from: '{{ invalid }}'
+        """
+    )
+    diagnoses_logger(diagnoses)
 
-MANIFEST_INVALID_OUTPUT_ARTIFACTS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  templates:
-    - name: main
-      outputs:
-        artifacts:
-          - name: data # TPL105
-            path: /data
-            archive: {} # M101
-          - name: data # TPL105
-            from: '{{ invalid }}'
-"""
+    loc = ("spec", "templates", 0, "outputs", "artifacts")
+    assert IsPartialModel(code="TPL105", loc=(*loc, 0, "name")) in diagnoses
+    assert IsPartialModel(code="TPL105", loc=(*loc, 1, "name")) in diagnoses
+
+    assert IsPartialModel(code="M101", loc=(*loc, 0, "archive")) in diagnoses
+    assert IsPartialModel(code="VAR002", loc=(*loc, 1, "from")) in diagnoses
 
 
 def test_check_metrics(diagnoses_logger):
