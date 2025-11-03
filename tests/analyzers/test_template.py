@@ -353,73 +353,33 @@ def test_check_output_parameters(diagnoses_logger):
     )
 
 
-class TestOutputRules:
+def test_check_output_artifacts(diagnoses_logger):
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: test-
+        spec:
+          templates:
+            - name: main
+              outputs:
+                artifacts:
+                  - name: data # TPL105
+                    path: /data
+                    archive: {} # M101
+                  - name: data # TPL105
+                    from: '{{ invalid }}'
+        """
+    )
+    diagnoses_logger(diagnoses)
 
-    def test_check_output_artifacts(self, diagnoses_logger):
-        diagnoses = analyze_yaml_stream(MANIFEST_INVALID_OUTPUT_ARTIFACTS)
-        diagnoses_logger(diagnoses)
-        assert (
-            IsPartialModel(
-                {
-                    "code": "TPL105",
-                    "loc": ("spec", "templates", 0, "outputs", "artifacts", 0, "name"),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialModel(
-                {
-                    "code": "TPL105",
-                    "loc": ("spec", "templates", 0, "outputs", "artifacts", 1, "name"),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialModel(
-                {
-                    "code": "M101",
-                    "loc": (
-                        "spec",
-                        "templates",
-                        0,
-                        "outputs",
-                        "artifacts",
-                        0,
-                        "archive",
-                    ),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialModel(
-                {
-                    "code": "VAR002",
-                    "loc": ("spec", "templates", 0, "outputs", "artifacts", 1, "from"),
-                }
-            )
-            in diagnoses
-        )
+    loc = ("spec", "templates", 0, "outputs", "artifacts")
+    assert IsPartialModel(code="TPL105", loc=(*loc, 0, "name")) in diagnoses
+    assert IsPartialModel(code="TPL105", loc=(*loc, 1, "name")) in diagnoses
 
-
-MANIFEST_INVALID_OUTPUT_ARTIFACTS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  templates:
-    - name: main
-      outputs:
-        artifacts:
-          - name: data # TPL105
-            path: /data
-            archive: {} # M101
-          - name: data # TPL105
-            from: '{{ invalid }}'
-"""
+    assert IsPartialModel(code="M101", loc=(*loc, 0, "archive")) in diagnoses
+    assert IsPartialModel(code="VAR002", loc=(*loc, 1, "from")) in diagnoses
 
 
 def test_check_metrics(diagnoses_logger):
