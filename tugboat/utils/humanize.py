@@ -61,7 +61,7 @@ def join_with_and(items: Iterable[Any], *, quote: bool = True) -> str:
     return join_items(
         items,
         conjunction="and",
-        stringify=quoting if quote else str,
+        stringify=_quote if quote else str,
     )
 
 
@@ -72,11 +72,11 @@ def join_with_or(items: Iterable[Any], *, quote: bool = True) -> str:
     return join_items(
         items,
         conjunction="or",
-        stringify=quoting if quote else str,
+        stringify=_quote if quote else str,
     )
 
 
-def quoting(item: Any) -> str:
+def _quote(item: Any) -> str:
     text = str(item)
     if "'" in text:
         return f'"{text}"'
