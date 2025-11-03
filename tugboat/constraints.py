@@ -30,7 +30,7 @@ from tugboat.types import Field
 from tugboat.utils import get_alias, get_context_name, join_with_and, join_with_or
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Iterable, Iterator, Sequence
     from typing import Any
 
     from pydantic import BaseModel
@@ -39,7 +39,7 @@ if typing.TYPE_CHECKING:
 
 
 def accept_none(
-    *, model: BaseModel, loc: Sequence[str | int], fields: Sequence[str]
+    *, model: BaseModel, loc: Sequence[str | int], fields: Iterable[str]
 ) -> Iterator[Diagnosis]:
     """
     Check if all the specified fields are not set.
@@ -62,7 +62,7 @@ def accept_none(
 
 
 def mutually_exclusive(
-    *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
+    *, model: Any, loc: Sequence[str | int], fields: Iterable[str]
 ) -> Iterator[Diagnosis]:
     """
     Ensures that at most one of the specified fields in the model is set, but
@@ -94,7 +94,7 @@ def mutually_exclusive(
 
 
 def require_all(
-    *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
+    *, model: Any, loc: Sequence[str | int], fields: Iterable[str]
 ) -> Iterator[Diagnosis]:
     """
     Requires that all of the specified fields in the model are set.
@@ -117,7 +117,7 @@ def require_all(
 
 
 def require_non_empty(
-    *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
+    *, model: Any, loc: Sequence[str | int], fields: Iterable[str]
 ) -> Iterator[Diagnosis]:
     """
     Requires that all of the specified fields are set and not empty.
@@ -149,7 +149,7 @@ def require_non_empty(
 
 
 def require_exactly_one(
-    *, model: Any, loc: Sequence[str | int], fields: Sequence[str]
+    *, model: Any, loc: Sequence[str | int], fields: Iterable[str]
 ) -> Iterator[Diagnosis]:
     """
     Requires that exactly one of the specified fields in the model is set.
