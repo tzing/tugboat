@@ -308,10 +308,19 @@ def test_check_output_parameters(diagnoses_logger):
                   - name: message # TPL104
                     valueFrom:
                       parameter: "{{ workflow.invalid}}" # VAR002
-        """
+
+            - name: main
+              suspend: {}
+              outputs:
+                parameters:
+                  - name: item
+                    valueFrom:
+                      path: /tmp/data.txt # M101
+          """
     )
     diagnoses_logger(diagnoses)
 
+    # 0-th template
     loc = ("spec", "templates", 0, "outputs", "parameters")
     assert IsPartialModel(code="TPL104", loc=(*loc, 0, "name")) in diagnoses
     assert IsPartialModel(code="TPL104", loc=(*loc, 1, "name")) in diagnoses
@@ -321,6 +330,10 @@ def test_check_output_parameters(diagnoses_logger):
         IsPartialModel(code="VAR002", loc=(*loc, 1, "valueFrom", "parameter"))
         in diagnoses
     )
+
+    # 1-th template
+    loc = ("spec", "templates", 1, "outputs", "parameters")
+    assert IsPartialModel(code="M102", loc=(*loc, 0, "valueFrom", "path")) in diagnoses
 
 
 def test_check_output_artifacts(diagnoses_logger):
