@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+:octicon:`plug` Enhancements
+++++++++++++++++++++++++++++
+
+* The helper functions :py:func:`~tugboat.utils.join_with_and` and :py:func:`~tugboat.utils.join_with_or` now automatically sort their input lists.
+
+
 0.6.0
 -----
 
