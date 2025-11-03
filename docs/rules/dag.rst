@@ -170,6 +170,33 @@ Code ``DAG`` is used for errors related to the `DAG`_ in a `template`_.
                       - name: data
                         from: "{{ inputs.artifacts.not-exist }}"
 
+.. rule:: DAG303 Invalid raw artifact reference
+
+   A task input artifact uses the :py:attr:`~tugboat.schemas.Artifact.raw` block to embed a template expression, but the expression does not resolve to a known parameter.
+
+   Raw artifacts only support parameter references (e.g. ``{{ inputs.parameters.foo }}``); pointing at artifacts leaves the expression unresolved.
+
+   .. code-block:: yaml
+      :emphasize-lines: 17
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: dag-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            dag:
+              tasks:
+                - name: process
+                  template: compute
+                  arguments:
+                    artifacts:
+                      - name: data
+                        raw:
+                          data: "{{ inputs.artifacts.any }}"
+
 .. DAG9xx deprecated items
 
 .. rule:: DAG901 Deprecated Field: ``onExit``

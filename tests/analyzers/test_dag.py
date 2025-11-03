@@ -133,10 +133,10 @@ def test_check_argument_artifacts(diagnoses_logger):
                     arguments:
                       artifacts:
                         - name: artifact1
-                          from: workflow.invalid
+                          from: "{{ workflow.invalid }}"
                         - name: artifact1
                           raw:
-                            data: "some data"
+                            data: "{{ workflow.invalid }}"
         """
     )
     diagnoses_logger(diagnoses)
@@ -145,6 +145,9 @@ def test_check_argument_artifacts(diagnoses_logger):
     assert IsPartialModel(code="DAG103", loc=(*loc_prefix, 0, "name")) in diagnoses
     assert IsPartialModel(code="DAG103", loc=(*loc_prefix, 1, "name")) in diagnoses
     assert IsPartialModel(code="DAG302", loc=(*loc_prefix, 0, "from")) in diagnoses
+    assert (
+        IsPartialModel(code="DAG303", loc=(*loc_prefix, 1, "raw", "data")) in diagnoses
+    )
 
 
 def test_check_referenced_template(caplog: pytest.LogCaptureFixture, diagnoses_logger):

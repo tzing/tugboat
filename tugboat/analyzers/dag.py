@@ -143,6 +143,8 @@ def _check_argument_artifact_fields(
         match diag["code"]:
             case "STP302":
                 diag["code"] = "DAG302"
+            case "STP303":
+                diag["code"] = "DAG303"
         yield diag
 
 
