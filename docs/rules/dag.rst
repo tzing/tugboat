@@ -137,3 +137,54 @@ Code ``DAG`` is used for errors related to the `DAG`_ in a `template`_.
               tasks:
                 - name: process
                   template: not-exist-template
+
+.. DAG9xx deprecated items
+
+.. rule:: DAG901 Deprecated Field: ``onExit``
+
+   The ``onExit`` field in a task definition is deprecated.
+
+   As of Argo Workflows 3.1, ``onExit`` is deprecated by the :py:class:`~tugboat.schemas.DagTask.hooks` field.
+   This rule is a variant of :rule:`STP901` specific to DAG templates.
+
+   .. code-block:: yaml
+      :caption: ❌ Example manifest that violates this rule
+      :emphasize-lines: 18
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: dag-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            dag:
+              tasks:
+                - name: build
+                  onExit: exit
+                  template: run-build
+
+          - name: run-build
+            container:
+              image: alpine
+
+   .. code-block:: yaml
+      :caption: ✅ Example manifest that complies with this rule
+      :emphasize-lines: 13-15
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: dag-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            dag:
+              tasks:
+                - name: build
+                  template: run-build
+            hooks:
+              exit:
+                template: cleanup
