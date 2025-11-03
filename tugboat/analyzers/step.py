@@ -88,11 +88,11 @@ def check_argument_parameters(
     for idx, param in enumerate(step.arguments.parameters or ()):
         yield from prepend_loc(
             ("arguments", "parameters", idx),
-            _check_argument_parameter_fields(param, ctx),
+            check_argument_parameter_fields(param, ctx),
         )
 
 
-def _check_argument_parameter_fields(
+def check_argument_parameter_fields(
     param: RelaxedParameter, context: Context
 ) -> Iterable[Diagnosis]:
     yield from require_non_empty(

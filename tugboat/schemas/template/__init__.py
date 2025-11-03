@@ -173,6 +173,7 @@ class DagTask(_StepBase):
     .. _DAGTask: https://argo-workflows.readthedocs.io/en/latest/fields/#dagtask
     """
 
+    arguments: RelaxedArguments | None = None  # type: ignore[reportIncompatibleVariableOverride]
     dependencies: Array[str] | None = None
     depends: str | None = None
 

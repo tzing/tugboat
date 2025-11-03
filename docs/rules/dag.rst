@@ -138,6 +138,13 @@ Code ``DAG`` is used for errors related to the `DAG`_ in a `template`_.
                 - name: process
                   template: not-exist-template
 
+.. DAG3xx argument reference issues
+
+.. rule:: DAG301 Invalid parameter reference
+
+   A task input parameter contains a reference that cannot be resolved.
+   This rule builds on :rule:`VAR002` but narrows the report to the task argument where the typo or mismatch occurs.
+
 .. DAG9xx deprecated items
 
 .. rule:: DAG901 Deprecated Field: ``onExit``
