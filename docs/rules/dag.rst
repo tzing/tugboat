@@ -231,6 +231,32 @@ Code ``DAG`` is used for errors related to the `DAG`_ in a `template`_.
                 - name: role
                   default: user
 
+.. rule:: DAG305 Missing argument parameters
+
+   The task skips parameters that are required by the referenced template.
+   Ensure every parameter without a default or static value on the template side is provided by the task.
+
+   .. code-block:: yaml
+      :emphasize-lines: 11-12
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: dag-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            dag:
+              tasks:
+                - name: process
+                  template: print-message
+
+          - name: print-message
+            inputs:
+              parameters:
+                - name: message
+
 .. DAG9xx deprecated items
 
 .. rule:: DAG901 Deprecated Field: ``onExit``

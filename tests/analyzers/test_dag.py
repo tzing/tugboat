@@ -151,6 +151,7 @@ def test_check_argument_parameters_usage(diagnoses_logger):
         IsPartialModel(code="DAG304", loc=(*loc_prefix, 1, "name"))
         in diagnoses
     )
+    assert IsPartialModel(code="DAG305", loc=loc_prefix) in diagnoses
 
 
 def test_check_argument_artifacts(diagnoses_logger):

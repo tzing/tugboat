@@ -6,11 +6,7 @@ import typing
 
 from rapidfuzz.process import extractOne
 
-from tugboat.analyzers.step import (
-    check_argument_artifact_fields,
-    check_argument_parameter_fields,
-    get_template_by_ref,
-)
+import tugboat.analyzers.step as step_analyzer
 from tugboat.constraints import (
     accept_none,
     mutually_exclusive,
@@ -95,20 +91,13 @@ def check_argument_parameters(
     ctx = get_task_context(workflow, template, task)
 
     for idx, param in enumerate(task.arguments.parameters or ()):
-        yield from prepend_loc(
-            ("arguments", "parameters", idx),
-            _check_argument_parameter_fields(param, ctx),
-        )
+        for diag in step_analyzer.check_argument_parameter_fields(param, ctx):
+            diag["loc"] = ["arguments", "parameters", idx, *diag["loc"]]
 
-
-def _check_argument_parameter_fields(
-    param: RelaxedParameter, context: Context
-) -> Iterable[Diagnosis]:
-    for diag in check_argument_parameter_fields(param, context):
-        match diag["code"]:
-            case "STP301":
-                diag["code"] = "DAG301"
-        yield diag
+            match diag["code"]:
+                case "STP301":
+                    diag["code"] = "DAG301"
+            yield diag
 
 
 @hookimpl(specname="analyze_task")
@@ -132,56 +121,28 @@ def check_argument_artifacts(
     ctx = get_task_context(workflow, template, task)
 
     for idx, artifact in enumerate(task.arguments.artifacts or ()):
-        yield from prepend_loc(
-            ("arguments", "artifacts", idx),
-            _check_argument_artifact_fields(artifact, ctx),
-        )
+        for diag in step_analyzer.check_argument_artifact_fields(artifact, ctx):
+            diag["loc"] = ["arguments", "artifacts", idx, *diag["loc"]]
 
-
-def _check_argument_artifact_fields(
-    artifact: RelaxedArtifact, context: Context
-) -> Iterable[Diagnosis]:
-    for diag in check_argument_artifact_fields(artifact, context):
-        match diag["code"]:
-            case "STP302":
-                diag["code"] = "DAG302"
-            case "STP303":
-                diag["code"] = "DAG303"
-        yield diag
+            match diag["code"]:
+                case "STP302":
+                    diag["code"] = "DAG302"
+                case "STP303":
+                    diag["code"] = "DAG303"
+            yield diag
 
 
 @hookimpl(specname="analyze_task")
 def check_argument_parameters_usage(
     task: DagTask, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
-    ref_template = get_template_by_ref(task, workflow)
-    if not ref_template:
-        return
-
-    arguments = task.arguments or Arguments()
-
-    if ref_template.inputs:
-        expected_params = set(ref_template.inputs.parameter_dict)
-    else:
-        expected_params = set()
-
-    for idx, param in enumerate(arguments.parameters or ()):
-        if param.name and param.name not in expected_params:
-            suggestion = None
-            if result := extractOne(param.name, expected_params):
-                suggestion, _, _ = result
-
-            yield {
-                "type": "warning",
-                "code": "DAG304",
-                "loc": ("arguments", "parameters", idx, "name"),
-                "summary": "Unexpected parameter",
-                "msg": (
-                    f"Parameter '{param.name}' is not expected by the template '{ref_template.name}'."
-                ),
-                "input": param.name,
-                "fix": suggestion,
-            }
+    for diag in step_analyzer.check_argument_parameters_usage(task, workflow):
+        match diag["code"]:
+            case "STP304":
+                diag["code"] = "DAG304"
+            case "STP305":
+                diag["code"] = "DAG305"
+        yield diag
 
 
 @hookimpl(specname="analyze_task")
