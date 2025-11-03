@@ -16,67 +16,134 @@ if typing.TYPE_CHECKING:
     from pydantic import BaseModel
 
 
-def join_items(
+def join_with_and(
     items: Iterable[Any],
     *,
-    separator: str = ", ",
-    conjunction: str = "and",
-    stringify: Callable[[Any], str] = str,
+    quote: bool = True,
+    sort: bool = True,
+    fallback_string: str = "(none)",
 ) -> str:
     """
-    Join items with a separator. The last item is preceded by a conjunction.
+    Join items with "and" as the last joiner.
+    On empty input, returns the fallback string.
 
-    This function serves as the foundation for the :py:func:`join_with_and` and
-    :py:func:`join_with_or` functions.
+    Arguments
+    ---------
+    items : Iterable[Any]
+        The items to join.
+    quote : bool
+        Whether to quote the items.
+    sort : bool
+        Whether to sort the items.
+    fallback_string : str
+        The string to return if there are no items.
     """
-    iterator = iter(items)
+    return _join(
+        items=items,
+        quoting=_quote if quote else str,
+        last_joiner=" and ",
+        sort=sort,
+        fallback_string=fallback_string,
+    )
 
-    with io.StringIO() as buffer:
+
+def join_with_or(
+    items: Iterable[Any],
+    *,
+    quote: bool = True,
+    sort: bool = True,
+    fallback_string: str = "(none)",
+) -> str:
+    """
+    Join items with "or" as the last joiner.
+    On empty input, returns the fallback string.
+
+    Arguments
+    ---------
+    items : Iterable[Any]
+        The items to join.
+    quote : bool
+        Whether to quote the items.
+    sort : bool
+        Whether to sort the items.
+    fallback_string : str
+        The string to return if there are no items.
+    """
+    return _join(
+        items=items,
+        quoting=_quote if quote else str,
+        last_joiner=" or ",
+        sort=sort,
+        fallback_string=fallback_string,
+    )
+
+
+def _join(
+    *,
+    items: Iterable[Any],
+    quoting: Callable[[Any], str],
+    last_joiner: str,
+    sort: bool,
+    fallback_string: str,
+):
+    """Internal helper for :func:`join_with_and` and :func:`join_with_or`."""
+    items_iter = map(quoting, items)
+    if sort:
+        items_iter = sorted(items_iter)
+    if result := join(
+        items_iter,
+        last_joiner=last_joiner,
+    ):
+        return result
+    return fallback_string
+
+
+def join(
+    items: Iterable[str],
+    *,
+    separator: str = ", ",
+    last_joiner: str = ", ",
+):
+    """
+    Join items with a separator, with a different last joiner.
+
+    Arguments
+    ---------
+    items : Iterable[str]
+        The items to join.
+
+    Keyword Arguments
+    -----------------
+    separator : str
+        The separator to use between items, by default ``, ``.
+    last_joiner : str
+        The string to use before the last item.
+
+    Returns
+    -------
+    str
+        The joined string.
+    """
+    with io.StringIO() as buf:
         # join items with the specified separator
         last_item = None
-        for item in iterator:
-            if buffer.tell():
-                buffer.write(separator)
+        for item in iter(items):
+            if buf.tell():
+                buf.write(separator)
             if last_item is not None:
-                buffer.write(stringify(last_item))
+                buf.write(last_item)
             last_item = item
 
-        # special case: empty input
-        if last_item is None:
-            return "(none)"
-
-        # the last item is joined with the conjunction text
-        if buffer.tell():
-            buffer.write(f" {conjunction} ")
+        # perform the last join
+        if buf.tell():
+            buf.write(last_joiner)
         if last_item is not None:
-            buffer.write(stringify(last_item))
+            buf.write(last_item)
 
-        return buffer.getvalue()
-
-
-def join_with_and(items: Iterable[Any], *, quote: bool = True) -> str:
-    """
-    Join items with a comma and the word "and" before the last item.
-    """
-    return join_items(
-        items,
-        conjunction="and",
-        stringify=quoting if quote else str,
-    )
+        return buf.getvalue()
 
 
-def join_with_or(items: Iterable[Any], *, quote: bool = True) -> str:
-    """
-    Join items with a comma and the word "or" before the last item.
-    """
-    return join_items(
-        items,
-        conjunction="or",
-        stringify=quoting if quote else str,
-    )
-
-
-def quoting(item: Any) -> str:
+def _quote(item: Any) -> str:
     text = str(item)
     if "'" in text:
         return f'"{text}"'

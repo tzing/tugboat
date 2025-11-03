@@ -100,7 +100,7 @@ def bulk_translate_pydantic_errors(
     for loc, errors in union_errors.items():
         # collect all expected types
         expected_types = {err["loc"][-1] for err in errors}
-        expected_type_expr = join_with_or(sorted(expected_types), quote=False)
+        expected_type_expr = join_with_or(expected_types, quote=False)
 
         # build a more concise message
         _, field = _get_field_name(loc)

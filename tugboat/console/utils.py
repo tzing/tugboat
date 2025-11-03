@@ -32,7 +32,7 @@ class DiagnosesCounter(collections.Counter):
             parts.append(f"{count} warnings")
 
         if parts:
-            summary = join_with_and(parts, quote=False)
+            summary = join_with_and(parts, quote=False, sort=False)
             return f"Found {summary}"
 
         return "All passed!"

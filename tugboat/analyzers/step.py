@@ -188,13 +188,12 @@ def check_argument_parameters_usage(
 
         missing_parameters = required_params.difference(arguments.parameter_dict)
         if missing_parameters:
-            names = join_with_and(sorted(missing_parameters))
             yield {
                 "code": "STP305",
                 "loc": ("arguments", "parameters"),
                 "summary": "Missing parameters",
                 "msg": (
-                    f"Parameters {names} are required by the template '{ref_template.name}' but are not provided."
+                    f"Parameters {join_with_and(missing_parameters)} are required by the template '{ref_template.name}' but are not provided."
                 ),
                 "input": Field("parameters"),
             }
@@ -389,13 +388,12 @@ def check_argument_artifact_usage(
 
         missing_artifacts = required_artifacts.difference(arguments.artifact_dict)
         if missing_artifacts:
-            names = join_with_and(sorted(missing_artifacts))
             yield {
                 "code": "STP307",
                 "loc": ("arguments", "artifacts"),
                 "summary": "Missing artifacts",
                 "msg": (
-                    f"Artifacts {names} are required by the template '{ref_template.name}' but are not provided."
+                    f"Artifacts {join_with_and(missing_artifacts)} are required by the template '{ref_template.name}' but are not provided."
                 ),
                 "input": Field("artifacts"),
             }
@@ -444,7 +442,6 @@ def _check_referenced_template(
     if target_template_name not in workflow.template_dict:
         templates = set(workflow.template_dict)
         templates -= {template.name}
-        templates = sorted(templates)
 
         suggestion = None
         if result := extractOne(target_template_name, templates):
