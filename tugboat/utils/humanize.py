@@ -71,9 +71,54 @@ def join_with_or(items: Iterable[Any], *, quote: bool = True) -> str:
     """
     return join_items(
         items,
-        conjunction="or",
+        last_joiner="or",
         stringify=_quote if quote else str,
     )
+
+
+def join(
+    items: Iterable[str],
+    *,
+    separator: str = ", ",
+    last_joiner: str = ", ",
+):
+    """
+    Join items with a separator, with a different last joiner.
+
+    Arguments
+    ---------
+    items : Iterable[str]
+        The items to join.
+
+    Keyword Arguments
+    -----------------
+    separator : str
+        The separator to use between items, by default ``, ``.
+    last_joiner : str
+        The string to use before the last item.
+
+    Returns
+    -------
+    str
+        The joined string.
+    """
+    with io.StringIO() as buf:
+        # join items with the specified separator
+        last_item = None
+        for item in iter(items):
+            if buf.tell():
+                buf.write(separator)
+            if last_item is not None:
+                buf.write(last_item)
+            last_item = item
+
+        # perform the last join
+        if buf.tell():
+            buf.write(last_joiner)
+        if last_item is not None:
+            buf.write(last_item)
+
+        return buf.getvalue()
 
 
 def _quote(item: Any) -> str:

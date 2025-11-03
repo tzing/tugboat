@@ -4,8 +4,25 @@ from tugboat.utils.humanize import (
     get_alias,
     get_context_name,
     join_with_and,
+    join,
     join_with_or,
 )
+
+
+class TestJoin:
+
+    def test_1(self):
+        assert join(["foo"]) == "foo"
+        assert join(["foo", "bar"]) == "foo, bar"
+        assert join(["foo", "bar", "baz"]) == "foo, bar, baz"
+
+    def test_2(self):
+        assert join(["foo"], last_joiner=", and ") == "foo"
+        assert join(["foo", "bar"], last_joiner=", and ") == "foo, and bar"
+        assert join(["foo", "bar", "baz"], last_joiner=", and ") == "foo, bar, and baz"
+
+    def test_empty(self):
+        assert join([]) == ""
 
 
 class TestJoinItems:
