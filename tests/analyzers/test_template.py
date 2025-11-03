@@ -1,4 +1,3 @@
-
 from tests.dirty_equals import HasSubstring, IsPartialModel
 from tugboat.engine import analyze_yaml_stream
 
@@ -294,7 +293,6 @@ def test_check_input_artifacts(diagnoses_logger):
                 image: alpine:latest
         """
     )
-
     diagnoses_logger(diagnoses)
 
     # 0-th template
@@ -321,64 +319,41 @@ def test_check_input_artifacts(diagnoses_logger):
     assert IsPartialModel(code="M102", loc=(*loc, 1, "value")) in diagnoses
 
 
-class TestOutputRules:
+def test_check_output_parameters(diagnoses_logger):
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: test-
+        spec:
+          entrypoint: main
+          templates:
+            - name: main
+              container:
+                image: busybox:latest
+              outputs:
+                parameters:
+                  - name: message # TPL104
+                  - name: message # TPL104
+                    valueFrom:
+                      parameter: "{{ workflow.invalid}}" # VAR002
+        """
+    )
+    diagnoses_logger(diagnoses)
 
-    def test_check_output_parameters(self, diagnoses_logger):
-        diagnoses = analyze_yaml_stream(MANIFEST_INVALID_OUTPUT_PARAMETERS)
-        diagnoses_logger(diagnoses)
-        assert (
-            IsPartialModel(
-                {
-                    "code": "TPL104",
-                    "loc": ("spec", "templates", 0, "outputs", "parameters", 0, "name"),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialModel(
-                {
-                    "code": "TPL104",
-                    "loc": ("spec", "templates", 0, "outputs", "parameters", 1, "name"),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialModel(
-                {
-                    "code": "M101",
-                    "loc": (
-                        "spec",
-                        "templates",
-                        0,
-                        "outputs",
-                        "parameters",
-                        0,
-                        "valueFrom",
-                    ),
-                }
-            )
-            in diagnoses
-        )
-        assert (
-            IsPartialModel(
-                {
-                    "code": "VAR002",
-                    "loc": (
-                        "spec",
-                        "templates",
-                        0,
-                        "outputs",
-                        "parameters",
-                        1,
-                        "valueFrom",
-                        "parameter",
-                    ),
-                }
-            )
-            in diagnoses
-        )
+    loc = ("spec", "templates", 0, "outputs", "parameters")
+    assert IsPartialModel(code="TPL104", loc=(*loc, 0, "name")) in diagnoses
+    assert IsPartialModel(code="TPL104", loc=(*loc, 1, "name")) in diagnoses
+
+    assert IsPartialModel(code="M101", loc=(*loc, 0, "valueFrom")) in diagnoses
+    assert (
+        IsPartialModel(code="VAR002", loc=(*loc, 1, "valueFrom", "parameter"))
+        in diagnoses
+    )
+
+
+class TestOutputRules:
 
     def test_check_output_artifacts(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_INVALID_OUTPUT_ARTIFACTS)
@@ -428,25 +403,6 @@ class TestOutputRules:
             in diagnoses
         )
 
-
-MANIFEST_INVALID_OUTPUT_PARAMETERS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  entrypoint: main
-  templates:
-    - name: main
-      container:
-        image: busybox:latest
-      outputs:
-        parameters:
-          - name: message # TPL104
-          - name: message # TPL104
-            valueFrom:
-              parameter: "{{ workflow.invalid}}" # VAR002
-"""
 
 MANIFEST_INVALID_OUTPUT_ARTIFACTS = """
 apiVersion: argoproj.io/v1alpha1
