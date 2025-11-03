@@ -241,6 +241,13 @@ def test_check_input_artifacts(diagnoses_logger):
                     value: foo # M102
               container:
                 image: alpine:latest
+
+            - name: steps
+              inputs:
+                artifacts:
+                  - name: item
+                    path: /tmp/item.txt
+              steps: []
         """
     )
     diagnoses_logger(diagnoses)
@@ -265,8 +272,21 @@ def test_check_input_artifacts(diagnoses_logger):
         in diagnoses
     )
 
+    # M101: missing required fields
+    assert IsPartialModel(code="M101", loc=(*loc, 0, "path")) in diagnoses
+    assert IsPartialModel(code="M101", loc=(*loc, 1, "path")) in diagnoses
+
     # M102: invalid fields
     assert IsPartialModel(code="M102", loc=(*loc, 1, "value")) in diagnoses
+
+    # 1-st template
+    # M102: invalid fields
+    assert (
+        IsPartialModel(
+            code="M102", loc=("spec", "templates", 1, "inputs", "artifacts", 0, "path")
+        )
+        in diagnoses
+    )
 
 
 def test_check_output_parameters(diagnoses_logger):
