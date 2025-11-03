@@ -6,7 +6,10 @@ import typing
 
 from rapidfuzz.process import extractOne
 
-from tugboat.analyzers.step import check_argument_parameter_fields
+from tugboat.analyzers.step import (
+    check_argument_artifact_fields,
+    check_argument_parameter_fields,
+)
 from tugboat.constraints import (
     accept_none,
     mutually_exclusive,
@@ -122,6 +125,25 @@ def check_argument_artifacts(
             "msg": f"Artifact name '{name}' is duplicated.",
             "input": name,
         }
+
+    # check fields for each parameter
+    ctx = get_task_context(workflow, template, task)
+
+    for idx, artifact in enumerate(task.arguments.artifacts or ()):
+        yield from prepend_loc(
+            ("arguments", "artifacts", idx),
+            _check_argument_artifact_fields(artifact, ctx),
+        )
+
+
+def _check_argument_artifact_fields(
+    artifact: RelaxedArtifact, context: Context
+) -> Iterable[Diagnosis]:
+    for diag in check_argument_artifact_fields(artifact, context):
+        match diag["code"]:
+            case "STP302":
+                diag["code"] = "DAG302"
+        yield diag
 
 
 @hookimpl(specname="analyze_task")

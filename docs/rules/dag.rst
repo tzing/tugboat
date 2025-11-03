@@ -145,6 +145,31 @@ Code ``DAG`` is used for errors related to the `DAG`_ in a `template`_.
    A task input parameter contains a reference that cannot be resolved.
    This rule builds on :rule:`VAR002` but narrows the report to the task argument where the typo or mismatch occurs.
 
+.. rule:: DAG302 Invalid artifact reference
+
+   A task input artifact points to an artifact that is not available in the current context.
+   This can happen with bare references (``inputs.artifacts.foo``) or templated expressions (``{{ inputs.artifacts.foo }}``) when the name is misspelled or simply not defined.
+
+   .. code-block:: yaml
+      :emphasize-lines: 16
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: dag-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            dag:
+              tasks:
+                - name: process
+                  template: compute
+                  arguments:
+                    artifacts:
+                      - name: data
+                        from: "{{ inputs.artifacts.not-exist }}"
+
 .. DAG9xx deprecated items
 
 .. rule:: DAG901 Deprecated Field: ``onExit``

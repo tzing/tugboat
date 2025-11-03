@@ -129,10 +129,11 @@ def test_check_argument_artifacts(diagnoses_logger):
               dag:
                 tasks:
                   - name: step1
+                    template: compute
                     arguments:
                       artifacts:
                         - name: artifact1
-                          from: "{{workflow.invalid}}"
+                          from: workflow.invalid
                         - name: artifact1
                           raw:
                             data: "some data"
@@ -143,6 +144,7 @@ def test_check_argument_artifacts(diagnoses_logger):
     loc_prefix = ("spec", "templates", 0, "dag", "tasks", 0, "arguments", "artifacts")
     assert IsPartialModel(code="DAG103", loc=(*loc_prefix, 0, "name")) in diagnoses
     assert IsPartialModel(code="DAG103", loc=(*loc_prefix, 1, "name")) in diagnoses
+    assert IsPartialModel(code="DAG302", loc=(*loc_prefix, 0, "from")) in diagnoses
 
 
 def test_check_referenced_template(caplog: pytest.LogCaptureFixture, diagnoses_logger):

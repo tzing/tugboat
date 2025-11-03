@@ -230,11 +230,11 @@ def check_argument_artifacts(
     for idx, artifact in enumerate(step.arguments.artifacts or []):
         yield from prepend_loc(
             ("arguments", "artifacts", idx),
-            _check_argument_artifact_fields(artifact, ctx),
+            check_argument_artifact_fields(artifact, ctx),
         )
 
 
-def _check_argument_artifact_fields(
+def check_argument_artifact_fields(
     artifact: RelaxedArtifact, context: Context
 ) -> Iterable[Diagnosis]:
     yield from require_non_empty(
