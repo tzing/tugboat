@@ -26,6 +26,26 @@ from tugboat.schemas.template.container import Quantity
 logger = logging.getLogger(__name__)
 
 
+class TestArtifacts:
+
+    def test_validate_pass(self):
+        assert Artifact.model_validate({"name": "my-artifact"}) == IsInstance(Artifact)
+
+    def test_validate_fail(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Artifact.model_validate({"name": "my-artifact", "value": "foobar"})
+
+        errors = exc_info.value.errors()
+        assert errors == [
+            {
+                "type": "artifact_prohibited_value_field",
+                "loc": ("value",),
+                "msg": "Field 'value' is not a valid field for artifact. Use 'raw' artifact type instead.",
+                "input": "foobar",
+            }
+        ]
+
+
 class TestArguments:
 
     def test_parameter_dict(self):

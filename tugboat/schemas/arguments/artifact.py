@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic_core import PydanticCustomError
 
 from tugboat.schemas.basic import (
     Array,
@@ -74,6 +75,34 @@ class Artifact(_BaseModel):
     recurseMode: bool | None = None
     s3: S3Artifact | None = None
     subPath: str | None = None
+
+    value: Literal[None] = None
+    """Not a valid field for artifact. Preserve for validation purposes.
+    """
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.artifactory,
+                self.azure,
+                self.gcs,
+                self.git,
+                self.hdfs,
+                self.http,
+                self.oss,
+                self.raw,
+                self.s3,
+            )
+        )
+
+    @field_validator("value", mode="plain")
+    @classmethod
+    def _validate_(cls, value: Any) -> Literal[None]:
+        if value is not None:
+            raise PydanticCustomError(
+                "artifact_prohibited_value_field",
+                "Field 'value' is not a valid field for artifact. Use 'raw' artifact type instead.",
+            )
 
 
 class RelaxedArtifact(Artifact):
