@@ -1,4 +1,5 @@
-from tests.dirty_equals import ContainsSubStrings, IsPartialModel
+
+from tests.dirty_equals import HasSubstring, IsPartialModel
 from tugboat.engine import analyze_yaml_stream
 
 
@@ -271,85 +272,53 @@ def test_check_input_parameters_2(diagnoses_logger):
 
 
 def test_check_input_artifacts(diagnoses_logger):
-    diagnoses = analyze_yaml_stream(MANIFEST_INVALID_INPUT_ARTIFACTS)
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: test-
+        spec:
+          entrypoint: test
+          templates:
+            - name: test
+              inputs:
+                artifacts:
+                  - name: data # TPL103
+                    raw:
+                      data:
+                        This is a message from {{ workflow.namee }}. # TPL202
+                  - name: data # TPL103
+                    value: foo # M102
+              container:
+                image: alpine:latest
+        """
+    )
+
     diagnoses_logger(diagnoses)
+
+    # 0-th template
+    loc = ("spec", "templates", 0, "inputs", "artifacts")
+
+    # TPL103: duplicate artifact names
+    assert IsPartialModel(code="TPL103", loc=(*loc, 0, "name")) in diagnoses
+    assert IsPartialModel(code="TPL103", loc=(*loc, 1, "name")) in diagnoses
+
+    # TPL202: improper use of raw artifact field
     assert (
         IsPartialModel(
-            {
-                "code": "TPL103",
-                "loc": ("spec", "templates", 0, "inputs", "artifacts", 0, "name"),
-            }
-        )
-        in diagnoses
-    )
-    assert (
-        IsPartialModel(
-            {
-                "code": "TPL103",
-                "loc": ("spec", "templates", 0, "inputs", "artifacts", 1, "name"),
-            }
-        )
-        in diagnoses
-    )
-    assert (
-        IsPartialModel(
-            {
-                "code": "TPL202",
-                "loc": (
-                    "spec",
-                    "templates",
-                    0,
-                    "inputs",
-                    "artifacts",
-                    0,
-                    "raw",
-                    "data",
-                ),
-                "msg": ContainsSubStrings(
-                    "The parameter reference 'workflow.namee' used in artifact 'data' is invalid.",
-                ),
-                "fix": "{{ workflow.name }}",
-            }
-        )
-        in diagnoses
-    )
-    assert (
-        IsPartialModel(
-            {
-                "code": "M102",
-                "loc": (
-                    "spec",
-                    "templates",
-                    0,
-                    "inputs",
-                    "artifacts",
-                    1,
-                    "value",
-                ),
-            }
+            code="TPL202",
+            loc=(*loc, 0, "raw", "data"),
+            msg=HasSubstring(
+                "The parameter reference 'workflow.namee' used in artifact 'data' is invalid."
+            ),
+            fix="{{ workflow.name }}",
         )
         in diagnoses
     )
 
-
-MANIFEST_INVALID_INPUT_ARTIFACTS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  entrypoint: test
-  templates:
-    - name: test
-      inputs:
-        artifacts:
-          - name: data # TPL103
-            raw:
-              data:
-                This is a message from {{ workflow.namee }}. # TPL202
-          - name: data # TPL103
-            value: foo # M102
-"""
+    # M102: invalid fields
+    assert IsPartialModel(code="M102", loc=(*loc, 1, "value")) in diagnoses
 
 
 class TestOutputRules:

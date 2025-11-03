@@ -21,13 +21,21 @@ class ContainsSubStrings(DirtyEquals[str]):
 class IsMatch(DirtyEquals[str]):
 
     def __init__(self, pattern: str):
-        super().__init__()
         self.pattern = re.compile(pattern)
+        super().__init__(self.pattern.pattern)
 
     def equals(self, other: Any) -> bool:
-        if isinstance(other, str):
-            return bool(self.pattern.search(other))
-        return False
+        if not isinstance(other, str):
+            return False
+        if not self.pattern.search(other):
+            return False
+        return True
+
+
+class HasSubstring(IsMatch):
+
+    def __init__(self, substring: str):
+        super().__init__(re.escape(substring))
 
 
 class IsPartialModel(DirtyEquals[BaseModel]):
@@ -39,11 +47,10 @@ class IsPartialModel(DirtyEquals[BaseModel]):
         fields : Any
             key-value pairs of field-value to check for.
         """
-        super().__init__()
-        self._expected = dict(*args, **kwargs)
+        super().__init__(**dict(*args, **kwargs))
 
     def equals(self, other):
         if isinstance(other, BaseModel):
             other = other.model_dump()
-            return other == IsDict(self._expected).settings(partial=True)
+            return other == IsDict(self._repr_kwargs).settings(partial=True)
         return False
