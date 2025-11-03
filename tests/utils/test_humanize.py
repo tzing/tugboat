@@ -3,8 +3,8 @@ from pydantic import BaseModel, Field
 from tugboat.utils.humanize import (
     get_alias,
     get_context_name,
-    join_with_and,
     join,
+    join_with_and,
     join_with_or,
 )
 
@@ -24,19 +24,17 @@ class TestJoin:
     def test_empty(self):
         assert join([]) == ""
 
-
-class TestJoinItems:
-    def test_single(self):
+    def test_join_with_and(self):
         assert join_with_and(["foo"]) == "'foo'"
-
-    def test_two(self):
         assert join_with_and(["foo", "bar"], quote=False) == "foo and bar"
-
-    def test_three(self):
-        assert join_with_or(["foo", "bar", "baz"]) == "'foo', 'bar' or 'baz'"
-
-    def test_empty(self):
+        assert join_with_and(["foo", "bar"], sort=True) == "'bar' and 'foo'"
         assert join_with_and([]) == "(none)"
+
+    def test_join_with_or(self):
+        assert join_with_or(["foo"]) == "'foo'"
+        assert join_with_or(["foo", "bar"], quote=False) == "foo or bar"
+        assert join_with_or(["foo", "bar", "baz"], sort=True) == "'bar', 'baz' or 'foo'"
+        assert join_with_or([]) == "(none)"
 
 
 class TestGetContextName:
