@@ -236,8 +236,8 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                 "type": "failure",
                 "code": "M103",
                 "loc": error["loc"],
-                "summary": "Input should be a valid floating point number",
-                "msg": f"Expected a floating point number for field {field}, but received a {input_type}.",
+                "summary": "Input should be a valid number",
+                "msg": f"Expected a number for field {field}, but received a {input_type}.",
                 "input": error["input"],
             }
 
@@ -364,7 +364,7 @@ def get_type_name(value: Any) -> str:
     if isinstance(value, str):
         return "string"
     if isinstance(value, float):
-        return "floating point number"
+        return "number"
     if isinstance(value, Mapping):
         return "mapping"
     if isinstance(value, Sequence):

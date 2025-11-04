@@ -170,8 +170,8 @@ class TestTranslatePydanticError:
             "type": "failure",
             "code": "M103",
             "loc": ("x",),
-            "summary": "Input should be a valid floating point number",
-            "msg": "Expected a floating point number for field 'x', but received a string.",
+            "summary": "Input should be a valid number",
+            "msg": "Expected a number for field 'x', but received a string.",
             "input": "foo",
         }
 
@@ -325,7 +325,7 @@ class TestGetTypeName:
         ("input_", "expected"),
         [
             (1234, "integer"),
-            (3.14, "floating point number"),
+            (3.14, "number"),
             ("foo", "string"),
             (True, "boolean"),
             ({"x": 1}, "mapping"),

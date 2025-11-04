@@ -93,7 +93,7 @@ class TestCritiqueRelaxedParameter:
                 "code": "M103",
                 "loc": ("value",),
                 "summary": "Input type mismatch",
-                "msg": "Expected string for parameter value, but received a floating point number.",
+                "msg": "Expected string for parameter value, but received a number.",
                 "input": 3.14,
             }
         ]
