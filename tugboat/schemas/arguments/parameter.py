@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+import typing
 
 from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic_core import PydanticCustomError
 
 from tugboat.schemas.basic import Array, ConfigKeySelector, Empty
+
+if typing.TYPE_CHECKING:
+    from typing import Any
 
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = ["ValueFrom"]
@@ -29,8 +32,17 @@ class Parameter(_BaseModel):
     enum: Array[str] | None = None
     globalName: str | None = None
     name: str
-    value: bool | int | str | None = None
     valueFrom: ValueFrom | None = None
+
+    value: bool | int | str | None = None
+    """
+    The literal value to use for the parameter.
+
+    .. note::
+
+       While documented as a string type in the official Argo Workflows documentation,
+       this field also accepts boolean and integer values in practice.
+    """
 
     def __hash__(self):
         return hash((repr(self.value), self.valueFrom))
