@@ -26,6 +26,69 @@ from tugboat.schemas.template.container import Quantity
 logger = logging.getLogger(__name__)
 
 
+class TestArtifacts:
+
+    def test_validate_pass(self):
+        assert Artifact.model_validate({"name": "my-artifact"}) == IsInstance(Artifact)
+
+    def test_validate_fail(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Artifact.model_validate({"name": "my-artifact", "value": "foobar"})
+
+        errors = exc_info.value.errors()
+        assert errors == [
+            {
+                "type": "artifact_prohibited_value_field",
+                "loc": ("value",),
+                "msg": "Field 'value' is not a valid field for artifact. Use 'raw' artifact type instead.",
+                "input": "foobar",
+            }
+        ]
+
+
+class TestParameters:
+
+    def test_validate_pass(self):
+        assert isinstance(
+            Parameter.model_validate({"name": "param", "value": "foobar"}), Parameter
+        )
+        assert isinstance(
+            Parameter.model_validate({"name": "param", "value": True}), Parameter
+        )
+        assert isinstance(
+            Parameter.model_validate({"name": "param", "value": None}), Parameter
+        )
+
+    def test_validate_fail(self):
+        #
+        with pytest.raises(ValidationError) as exc_info:
+            Parameter.model_validate({"name": "param", "value": {}})
+
+        errors = exc_info.value.errors()
+        assert errors == [
+            {
+                "type": "parameter_value_type_error",
+                "loc": ("value",),
+                "msg": "",
+                "input": {},
+            }
+        ]
+
+        #
+        with pytest.raises(ValidationError) as exc_info:
+            Parameter.model_validate({"name": "param", "value": 123.456})
+
+        errors = exc_info.value.errors()
+        assert errors == [
+            {
+                "type": "parameter_value_type_error",
+                "loc": ("value",),
+                "msg": "",
+                "input": pytest.approx(123.456),
+            }
+        ]
+
+
 class TestArguments:
 
     def test_parameter_dict(self):
@@ -282,6 +345,10 @@ class TestArgoExamples:
         manifests = load_manifests(
             dir_path=argo_example_dir,
             expected_kinds=["WorkflowTemplate"],
+            exclude_files=[
+                # github-path-filter-workflowtemplate: found parameter value in list type
+                "workflow-event-binding/github-path-filter-workflowtemplate.yaml"
+            ],
         )
 
         for file, data in manifests:
@@ -322,7 +389,7 @@ def load_manifests(
 
     manifests = []
     for file_path in dir_path.glob("**/*.yaml"):
-        if file_path.name in exclude_files:
+        if file_path in map(dir_path.joinpath, exclude_files):
             continue
 
         with file_path.open() as fd:

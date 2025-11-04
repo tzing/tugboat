@@ -12,6 +12,7 @@ from pydantic import (
 )
 from pydantic_core import ErrorDetails
 
+from tugboat.schemas import Artifact, Parameter
 from tugboat.schemas.basic import Array, Dict
 from tugboat.types import Field
 from tugboat.utils.pydantic import (
@@ -298,6 +299,49 @@ class TestTranslatePydanticError:
             "summary": "Input should be a valid integer",
             "msg": "Expected a integer for field <unnamed>, but received a string.",
             "input": "foo",
+        }
+
+    def test_artifact_prohibited_value_field(self):
+        error = get_validation_error(
+            Artifact, {"name": "my-artifact", "value": "foobar"}
+        )
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M102",
+            "loc": ("value",),
+            "summary": "Invalid field for artifact",
+            "msg": (
+                "Field 'value' is not a valid field for artifact. "
+                "Use 'raw' artifact type instead."
+            ),
+            "input": "value",
+            "fix": '{"raw": {"data": "foobar"}}',
+        }
+
+    def test_parameter_value_type_error_1(self):
+        error = get_validation_error(Parameter, {"name": "my-param", "value": 123.456})
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M103",
+            "loc": ("value",),
+            "summary": "Input should be a string",
+            "msg": "Expected string for parameter value, but received a number.",
+            "input": pytest.approx(123.456),
+        }
+
+    def test_parameter_value_type_error_2(self):
+        error = get_validation_error(Parameter, {"name": "my-param", "value": {"x": 1}})
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M103",
+            "loc": ("value",),
+            "summary": "Input should be a string",
+            "msg": (
+                "Expected string for parameter value, but received a mapping.\n"
+                "If a complex structure is intended, serialize it as a JSON string."
+            ),
+            "input": {"x": 1},
+            "fix": '{\n  "x": 1\n}',
         }
 
 

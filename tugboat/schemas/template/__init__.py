@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict
 
-from tugboat.schemas.arguments import Arguments, RelaxedArguments
+from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Array, Dict
 from tugboat.schemas.metrics import Metrics
 from tugboat.schemas.template.container import (
@@ -67,7 +67,7 @@ class Template(_BaseModel):
     daemon: bool | None = None
     dag: DagTemplate | None = None
     failFast: bool | None = None
-    inputs: RelaxedArguments | None = None
+    inputs: Arguments | None = None
     metrics: Metrics | None = None
     name: str | None = None
     nodeSelector: Dict[str, str] | None = None
@@ -198,8 +198,6 @@ class Step(_StepBase):
 
     .. _Step: https://argo-workflows.readthedocs.io/en/latest/fields/#workflowstep
     """
-
-    arguments: RelaxedArguments | None = None  # type: ignore[reportIncompatibleVariableOverride]
 
 
 class TemplateRef(_BaseModel):

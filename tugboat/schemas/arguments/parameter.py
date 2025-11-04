@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+import typing
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic_core import PydanticCustomError
 
 from tugboat.schemas.basic import Array, ConfigKeySelector, Empty
 
+if typing.TYPE_CHECKING:
+    from typing import Any
+
 if os.getenv("DOCUTILSCONFIG"):
-    __all__ = ["RelaxedParameter", "ValueFrom"]
+    __all__ = ["ValueFrom"]
 
 
 class _BaseModel(BaseModel):
@@ -28,22 +32,29 @@ class Parameter(_BaseModel):
     enum: Array[str] | None = None
     globalName: str | None = None
     name: str
-    value: bool | int | str | None = None
     valueFrom: ValueFrom | None = None
 
-
-class RelaxedParameter(Parameter):
+    value: bool | int | str | None = None
     """
-    A relaxed version of :py:class:`Parameter` that allows some often misused fields.
+    The literal value to use for the parameter.
 
-    Please refer to the original class for the full list of fields.
-    This class only shows the fields that are changed.
+    .. note::
+
+       While documented as a string type in the official Argo Workflows documentation,
+       this field also accepts boolean and integer values in practice.
     """
-
-    value: Any | None = None
 
     def __hash__(self):
         return hash((repr(self.value), self.valueFrom))
+
+    @field_validator("value", mode="plain")
+    @classmethod
+    def _validate_value(cls, value: Any) -> bool | int | str | None:
+        if value is None:
+            return value
+        if isinstance(value, bool | int | str):
+            return value
+        raise PydanticCustomError("parameter_value_type_error", "")
 
 
 class ValueFrom(_BaseModel):

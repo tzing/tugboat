@@ -4,8 +4,8 @@ import functools
 
 from pydantic import BaseModel, ConfigDict
 
-from tugboat.schemas.arguments.artifact import Artifact, RelaxedArtifact
-from tugboat.schemas.arguments.parameter import Parameter, RelaxedParameter
+from tugboat.schemas.arguments.artifact import Artifact
+from tugboat.schemas.arguments.parameter import Parameter
 from tugboat.schemas.basic import Array
 
 
@@ -44,14 +44,3 @@ class Arguments(BaseModel):
             for artifact in self.artifacts or ()
             if artifact.name
         }
-
-
-class RelaxedArguments(Arguments):
-    """
-    A relaxed version of :py:class:`Arguments` that allows some often misused
-    fields. This is useful for skipping Pydantic validation and handle it during
-    later processing.
-    """
-
-    parameters: Array[RelaxedParameter] | None = None  # type: ignore[reportIncompatibleVariableOverride]
-    artifacts: Array[RelaxedArtifact] | None = None  # type: ignore[reportIncompatibleVariableOverride]
