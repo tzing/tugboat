@@ -9,7 +9,7 @@ from pydantic_core import PydanticCustomError
 from tugboat.schemas.basic import Array, ConfigKeySelector, Empty
 
 if os.getenv("DOCUTILSCONFIG"):
-    __all__ = ["RelaxedParameter", "ValueFrom"]
+    __all__ = ["ValueFrom"]
 
 
 class _BaseModel(BaseModel):
@@ -43,20 +43,6 @@ class Parameter(_BaseModel):
         if isinstance(value, bool | int | str):
             return value
         raise PydanticCustomError("parameter_value_type_error", "")
-
-
-class RelaxedParameter(Parameter):
-    """
-    A relaxed version of :py:class:`Parameter` that allows some often misused fields.
-
-    Please refer to the original class for the full list of fields.
-    This class only shows the fields that are changed.
-    """
-
-    value: Any | None = None
-
-    def __hash__(self):
-        return hash((repr(self.value), self.valueFrom))
 
 
 class ValueFrom(_BaseModel):

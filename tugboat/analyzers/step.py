@@ -19,7 +19,6 @@ from tugboat.types import Field
 from tugboat.utils import (
     check_model_fields_references,
     check_value_references,
-    critique_relaxed_parameter,
     find_duplicate_names,
     join_with_and,
     join_with_or,
@@ -30,8 +29,14 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
     from tugboat.references import Context
-    from tugboat.schemas import Artifact, Step, Template, Workflow, WorkflowTemplate
-    from tugboat.schemas.arguments import RelaxedParameter
+    from tugboat.schemas import (
+        Artifact,
+        Parameter,
+        Step,
+        Template,
+        Workflow,
+        WorkflowTemplate,
+    )
     from tugboat.types import Diagnosis
 
     type WorkflowCompatible = Workflow | WorkflowTemplate
@@ -92,7 +97,7 @@ def check_argument_parameters(
 
 
 def _check_argument_parameter_fields(
-    param: RelaxedParameter, context: Context
+    param: Parameter, context: Context
 ) -> Iterable[Diagnosis]:
     yield from require_non_empty(
         model=param,
@@ -104,7 +109,6 @@ def _check_argument_parameter_fields(
         loc=(),
         fields=["value", "valueFrom"],
     )
-    yield from critique_relaxed_parameter(param)
 
     if param.valueFrom:
         yield from require_exactly_one(

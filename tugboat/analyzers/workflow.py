@@ -11,7 +11,6 @@ from tugboat.constraints import accept_none, require_exactly_one, require_non_em
 from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_workflow_context
 from tugboat.utils import (
-    critique_relaxed_parameter,
     find_duplicate_names,
     join_with_and,
     prepend_loc,
@@ -160,7 +159,6 @@ def check_argument_parameters(workflow: WorkflowCompatible) -> Iterator[Diagnosi
             loc=loc,
             fields=["default", "enum"],
         )
-        yield from prepend_loc(loc, critique_relaxed_parameter(param))
 
         if workflow.kind == "Workflow":
             yield from require_exactly_one(
