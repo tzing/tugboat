@@ -106,11 +106,12 @@ class DiagnosisModel(BaseModel):
     ]
 
     fix: Annotated[
-        str | None,
+        str | dict[str, Any],
+        None,
         Field(
             default=None,
             description=(
-                "Analyzer's suggested fix presented as plain text. Treat this as guidance, not a guaranteed solution."
+                "Analyzer's suggested fix. Treat this as guidance, not a guaranteed solution."
             ),
         ),
     ]

@@ -75,7 +75,7 @@ class Diagnosis(TypedDict):
     Use :py:class:`Field` to indicate a specific field rather than a value.
     """
 
-    fix: NotRequired[str | None]
+    fix: NotRequired[str | dict[str, Any] | None]
     """Possible alternative value to fix the issue."""
 
     ctx: NotRequired[dict[str, Bundle]]
