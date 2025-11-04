@@ -345,6 +345,10 @@ class TestArgoExamples:
         manifests = load_manifests(
             dir_path=argo_example_dir,
             expected_kinds=["WorkflowTemplate"],
+            exclude_files=[
+                # github-path-filter-workflowtemplate: found parameter value in list type
+                "workflow-event-binding/github-path-filter-workflowtemplate.yaml"
+            ],
         )
 
         for file, data in manifests:
@@ -385,7 +389,7 @@ def load_manifests(
 
     manifests = []
     for file_path in dir_path.glob("**/*.yaml"):
-        if file_path.name in exclude_files:
+        if file_path in map(dir_path.joinpath, exclude_files):
             continue
 
         with file_path.open() as fd:

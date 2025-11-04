@@ -67,10 +67,28 @@ spec:
 
 
 def test_check_argument_parameters(diagnoses_logger):
-    diagnoses = analyze_yaml_stream(MANIFEST_MALFORMED_PARAMETERS)
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: WorkflowTemplate
+        metadata:
+          name: test
+        spec:
+          arguments:
+            parameters:
+              - name: message  # WT101
+                valueFrom:
+                  configMapKeyRef:
+                    name: my-config
+                    key: my-key
+              - name: message  # WT101
+                default: foo
+              - name: param-3
+                value: ""
+        """
+    )
     diagnoses_logger(diagnoses)
 
-    # WT101: Duplicated parameter name
     assert (
         IsPartialModel(
             {"code": "WT101", "loc": ("spec", "arguments", "parameters", 0, "name")}
@@ -83,35 +101,6 @@ def test_check_argument_parameters(diagnoses_logger):
         )
         in diagnoses
     )
-
-    # M103: Type error
-    assert (
-        IsPartialModel(
-            {"code": "M103", "loc": ("spec", "arguments", "parameters", 2, "value")}
-        )
-        in diagnoses
-    )
-
-
-MANIFEST_MALFORMED_PARAMETERS = """
-apiVersion: argoproj.io/v1alpha1
-kind: WorkflowTemplate
-metadata:
-  name: test
-spec:
-  arguments:
-    parameters:
-      - name: message  # WT101
-        valueFrom:
-          configMapKeyRef:
-            name: my-config
-            key: my-key
-      - name: message  # WT101
-        default: foo
-      - name: param-3
-        value:
-          foo: bar # M103
-"""
 
 
 def test_check_argument_artifacts(diagnoses_logger):

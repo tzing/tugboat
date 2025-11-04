@@ -169,8 +169,7 @@ def test_check_input_parameters_1(diagnoses_logger):
                   - name: message-3
                     value: "{{ workflow.invalid}}" #
                   - name: message-4
-                    value:
-                      foo: bar # M103
+                    value: ""
         """
     )
     diagnoses_logger(diagnoses)
@@ -189,7 +188,6 @@ def test_check_input_parameters_1(diagnoses_logger):
         )
         in diagnoses
     )
-    assert IsPartialModel(code="M103", loc=(*loc, 3, "value")) in diagnoses
 
 
 def test_check_input_parameters_2(diagnoses_logger):

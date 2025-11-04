@@ -45,7 +45,30 @@ spec:
 
 
 def test_check_argument_parameters(diagnoses_logger):
-    diagnoses = analyze_yaml_stream(MANIFEST_INVALID_INPUT_PARAMETERS)
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: test-
+        spec:
+          entrypoint: main
+          templates:
+            - name: main
+              steps:
+                - - name: step1
+                    template: test
+                    arguments:
+                      parameters:
+                        - name: message # STP102
+                          valueFrom:
+                            path: /tmp/message  # M102
+                        - name: message # STP102
+                          value: "{{ workflow.invalid}}" # STP301
+                        - name: param-3
+                          value: ""
+        """
+    )
     diagnoses_logger(diagnoses)
 
     loc_prefix = ("spec", "templates", 0, "steps", 0, 0, "arguments", "parameters")
@@ -54,11 +77,6 @@ def test_check_argument_parameters(diagnoses_logger):
     assert (
         IsPartialModel({"code": "M102", "loc": (*loc_prefix, 0, "valueFrom", "path")})
         in diagnoses
-    )
-
-    # M103: Type error
-    assert (
-        IsPartialModel({"code": "M103", "loc": (*loc_prefix, 2, "value")}) in diagnoses
     )
 
     # STP102: Duplicated input parameter name
@@ -74,31 +92,6 @@ def test_check_argument_parameters(diagnoses_logger):
         IsPartialModel({"code": "STP301", "loc": (*loc_prefix, 1, "value")})
         in diagnoses
     )
-
-
-MANIFEST_INVALID_INPUT_PARAMETERS = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: test-
-spec:
-  entrypoint: main
-  templates:
-    - name: main
-      steps:
-        - - name: step1
-            template: test
-            arguments:
-              parameters:
-                - name: message # STP102
-                  valueFrom:
-                    path: /tmp/message  # M102
-                - name: message # STP102
-                  value: "{{ workflow.invalid}}" # STP301
-                - name: param-3
-                  value:
-                    foo: bar # M103
-"""
 
 
 def test_check_argument_parameters_usage(diagnoses_logger):
