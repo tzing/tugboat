@@ -3,7 +3,8 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic_core import PydanticCustomError
 
 from tugboat.schemas.basic import Array, ConfigKeySelector, Empty
 
@@ -30,6 +31,18 @@ class Parameter(_BaseModel):
     name: str
     value: bool | int | str | None = None
     valueFrom: ValueFrom | None = None
+
+    def __hash__(self):
+        return hash((repr(self.value), self.valueFrom))
+
+    @field_validator("value", mode="plain")
+    @classmethod
+    def _validate_value(cls, value: Any) -> bool | int | str | None:
+        if value is None:
+            return value
+        if isinstance(value, bool | int | str):
+            return value
+        raise PydanticCustomError("parameter_value_type_error", "")
 
 
 class RelaxedParameter(Parameter):

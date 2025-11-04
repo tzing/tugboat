@@ -46,6 +46,49 @@ class TestArtifacts:
         ]
 
 
+class TestParameters:
+
+    def test_validate_pass(self):
+        assert isinstance(
+            Parameter.model_validate({"name": "param", "value": "foobar"}), Parameter
+        )
+        assert isinstance(
+            Parameter.model_validate({"name": "param", "value": True}), Parameter
+        )
+        assert isinstance(
+            Parameter.model_validate({"name": "param", "value": None}), Parameter
+        )
+
+    def test_validate_fail(self):
+        #
+        with pytest.raises(ValidationError) as exc_info:
+            Parameter.model_validate({"name": "param", "value": {}})
+
+        errors = exc_info.value.errors()
+        assert errors == [
+            {
+                "type": "parameter_value_type_error",
+                "loc": ("value",),
+                "msg": "",
+                "input": {},
+            }
+        ]
+
+        #
+        with pytest.raises(ValidationError) as exc_info:
+            Parameter.model_validate({"name": "param", "value": 123.456})
+
+        errors = exc_info.value.errors()
+        assert errors == [
+            {
+                "type": "parameter_value_type_error",
+                "loc": ("value",),
+                "msg": "",
+                "input": pytest.approx(123.456),
+            }
+        ]
+
+
 class TestArguments:
 
     def test_parameter_dict(self):
