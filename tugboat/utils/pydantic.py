@@ -184,6 +184,8 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
           - Tugboat Code
         * - ``artifact_prohibited_value_field``
           - :rule:`m102`
+        * - ``parameter_value_type_error``
+          - :rule:`m103`
 
     Parameters
     ----------
@@ -366,6 +368,33 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                 diagnosis["fix"] = json.dumps({"raw": {"data": error["input"]}})
             except Exception:
                 ...
+
+            return diagnosis
+
+        case "parameter_value_type_error":
+            input_type = get_type_name(error["input"])
+
+            diagnosis: Diagnosis = {
+                "type": "failure",
+                "code": "M103",
+                "loc": error["loc"],
+                "summary": "Input should be a string",
+                "msg": (
+                    f"Expected string for parameter value, but received a {input_type}."
+                ),
+                "input": error["input"],
+            }
+
+            if isinstance(error["input"], dict | list):
+                try:
+                    diagnosis["fix"] = json.dumps(error["input"], indent=2)
+                except Exception:
+                    ...
+
+                diagnosis["msg"] += (
+                    "\n"
+                    "If a complex structure is intended, serialize it as a JSON string."
+                )
 
             return diagnosis
 
