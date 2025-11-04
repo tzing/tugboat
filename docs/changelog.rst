@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+:octicon:`plug` Enhancements
+++++++++++++++++++++++++++++
+
+* Redesign the validator for :py:class:`~tugboat.schemas.Artifact` and :py:class:`~tugboat.schemas.Parameter` to improve clarity and maintainability.
+
 0.6.1
 -----
 
