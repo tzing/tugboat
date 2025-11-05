@@ -4,6 +4,7 @@ import enum
 import io
 import textwrap
 import typing
+from dataclasses import dataclass
 
 import click
 
@@ -50,9 +51,7 @@ class ConsoleFormatter(OutputFormatter):
             nl=False,
         )
 
-    def append(  # noqa: C901
-        self, *, content_lines: list[str], diagnosis: DiagnosisModel
-    ) -> None:
+    def append(self, *, content_lines: list[str], diagnosis: DiagnosisModel) -> None:
         """
         Formats and appends a diagnosis to the internal buffer.
 
@@ -74,18 +73,14 @@ class ConsoleFormatter(OutputFormatter):
           Do you mean: {{ inputs.parameters.message }}
         ```
         """
-        # determine emphasis style
-        match diagnosis.type:
-            case "error" | "failure":
-                emphasis = Style.Error
-            case "warning":
-                emphasis = Style.Warn
+        # convert to formatter-specific model
+        diag_formatter = DiagnosisModelFormatter(diagnosis)
 
         # ---------------------------------------------------------------------
         # :PART: summary
 
         # > T01 Example error message
-        self.buf.write(emphasis.fmt(diagnosis.code))
+        self.buf.write(diag_formatter.emphasis.fmt(diagnosis.code))
         self.buf.write(" ")
         self.buf.write(Style.Summary.fmt(diagnosis.summary))
         self.buf.write("\n")
@@ -147,7 +142,9 @@ class ConsoleFormatter(OutputFormatter):
                     indent += " " * col_start
 
                     self.buf.write(indent)
-                    self.buf.write(emphasis.fmt("^" * (col_end - col_start)))
+                    self.buf.write(
+                        diag_formatter.emphasis.fmt("^" * (col_end - col_start))
+                    )
                     self.buf.write("\n")
 
                 else:
@@ -156,7 +153,7 @@ class ConsoleFormatter(OutputFormatter):
                 # draw position indicator
                 # >    └ T01 at .spec.templates[0].container.args[0]
                 self.buf.write(indent)
-                self.buf.write(emphasis.fmt(f"└ {diagnosis.code}"))
+                self.buf.write(diag_formatter.emphasis.fmt(f"└ {diagnosis.code}"))
                 self.buf.write(Style.LocationDelimiter.fmt(" at "))
                 self.buf.write(Style.Location.fmt(diagnosis.loc_path))
                 self.buf.write("\n")
@@ -187,6 +184,21 @@ class ConsoleFormatter(OutputFormatter):
                 self.buf.write("\n")
 
         self.buf.write("\n")  # separate entries with a blank line
+
+
+@dataclass
+class DiagnosisModelFormatter:
+
+    diagnosis: DiagnosisModel
+
+    @property
+    def emphasis(self) -> Style:
+        match self.diagnosis.type:
+            case "error" | "failure":
+                return Style.Error
+            case "warning":
+                return Style.Warn
+        return Style.Error
 
 
 class Style(enum.StrEnum):
