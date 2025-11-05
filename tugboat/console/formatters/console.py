@@ -37,12 +37,18 @@ class ConsoleFormatter(OutputFormatter):
         self.buf = io.StringIO()
 
     def update(self, *, content: str, diagnoses: Sequence[DiagnosisModel]) -> None:
-        content_lines = content.splitlines()
+        snippet = Snippet(content.splitlines())
         for diagnosis in diagnoses:
-            self.append(
-                content_lines=content_lines,
-                diagnosis=diagnosis,
+            self.buf.write(
+                str(
+                    DiagnosticMessageBuilder(
+                        diagnosis=diagnosis,
+                        snippet=snippet,
+                        settings=settings.console_output,
+                    )
+                )
             )
+            self.buf.write("\n")
 
     def dump(self, stream: TextIO) -> None:
         click.echo(
@@ -146,18 +152,17 @@ class DiagnosticMessageBuilder:
             return buf.getvalue()
 
     def code_area(self) -> str:
-        max_line_number = (
-            self.diagnosis.line + settings.console_output.snippet_lines_behind
-        )
+        max_line_number = self.diagnosis.line + self.settings.snippet_lines_behind
         lncw = len(str(max_line_number - 1)) + 2  # line number column width
 
         with io.StringIO() as buf:
             # code snippet before (and including) the issue
             # > 15 |         args:
             # > 16 |           - "{{ inputs.parameter.message }}"
-            lineno_issue = self.diagnosis.line
-            lineno_first = max(0, lineno_issue - self.settings.snippet_lines_ahead)
-            for line_no, line_text in self.snippet.iter(lineno_first, lineno_issue):
+            for line_no, line_text in self.snippet.lines_between(
+                start=self.diagnosis.line - self.settings.snippet_lines_ahead,
+                last=self.diagnosis.line,
+            ):
                 buf.write(Style.LineNumber.fmt(f"{line_no:{lncw}} | "))
                 buf.write(line_text)
                 buf.write("\n")
@@ -192,10 +197,10 @@ class DiagnosticMessageBuilder:
             buf.write("\n")
 
             # code snippet after the issue
-            # > 15 |         args:
-            # > 16 |           - "{{ inputs.parameter.message }}"
-            lineno_last = lineno_issue + self.settings.snippet_lines_behind
-            for line_no, line_text in self.snippet.iter(lineno_issue + 1, lineno_last):
+            for line_no, line_text in self.snippet.lines_between(
+                start=self.diagnosis.line + 1,
+                last=self.diagnosis.line + self.settings.snippet_lines_behind,
+            ):
                 buf.write(Style.LineNumber.fmt(f"{line_no:{lncw}} | "))
                 buf.write(line_text)
                 buf.write("\n")
@@ -237,8 +242,9 @@ class Snippet:
         """Gets the line at the given 1-based line number."""
         return self.lines[lineno - 1]
 
-    def iter(self, start: int, last: int) -> Iterator[tuple[int, str]]:
-        """Yields lines from start (1-based, inclusive) to last (1-based, inclusive)."""
+    def lines_between(self, start: int, last: int) -> Iterator[tuple[int, str]]:
+        """Yields lines between the given 1-based line numbers (inclusive)."""
+        start = max(start, 1)
         yield from enumerate(self.lines[start - 1 : last], start)
 
 
