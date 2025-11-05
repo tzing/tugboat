@@ -4,6 +4,7 @@ import enum
 import io
 import textwrap
 import typing
+from dataclasses import dataclass
 
 import click
 
@@ -15,6 +16,7 @@ if typing.TYPE_CHECKING:
     from typing import Any, Literal, TextIO
 
     from tugboat.engine import DiagnosisModel
+    from tugboat.settings import ConsoleOutputSettings
 
     type Color = Literal[
         "black",
@@ -35,12 +37,18 @@ class ConsoleFormatter(OutputFormatter):
         self.buf = io.StringIO()
 
     def update(self, *, content: str, diagnoses: Sequence[DiagnosisModel]) -> None:
-        content_lines = content.splitlines()
+        snippet = Snippet(content.splitlines())
         for diagnosis in diagnoses:
-            self.append(
-                content_lines=content_lines,
-                diagnosis=diagnosis,
+            self.buf.write(
+                str(
+                    DiagnosticMessageBuilder(
+                        diagnosis=diagnosis,
+                        snippet=snippet,
+                        settings=settings.console_output,
+                    )
+                )
             )
+            self.buf.write("\n")
 
     def dump(self, stream: TextIO) -> None:
         click.echo(
@@ -50,11 +58,26 @@ class ConsoleFormatter(OutputFormatter):
             nl=False,
         )
 
-    def append(  # noqa: C901
-        self, *, content_lines: list[str], diagnosis: DiagnosisModel
-    ) -> None:
+
+@dataclass
+class DiagnosticMessageBuilder:
+
+    diagnosis: DiagnosisModel
+    snippet: Snippet
+    settings: ConsoleOutputSettings
+
+    @property
+    def emphasis(self) -> Style:
+        match self.diagnosis.type:
+            case "error" | "failure":
+                return Style.Error
+            case "warning":
+                return Style.Warn
+        return Style.Error
+
+    def __str__(self) -> str:
         """
-        Formats and appends a diagnosis to the internal buffer.
+        Formats the diagnosis to rich text.
 
         Example output:
 
@@ -74,119 +97,140 @@ class ConsoleFormatter(OutputFormatter):
           Do you mean: {{ inputs.parameters.message }}
         ```
         """
-        # determine emphasis style
-        match diagnosis.type:
-            case "error" | "failure":
-                emphasis = Style.Error
-            case "warning":
-                emphasis = Style.Warn
+        with io.StringIO() as buf:
+            buf.write(self.summary())
+            buf.write("\n")
+            buf.write(self.code_area())
 
-        # ---------------------------------------------------------------------
-        # :PART: summary
+            if details := self.details():
+                buf.write("\n")
+                buf.write(details)
 
-        # > T01 Example error message
-        self.buf.write(emphasis.fmt(diagnosis.code))
-        self.buf.write(" ")
-        self.buf.write(Style.Summary.fmt(diagnosis.summary))
-        self.buf.write("\n")
+            if suggestion := self.suggestion():
+                buf.write("\n")
+                buf.write(suggestion)
 
-        # > @manifest.yaml:16:11 (demo-)
-        self.buf.write(Style.PathDelimiter.fmt("  @"))
-        if diagnosis.extras.file:
-            if diagnosis.extras.file.is_stdin:
-                self.buf.write(Style.LocationStdin.fmt("<stdin>"))
-            else:
-                self.buf.write(diagnosis.extras.file.filepath)
+            return buf.getvalue()
 
-        self.buf.write(Style.PathDelimiter.fmt(":"))
-        self.buf.write(str(diagnosis.line))
-        self.buf.write(Style.PathDelimiter.fmt(":"))
-        self.buf.write(str(diagnosis.column))
+    def summary(self) -> str:
+        with io.StringIO() as buf:
+            # Headline
+            # > T01 Example error message
+            buf.write(self.emphasis.fmt(self.diagnosis.code))
+            buf.write(" ")
+            buf.write(Style.Summary.fmt(self.diagnosis.summary))
+            buf.write("\n")
 
-        if diagnosis.extras.manifest and diagnosis.extras.manifest.name:
-            self.buf.write(
-                Style.ManifestName.fmt(f" ({diagnosis.extras.manifest.name})")
-            )
+            # Path, location, manifest
+            # > @manifest.yaml:16:11 (demo-)
+            buf.write(Style.PathDelimiter.fmt("  @"))
+            if self.diagnosis.extras.file:
+                if self.diagnosis.extras.file.is_stdin:
+                    buf.write(Style.LocationStdin.fmt("<stdin>"))
+                else:
+                    buf.write(self.diagnosis.extras.file.filepath)
 
-        self.buf.write("\n")
+            buf.write(Style.PathDelimiter.fmt(":"))
+            buf.write(str(self.diagnosis.line))
+            buf.write(Style.PathDelimiter.fmt(":"))
+            buf.write(str(self.diagnosis.column))
 
-        # > @Template:templates/workflow.yaml
-        if diagnosis.extras.helm:
-            self.buf.write(Style.PathDelimiter.fmt("  @Template:"))
-            self.buf.write(diagnosis.extras.helm.template)
-            self.buf.write("\n")
+            if self.diagnosis.extras.manifest and self.diagnosis.extras.manifest.name:
+                buf.write(
+                    Style.ManifestName.fmt(f" ({self.diagnosis.extras.manifest.name})")
+                )
 
-        self.buf.write("\n")
+            buf.write("\n")
 
-        # ---------------------------------------------------------------------
-        # :PART: code snippet
-        max_line_number = diagnosis.line + settings.console_output.snippet_lines_behind
+            # Helm template info
+            # > @Template:templates/workflow.yaml
+            if self.diagnosis.extras.helm:
+                buf.write(Style.PathDelimiter.fmt("  @Template:"))
+                buf.write(self.diagnosis.extras.helm.template)
+                buf.write("\n")
+
+            return buf.getvalue()
+
+    def code_area(self) -> str:
+        max_line_number = self.diagnosis.line + self.settings.snippet_lines_behind
         lncw = len(str(max_line_number - 1)) + 2  # line number column width
 
-        for line_no, line_text in get_lines_near(content_lines, diagnosis.line):
-            # code snippet lines
+        with io.StringIO() as buf:
+            # code snippet before (and including) the issue
             # > 15 |         args:
             # > 16 |           - "{{ inputs.parameter.message }}"
-            self.buf.write(Style.LineNumber.fmt(f"{line_no:{lncw}} | "))
-            self.buf.write(line_text)
-            self.buf.write("\n")
+            for line_no, line_text in self.snippet.lines_between(
+                start=self.diagnosis.line - self.settings.snippet_lines_ahead,
+                last=self.diagnosis.line,
+            ):
+                buf.write(Style.LineNumber.fmt(f"{line_no:{lncw}} | "))
+                buf.write(line_text)
+                buf.write("\n")
 
-            # the emphasis line(s)
-            if line_no == diagnosis.line:
-                # indent: line number column + " | "
-                indent = Style.LineNumber.fmt(" " * lncw + " | ")
+            # markers for the issue line
+            # marker prefix: line number column + " | "
+            prefix = Style.LineNumber.fmt(" " * lncw + " | ")
 
-                # draw underline if possible
-                # >    ^^^^^^^^^
-                if rng := calc_highlight_range(
-                    line_text,
-                    offset=diagnosis.column - 1,
-                    substr=diagnosis.input,
-                ):
-                    col_start, col_end = rng
-                    indent += " " * col_start
+            # draw underline if possible
+            # >    ^^^^^^^^^
+            if rng := calc_highlight_range(
+                self.snippet[self.diagnosis.line],
+                offset=self.diagnosis.column - 1,
+                substr=self.diagnosis.input,
+            ):
+                col_start, col_end = rng
+                prefix += " " * col_start
 
-                    self.buf.write(indent)
-                    self.buf.write(emphasis.fmt("^" * (col_end - col_start)))
-                    self.buf.write("\n")
+                buf.write(prefix)
+                buf.write(self.emphasis.fmt("^" * (col_end - col_start)))
+                buf.write("\n")
 
-                else:
-                    indent += " " * max(diagnosis.column - 1, 0)
-
-                # draw position indicator
-                # >    └ T01 at .spec.templates[0].container.args[0]
-                self.buf.write(indent)
-                self.buf.write(emphasis.fmt(f"└ {diagnosis.code}"))
-                self.buf.write(Style.LocationDelimiter.fmt(" at "))
-                self.buf.write(Style.Location.fmt(diagnosis.loc_path))
-                self.buf.write("\n")
-
-        # ---------------------------------------------------------------------
-        # :PART: detail message
-        if diagnosis.msg:
-            self.buf.write("\n")
-            self.buf.write(textwrap.indent(diagnosis.msg, "  "))
-            self.buf.write("\n")
-
-        # ---------------------------------------------------------------------
-        # :PART: suggestion
-        if diagnosis.fix:
-            self.buf.write("\n")
-            self.buf.write("  ")
-            self.buf.write(Style.DoYouMean.fmt("Do you mean: "))
-
-            if "\n" in diagnosis.fix:
-                self.buf.write("|-\n")
-
-                for line in diagnosis.fix.splitlines():
-                    self.buf.write("  ")
-                    self.buf.write(Style.Suggestion.fmt(line))
-                    self.buf.write("\n")
             else:
-                self.buf.write(Style.Suggestion.fmt(diagnosis.fix))
-                self.buf.write("\n")
+                prefix += " " * max(self.diagnosis.column - 1, 0)
 
-        self.buf.write("\n")  # separate entries with a blank line
+            # draw position indicator
+            # >    └ T01 at .spec.templates[0].container.args[0]
+            buf.write(prefix)
+            buf.write(self.emphasis.fmt(f"└ {self.diagnosis.code}"))
+            buf.write(Style.LocationDelimiter.fmt(" at "))
+            buf.write(Style.Location.fmt(self.diagnosis.loc_path))
+            buf.write("\n")
+
+            # code snippet after the issue
+            for line_no, line_text in self.snippet.lines_between(
+                start=self.diagnosis.line + 1,
+                last=self.diagnosis.line + self.settings.snippet_lines_behind,
+            ):
+                buf.write(Style.LineNumber.fmt(f"{line_no:{lncw}} | "))
+                buf.write(line_text)
+                buf.write("\n")
+
+            return buf.getvalue()
+
+    def details(self) -> str:
+        if not self.diagnosis.msg:
+            return ""
+        return textwrap.indent(self.diagnosis.msg, "  ") + "\n"
+
+    def suggestion(self) -> str:
+        if not self.diagnosis.fix:
+            return ""
+
+        with io.StringIO() as buf:
+            buf.write("  ")
+            buf.write(Style.DoYouMean.fmt("Do you mean: "))
+
+            if "\n" in self.diagnosis.fix:
+                buf.write("|-\n")
+                for line in self.diagnosis.fix.splitlines():
+                    buf.write("  ")
+                    buf.write(Style.Suggestion.fmt(line))
+                    buf.write("\n")
+            else:
+                buf.write(Style.Suggestion.fmt(self.diagnosis.fix))
+                buf.write("\n")
+
+            return buf.getvalue()
 
 
 class Style(enum.StrEnum):
@@ -240,15 +284,19 @@ class Style(enum.StrEnum):
     Warn =              enum.auto(), "yellow", None, True
 
 
-def get_lines_near(content: list[str], focus_line: int) -> Iterator[tuple[int, str]]:
-    lines_ahead = settings.console_output.snippet_lines_ahead
-    lines_behind = settings.console_output.snippet_lines_behind
+@dataclass
+class Snippet:
 
-    focus_line -= 1  # 1-based to 0-based
-    line_starting = max(0, focus_line - lines_ahead)
-    line_ending = min(len(content), focus_line + lines_behind)
+    lines: list[str]
 
-    yield from enumerate(content[line_starting : line_ending + 1], line_starting + 1)
+    def __getitem__(self, lineno: int) -> str:
+        """Gets the line at the given 1-based line number."""
+        return self.lines[lineno - 1]
+
+    def lines_between(self, start: int, last: int) -> Iterator[tuple[int, str]]:
+        """Yields lines between the given 1-based line numbers (inclusive)."""
+        start = max(start, 1)
+        yield from enumerate(self.lines[start - 1 : last], start)
 
 
 def calc_highlight_range(line: str, offset: int, substr: Any) -> tuple[int, int] | None:
