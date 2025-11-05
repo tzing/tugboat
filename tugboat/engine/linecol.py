@@ -71,7 +71,8 @@ def get_line_column(
         if not isinstance(current_node, CommentedSeq | CommentedMap):
             break  # prevent navigation further
 
-    assert key is not None
+    if key is None:
+        return fallback_position
 
     # if the value is 'Field' type, return the position of the key
     if isinstance(value, Field):

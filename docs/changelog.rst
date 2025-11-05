@@ -9,6 +9,11 @@ Unreleased
 
 * Redesign the validator for :py:class:`~tugboat.schemas.Artifact` and :py:class:`~tugboat.schemas.Parameter` to improve clarity and maintainability.
 
+:octicon:`bug` Fixes
+++++++++++++++++++++
+
+* Prevent crashes when resolving source locations where the recorded path is empty.
+
 0.6.1
 -----
 

@@ -184,6 +184,16 @@ class TestAnalyzeYamlStream:
         )
         assert diagnoses == []
 
+    def test_not_a_manifest(self):
+        diagnoses = analyze_yaml_stream(
+            textwrap.dedent(
+                """
+                foo: bar
+                """
+            )
+        )
+        assert diagnoses == [IsPartialModel(code="M001")]
+
     def test_yaml_error(self):
         diagnoses = analyze_yaml_stream('test: "foo')
         assert diagnoses == [

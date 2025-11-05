@@ -175,6 +175,16 @@ class TestGetLineColumn:
 
             assert get_line_column(doc, (0,), "adipiscing") == (2, 2)  # fallback
 
+    def test_empty(self):
+        doc = yaml_parser.load(
+            textwrap.dedent(
+                """
+                # nothing here
+                """
+            )
+        )
+        assert get_line_column(doc, (), "") == (0, 0)
+
     def test_error(self):
         doc = yaml_parser.load(
             textwrap.dedent(
