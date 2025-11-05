@@ -16,6 +16,7 @@ if typing.TYPE_CHECKING:
     from typing import Any, Literal, TextIO
 
     from tugboat.engine import DiagnosisModel
+    from tugboat.settings import ConsoleOutputSettings
 
     type Color = Literal[
         "black",
@@ -73,54 +74,6 @@ class ConsoleFormatter(OutputFormatter):
           Do you mean: {{ inputs.parameters.message }}
         ```
         """
-        # convert to formatter-specific model
-        diag_formatter = DiagnosisModelFormatter(diagnosis)
-
-        # ---------------------------------------------------------------------
-        # :PART: code snippet
-        max_line_number = diagnosis.line + settings.console_output.snippet_lines_behind
-        lncw = len(str(max_line_number - 1)) + 2  # line number column width
-
-        for line_no, line_text in get_lines_near(content_lines, diagnosis.line):
-            # code snippet lines
-            # > 15 |         args:
-            # > 16 |           - "{{ inputs.parameter.message }}"
-            self.buf.write(Style.LineNumber.fmt(f"{line_no:{lncw}} | "))
-            self.buf.write(line_text)
-            self.buf.write("\n")
-
-            # the emphasis line(s)
-            if line_no == diagnosis.line:
-                # indent: line number column + " | "
-                indent = Style.LineNumber.fmt(" " * lncw + " | ")
-
-                # draw underline if possible
-                # >    ^^^^^^^^^
-                if rng := calc_highlight_range(
-                    line_text,
-                    offset=diagnosis.column - 1,
-                    substr=diagnosis.input,
-                ):
-                    col_start, col_end = rng
-                    indent += " " * col_start
-
-                    self.buf.write(indent)
-                    self.buf.write(
-                        diag_formatter.emphasis.fmt("^" * (col_end - col_start))
-                    )
-                    self.buf.write("\n")
-
-                else:
-                    indent += " " * max(diagnosis.column - 1, 0)
-
-                # draw position indicator
-                # >    └ T01 at .spec.templates[0].container.args[0]
-                self.buf.write(indent)
-                self.buf.write(diag_formatter.emphasis.fmt(f"└ {diagnosis.code}"))
-                self.buf.write(Style.LocationDelimiter.fmt(" at "))
-                self.buf.write(Style.Location.fmt(diagnosis.loc_path))
-                self.buf.write("\n")
-
         # ---------------------------------------------------------------------
         # :PART: detail message
         if diagnosis.msg:
@@ -154,6 +107,7 @@ class DiagnosticMessageBuilder:
 
     diagnosis: DiagnosisModel
     snippet: Snippet
+    settings: ConsoleOutputSettings
 
     @property
     def emphasis(self) -> Style:
@@ -188,6 +142,8 @@ class DiagnosticMessageBuilder:
         """
         with io.StringIO() as buf:
             buf.write(self.summary())
+            buf.write("\n")
+            buf.write(self.code_area())
             buf.write("\n")
 
             return buf.getvalue()
@@ -231,23 +187,76 @@ class DiagnosticMessageBuilder:
 
             return buf.getvalue()
 
+    def code_area(self) -> str:
+        max_line_number = (
+            self.diagnosis.line + settings.console_output.snippet_lines_behind
+        )
+        lncw = len(str(max_line_number - 1)) + 2  # line number column width
+
+        with io.StringIO() as buf:
+            # code snippet before (and including) the issue
+            # > 15 |         args:
+            # > 16 |           - "{{ inputs.parameter.message }}"
+            lineno_issue = self.diagnosis.line
+            lineno_first = max(0, lineno_issue - self.settings.snippet_lines_ahead)
+            for line_no, line_text in self.snippet.iter(lineno_first, lineno_issue):
+                buf.write(Style.LineNumber.fmt(f"{line_no:{lncw}} | "))
+                buf.write(line_text)
+                buf.write("\n")
+
+            # markers for the issue line
+            # indent: line number column + " | "
+            indent = Style.LineNumber.fmt(" " * lncw + " | ")
+
+            # draw underline if possible
+            # >    ^^^^^^^^^
+            if rng := calc_highlight_range(
+                self.snippet[self.diagnosis.line],
+                offset=self.diagnosis.column - 1,
+                substr=self.diagnosis.input,
+            ):
+                col_start, col_end = rng
+                indent += " " * col_start
+
+                buf.write(indent)
+                buf.write(self.emphasis.fmt("^" * (col_end - col_start)))
+                buf.write("\n")
+
+            else:
+                indent += " " * max(self.diagnosis.column - 1, 0)
+
+            # draw position indicator
+            # >    └ T01 at .spec.templates[0].container.args[0]
+            buf.write(indent)
+            buf.write(self.emphasis.fmt(f"└ {self.diagnosis.code}"))
+            buf.write(Style.LocationDelimiter.fmt(" at "))
+            buf.write(Style.Location.fmt(self.diagnosis.loc_path))
+            buf.write("\n")
+
+            # code snippet after the issue
+            # > 15 |         args:
+            # > 16 |           - "{{ inputs.parameter.message }}"
+            lineno_last = lineno_issue + self.settings.snippet_lines_behind
+            for line_no, line_text in self.snippet.iter(lineno_issue + 1, lineno_last):
+                buf.write(Style.LineNumber.fmt(f"{line_no:{lncw}} | "))
+                buf.write(line_text)
+                buf.write("\n")
+
+            return buf.getvalue()
+
 
 @dataclass
 class Snippet:
 
     lines: list[str]
 
-    def near(self, focus: int) -> Iterator[tuple[int, str]]:
-        lines_ahead = settings.console_output.snippet_lines_ahead
-        lines_behind = settings.console_output.snippet_lines_behind
+    def __getitem__(self, lineno: int) -> str:
+        """Gets the line at the given 1-based line number."""
+        return self.lines[lineno - 1]
 
-        focus -= 1  # 1-based to 0-based
-        lineno_first = max(0, focus - lines_ahead)
-        lineno_last = min(len(self.lines), focus + lines_behind)
-
-        yield from enumerate(
-            self.lines[lineno_first : lineno_last + 1], lineno_first + 1
-        )
+    def iter(self, start: int, last: int) -> Iterator[tuple[int, str]]:
+        """Yields lines from start (1-based, inclusive) to last (1-based, inclusive)."""
+        yield from enumerate(self.lines[start - 1 : last], start)
 
 
 class Style(enum.StrEnum):
