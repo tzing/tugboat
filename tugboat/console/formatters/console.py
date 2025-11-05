@@ -52,55 +52,6 @@ class ConsoleFormatter(OutputFormatter):
             nl=False,
         )
 
-    def append(self, *, content_lines: list[str], diagnosis: DiagnosisModel) -> None:
-        """
-        Formats and appends a diagnosis to the internal buffer.
-
-        Example output:
-
-        ```none
-        T01 Example error message
-          @manifest.yaml:16:11 (demo-)
-          @Template:templates/workflow.yaml
-
-          14 |         command: [cowsay]
-          15 |         args:
-          16 |           - "{{ inputs.parameter.message }}"
-             |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-             |              └ T01 at .spec.templates[0].container.args[0]
-
-          Detail message explaining the error here.
-
-          Do you mean: {{ inputs.parameters.message }}
-        ```
-        """
-        # ---------------------------------------------------------------------
-        # :PART: detail message
-        if diagnosis.msg:
-            self.buf.write("\n")
-            self.buf.write(textwrap.indent(diagnosis.msg, "  "))
-            self.buf.write("\n")
-
-        # ---------------------------------------------------------------------
-        # :PART: suggestion
-        if diagnosis.fix:
-            self.buf.write("\n")
-            self.buf.write("  ")
-            self.buf.write(Style.DoYouMean.fmt("Do you mean: "))
-
-            if "\n" in diagnosis.fix:
-                self.buf.write("|-\n")
-
-                for line in diagnosis.fix.splitlines():
-                    self.buf.write("  ")
-                    self.buf.write(Style.Suggestion.fmt(line))
-                    self.buf.write("\n")
-            else:
-                self.buf.write(Style.Suggestion.fmt(diagnosis.fix))
-                self.buf.write("\n")
-
-        self.buf.write("\n")  # separate entries with a blank line
-
 
 @dataclass
 class DiagnosticMessageBuilder:
@@ -144,7 +95,14 @@ class DiagnosticMessageBuilder:
             buf.write(self.summary())
             buf.write("\n")
             buf.write(self.code_area())
-            buf.write("\n")
+
+            if details := self.details():
+                buf.write("\n")
+                buf.write(details)
+
+            if suggestion := self.suggestion():
+                buf.write("\n")
+                buf.write(suggestion)
 
             return buf.getvalue()
 
@@ -164,7 +122,7 @@ class DiagnosticMessageBuilder:
                 if self.diagnosis.extras.file.is_stdin:
                     buf.write(Style.LocationStdin.fmt("<stdin>"))
                 else:
-                    buf.write(Style.Location.fmt(self.diagnosis.extras.file.filepath))
+                    buf.write(self.diagnosis.extras.file.filepath)
 
             buf.write(Style.PathDelimiter.fmt(":"))
             buf.write(str(self.diagnosis.line))
@@ -240,6 +198,31 @@ class DiagnosticMessageBuilder:
             for line_no, line_text in self.snippet.iter(lineno_issue + 1, lineno_last):
                 buf.write(Style.LineNumber.fmt(f"{line_no:{lncw}} | "))
                 buf.write(line_text)
+                buf.write("\n")
+
+            return buf.getvalue()
+
+    def details(self) -> str:
+        if not self.diagnosis.msg:
+            return ""
+        return textwrap.indent(self.diagnosis.msg, "  ") + "\n"
+
+    def suggestion(self) -> str:
+        if not self.diagnosis.fix:
+            return ""
+
+        with io.StringIO() as buf:
+            buf.write("  ")
+            buf.write(Style.DoYouMean.fmt("Do you mean: "))
+
+            if "\n" in self.diagnosis.fix:
+                buf.write("|-\n")
+                for line in self.diagnosis.fix.splitlines():
+                    buf.write("  ")
+                    buf.write(Style.Suggestion.fmt(line))
+                    buf.write("\n")
+            else:
+                buf.write(Style.Suggestion.fmt(self.diagnosis.fix))
                 buf.write("\n")
 
             return buf.getvalue()
