@@ -150,9 +150,10 @@ class ConsoleFormatter(OutputFormatter):
 
 
 @dataclass
-class DiagnosisModelFormatter:
+class DiagnosticMessageBuilder:
 
     diagnosis: DiagnosisModel
+    snippet: Snippet
 
     @property
     def emphasis(self) -> Style:
@@ -231,6 +232,24 @@ class DiagnosisModelFormatter:
             return buf.getvalue()
 
 
+@dataclass
+class Snippet:
+
+    lines: list[str]
+
+    def near(self, focus: int) -> Iterator[tuple[int, str]]:
+        lines_ahead = settings.console_output.snippet_lines_ahead
+        lines_behind = settings.console_output.snippet_lines_behind
+
+        focus -= 1  # 1-based to 0-based
+        lineno_first = max(0, focus - lines_ahead)
+        lineno_last = min(len(self.lines), focus + lines_behind)
+
+        yield from enumerate(
+            self.lines[lineno_first : lineno_last + 1], lineno_first + 1
+        )
+
+
 class Style(enum.StrEnum):
 
     fg: Color | None
@@ -280,17 +299,6 @@ class Style(enum.StrEnum):
     Suggestion =        enum.auto(), None,     None, None, None, True
     Summary =           enum.auto(), None,     None, True
     Warn =              enum.auto(), "yellow", None, True
-
-
-def get_lines_near(content: list[str], focus_line: int) -> Iterator[tuple[int, str]]:
-    lines_ahead = settings.console_output.snippet_lines_ahead
-    lines_behind = settings.console_output.snippet_lines_behind
-
-    focus_line -= 1  # 1-based to 0-based
-    line_starting = max(0, focus_line - lines_ahead)
-    line_ending = min(len(content), focus_line + lines_behind)
-
-    yield from enumerate(content[line_starting : line_ending + 1], line_starting + 1)
 
 
 def calc_highlight_range(line: str, offset: int, substr: Any) -> tuple[int, int] | None:
