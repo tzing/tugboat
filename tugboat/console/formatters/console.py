@@ -77,43 +77,6 @@ class ConsoleFormatter(OutputFormatter):
         diag_formatter = DiagnosisModelFormatter(diagnosis)
 
         # ---------------------------------------------------------------------
-        # :PART: summary
-
-        # > T01 Example error message
-        self.buf.write(diag_formatter.emphasis.fmt(diagnosis.code))
-        self.buf.write(" ")
-        self.buf.write(Style.Summary.fmt(diagnosis.summary))
-        self.buf.write("\n")
-
-        # > @manifest.yaml:16:11 (demo-)
-        self.buf.write(Style.PathDelimiter.fmt("  @"))
-        if diagnosis.extras.file:
-            if diagnosis.extras.file.is_stdin:
-                self.buf.write(Style.LocationStdin.fmt("<stdin>"))
-            else:
-                self.buf.write(diagnosis.extras.file.filepath)
-
-        self.buf.write(Style.PathDelimiter.fmt(":"))
-        self.buf.write(str(diagnosis.line))
-        self.buf.write(Style.PathDelimiter.fmt(":"))
-        self.buf.write(str(diagnosis.column))
-
-        if diagnosis.extras.manifest and diagnosis.extras.manifest.name:
-            self.buf.write(
-                Style.ManifestName.fmt(f" ({diagnosis.extras.manifest.name})")
-            )
-
-        self.buf.write("\n")
-
-        # > @Template:templates/workflow.yaml
-        if diagnosis.extras.helm:
-            self.buf.write(Style.PathDelimiter.fmt("  @Template:"))
-            self.buf.write(diagnosis.extras.helm.template)
-            self.buf.write("\n")
-
-        self.buf.write("\n")
-
-        # ---------------------------------------------------------------------
         # :PART: code snippet
         max_line_number = diagnosis.line + settings.console_output.snippet_lines_behind
         lncw = len(str(max_line_number - 1)) + 2  # line number column width
@@ -199,6 +162,73 @@ class DiagnosisModelFormatter:
             case "warning":
                 return Style.Warn
         return Style.Error
+
+    def __str__(self) -> str:
+        """
+        Formats the diagnosis to rich text.
+
+        Example output:
+
+        ```none
+        T01 Example error message
+          @manifest.yaml:16:11 (demo-)
+          @Template:templates/workflow.yaml
+
+          14 |         command: [cowsay]
+          15 |         args:
+          16 |           - "{{ inputs.parameter.message }}"
+             |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+             |              └ T01 at .spec.templates[0].container.args[0]
+
+          Detail message explaining the error here.
+
+          Do you mean: {{ inputs.parameters.message }}
+        ```
+        """
+        with io.StringIO() as buf:
+            buf.write(self.summary())
+            buf.write("\n")
+
+            return buf.getvalue()
+
+    def summary(self) -> str:
+        with io.StringIO() as buf:
+            # Headline
+            # > T01 Example error message
+            buf.write(self.emphasis.fmt(self.diagnosis.code))
+            buf.write(" ")
+            buf.write(Style.Summary.fmt(self.diagnosis.summary))
+            buf.write("\n")
+
+            # Path, location, manifest
+            # > @manifest.yaml:16:11 (demo-)
+            buf.write(Style.PathDelimiter.fmt("  @"))
+            if self.diagnosis.extras.file:
+                if self.diagnosis.extras.file.is_stdin:
+                    buf.write(Style.LocationStdin.fmt("<stdin>"))
+                else:
+                    buf.write(Style.Location.fmt(self.diagnosis.extras.file.filepath))
+
+            buf.write(Style.PathDelimiter.fmt(":"))
+            buf.write(str(self.diagnosis.line))
+            buf.write(Style.PathDelimiter.fmt(":"))
+            buf.write(str(self.diagnosis.column))
+
+            if self.diagnosis.extras.manifest and self.diagnosis.extras.manifest.name:
+                buf.write(
+                    Style.ManifestName.fmt(f" ({self.diagnosis.extras.manifest.name})")
+                )
+
+            buf.write("\n")
+
+            # Helm template info
+            # > @Template:templates/workflow.yaml
+            if self.diagnosis.extras.helm:
+                buf.write(Style.PathDelimiter.fmt("  @Template:"))
+                buf.write(self.diagnosis.extras.helm.template)
+                buf.write("\n")
+
+            return buf.getvalue()
 
 
 class Style(enum.StrEnum):
