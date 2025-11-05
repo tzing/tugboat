@@ -168,8 +168,8 @@ class DiagnosticMessageBuilder:
                 buf.write("\n")
 
             # markers for the issue line
-            # indent: line number column + " | "
-            indent = Style.LineNumber.fmt(" " * lncw + " | ")
+            # marker prefix: line number column + " | "
+            prefix = Style.LineNumber.fmt(" " * lncw + " | ")
 
             # draw underline if possible
             # >    ^^^^^^^^^
@@ -179,18 +179,18 @@ class DiagnosticMessageBuilder:
                 substr=self.diagnosis.input,
             ):
                 col_start, col_end = rng
-                indent += " " * col_start
+                prefix += " " * col_start
 
-                buf.write(indent)
+                buf.write(prefix)
                 buf.write(self.emphasis.fmt("^" * (col_end - col_start)))
                 buf.write("\n")
 
             else:
-                indent += " " * max(self.diagnosis.column - 1, 0)
+                prefix += " " * max(self.diagnosis.column - 1, 0)
 
             # draw position indicator
             # >    └ T01 at .spec.templates[0].container.args[0]
-            buf.write(indent)
+            buf.write(prefix)
             buf.write(self.emphasis.fmt(f"└ {self.diagnosis.code}"))
             buf.write(Style.LocationDelimiter.fmt(" at "))
             buf.write(Style.Location.fmt(self.diagnosis.loc_path))
@@ -231,21 +231,6 @@ class DiagnosticMessageBuilder:
                 buf.write("\n")
 
             return buf.getvalue()
-
-
-@dataclass
-class Snippet:
-
-    lines: list[str]
-
-    def __getitem__(self, lineno: int) -> str:
-        """Gets the line at the given 1-based line number."""
-        return self.lines[lineno - 1]
-
-    def lines_between(self, start: int, last: int) -> Iterator[tuple[int, str]]:
-        """Yields lines between the given 1-based line numbers (inclusive)."""
-        start = max(start, 1)
-        yield from enumerate(self.lines[start - 1 : last], start)
 
 
 class Style(enum.StrEnum):
@@ -297,6 +282,21 @@ class Style(enum.StrEnum):
     Suggestion =        enum.auto(), None,     None, None, None, True
     Summary =           enum.auto(), None,     None, True
     Warn =              enum.auto(), "yellow", None, True
+
+
+@dataclass
+class Snippet:
+
+    lines: list[str]
+
+    def __getitem__(self, lineno: int) -> str:
+        """Gets the line at the given 1-based line number."""
+        return self.lines[lineno - 1]
+
+    def lines_between(self, start: int, last: int) -> Iterator[tuple[int, str]]:
+        """Yields lines between the given 1-based line numbers (inclusive)."""
+        start = max(start, 1)
+        yield from enumerate(self.lines[start - 1 : last], start)
 
 
 def calc_highlight_range(line: str, offset: int, substr: Any) -> tuple[int, int] | None:
