@@ -1,6 +1,5 @@
 import decimal
 import logging
-from collections.abc import Sequence
 from pathlib import Path
 
 import frozendict
@@ -318,85 +317,33 @@ class TestParseManifest:
         assert isinstance(manifest, DebugManifest)
 
 
-class TestArgoExamples:
-    """
-    Make sure our schemas are valid for (almost) all examples from Argo.
-    """
+def test_with_argo_examples(subtests: pytest.Subtests, argo_example_dir: Path):
+    """Make sure our schemas are valid for (almost) all examples from Argo."""
+    EXCLUDES = {
+        # github-path-filter-workflowtemplate: found parameter value in list type
+        argo_example_dir
+        / "workflow-event-binding"
+        / "github-path-filter-workflowtemplate.yaml"
+    }
 
-    def test_workflow(self, argo_example_dir: Path):
-        manifests = load_manifests(
-            dir_path=argo_example_dir,
-            expected_kinds=["Workflow"],
-        )
-
-        for file, data in manifests:
-            try:
-                manifest = Workflow.model_validate(data)
-            except ValidationError:
-                logger.exception("Failed to validate %s", file)
-                pytest.fail(f"Failed to validate {file}")
-
-            try:
-                hash(manifest)
-            except TypeError:
-                pytest.fail(f"Failed to hash {file}")
-
-    def test_workflowtemplate(self, argo_example_dir: Path):
-        manifests = load_manifests(
-            dir_path=argo_example_dir,
-            expected_kinds=["WorkflowTemplate"],
-            exclude_files=[
-                # github-path-filter-workflowtemplate: found parameter value in list type
-                "workflow-event-binding/github-path-filter-workflowtemplate.yaml"
-            ],
-        )
-
-        for file, data in manifests:
-            try:
-                manifest = WorkflowTemplate.model_validate(data)
-            except ValidationError:
-                logger.exception("Failed to validate %s", file)
-                pytest.fail(f"Failed to validate {file}")
-
-            try:
-                hash(manifest)
-            except TypeError:
-                pytest.fail(f"Failed to hash {file}")
-
-    def test_cronworkflow(self, argo_example_dir: Path):
-        manifests = load_manifests(
-            dir_path=argo_example_dir,
-            expected_kinds=["CronWorkflow"],
-        )
-
-        for file, data in manifests:
-            try:
-                manifest = CronWorkflow.model_validate(data)
-            except ValidationError:
-                logger.exception("Failed to validate %s", file)
-                pytest.fail(f"Failed to validate {file}")
-
-            try:
-                hash(manifest)
-            except TypeError:
-                pytest.fail(f"Failed to hash {file}")
-
-
-def load_manifests(
-    *, dir_path: Path, expected_kinds: list[str], exclude_files: Sequence[str] = ()
-):
     yaml = ruamel.yaml.YAML()
 
-    manifests = []
-    for file_path in dir_path.glob("**/*.yaml"):
-        if file_path in map(dir_path.joinpath, exclude_files):
+    for path in argo_example_dir.glob("**/*.yaml"):
+        if path in EXCLUDES:
             continue
 
-        with file_path.open() as fd:
-            for resource in yaml.load_all(fd):
-                if resource["kind"] in expected_kinds:
-                    logger.debug("Found %s in %s", resource["kind"], file_path)
-                    manifests.append((file_path, resource))
+        with path.open() as fd:
+            for document in yaml.load_all(fd):
+                match document["kind"]:
+                    case "Workflow":
+                        model = Workflow
+                    case "WorkflowTemplate":
+                        model = WorkflowTemplate
+                    case "CronWorkflow":
+                        model = CronWorkflow
+                    case _:
+                        continue
 
-    logger.critical("Found %d manifests of kind %s", len(manifests), expected_kinds)
-    return manifests
+                with subtests.test(path=path, kind=document["kind"]):
+                    manifest = model.model_validate(document)
+                    hash(manifest)
