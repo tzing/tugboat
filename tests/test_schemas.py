@@ -1,6 +1,5 @@
 import decimal
 import logging
-from collections.abc import Sequence
 from pathlib import Path
 
 import frozendict
