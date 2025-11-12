@@ -76,8 +76,8 @@ exclude_also = [
 [tool.isort]
 profile = "black"
 
-[tool.pytest.ini_options]
-addopts = "--cov=tugboat --cov-report xml"
+[tool.pytest]
+addopts = ["--cov=tugboat", "--cov-report=xml"]
 
 [tool.ruff]
 target-version = "py312"
