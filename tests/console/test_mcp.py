@@ -91,23 +91,24 @@ class TestAnalyzeStream:
 
     @pytest.mark.asyncio
     @pytest.mark.usefixtures("_requires_helm")
-    async def test_helm(self, argo_example_helm_dir: Path):
-        template_path = argo_example_helm_dir / "templates" / "print-message.yaml"
+    async def test_helm(self, subtests: pytest.Subtests, argo_example_helm_dir: Path):
+        for path in argo_example_helm_dir.glob("templates/*.yaml"):
+            path = str(path)
+            with subtests.test(path=path):
+                async with fastmcp.Client(server) as client:
+                    result = await client.call_tool(
+                        "analyze_stream",
+                        {
+                            "manifest_path": path,
+                            "is_helm_template": True,
+                        },
+                    )
 
-        async with fastmcp.Client(server) as client:
-            result = await client.call_tool(
-                "analyze_stream",
-                {
-                    "manifest_path": str(template_path),
-                    "is_helm_template": True,
-                },
-            )
+                assert len(result.content) == 1
+                assert isinstance(result.content[0], mcp.types.TextContent)
 
-        assert len(result.content) == 1
-        assert isinstance(result.content[0], mcp.types.TextContent)
-
-        response = json.loads(result.content[0].text)
-        assert response == {"count": 0, "issues": []}
+                response = json.loads(result.content[0].text)
+                assert response == {"count": 0, "issues": []}
 
     @pytest.mark.asyncio
     async def test_manifest_not_found(self):
