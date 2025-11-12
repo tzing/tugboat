@@ -245,7 +245,9 @@ class TestAnalyzeYamlStream:
             )
         ]
 
-    def test_with_argo_examples(self, argo_example_dir: Path):
+    def test_with_argo_examples(
+        self, subtests: pytest.Subtests, argo_example_dir: Path
+    ):
         """
         This test is an integration test that make sure that our rules are valid
         for (almost) all examples from Argo Workflows official repository.
@@ -261,30 +263,20 @@ class TestAnalyzeYamlStream:
         ta = TypeAdapter(list[DiagnosisModel])
 
         for file_path in argo_example_dir.glob("**/*.yaml"):
-            # skip known false positives
             if file_path in EXCLUDES:
+                # skip known false positives
                 continue
 
-            logger.debug("Checking %s", file_path)
+            with subtests.test(path=file_path):
+                diagnoses = analyze_yaml_stream(file_path.read_text())
+                diagnoses = list(filter(lambda d: d.type != "warning", diagnoses))
 
-            # analyze
-            diagnoses = analyze_yaml_stream(file_path.read_text())
-
-            # skip warnings
-            diagnoses = list(filter(lambda d: d.type != "warning", diagnoses))
-
-            # fail on errors
-            if any(diagnoses):
-                logger.critical(
-                    "diagnoses: %s",
-                    ta.dump_json(
-                        diagnoses,
-                        indent=2,
-                        exclude_none=True,
-                        exclude_unset=True,
-                    ).decode(),
-                )
-                pytest.fail(f"Found issue with {file_path}")
+                assert not diagnoses, ta.dump_json(
+                    diagnoses,
+                    indent=2,
+                    exclude_none=True,
+                    exclude_unset=True,
+                ).decode()
 
 
 class TestAnalyzeYamlDocument:
