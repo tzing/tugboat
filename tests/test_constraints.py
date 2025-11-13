@@ -6,7 +6,6 @@ from tugboat.constraints import (
     mutually_exclusive,
     require_all,
     require_exactly_one,
-    require_non_empty,
 )
 from tugboat.types import Field
 
@@ -97,38 +96,6 @@ class TestMutuallyExclusive:
         ]
 
 
-class TestRequireNonEmpty:
-
-    def test_pass(self):
-        model = SampleModel(foo="foo", baz="baz")
-        diagnoses = list(
-            require_non_empty(model=model, loc=["spec"], fields=["foo", "bar"])
-        )
-        assert diagnoses == []
-
-    def test_missing(self):
-        model = SampleModel(foo=None, baz="")
-        diagnoses = list(
-            require_non_empty(model=model, loc=["spec"], fields=["foo", "bar"])
-        )
-        assert diagnoses == [
-            {
-                "type": "failure",
-                "code": "M101",
-                "loc": ("spec", "foo"),
-                "summary": "Missing required field 'foo'",
-                "msg": "Field 'foo' is required in the 'spec' section but missing.",
-            },
-            {
-                "type": "failure",
-                "code": "M202",
-                "loc": ("spec", "baz"),
-                "summary": "Missing input in field 'baz'",
-                "msg": "Field 'baz' is required in the 'spec' section but is currently empty.",
-            },
-        ]
-
-
 class TestRequireAll:
 
     def test_pass(self):
@@ -136,7 +103,7 @@ class TestRequireAll:
         diagnoses = list(require_all(model=model, loc=["spec"], fields=["foo", "bar"]))
         assert diagnoses == []
 
-    def test_missing(self):
+    def test_strict(self):
         model = SampleModel(foo=None, baz="")
         diagnoses = list(require_all(model=model, loc=["spec"], fields=["foo", "bar"]))
         assert diagnoses == [
@@ -147,6 +114,26 @@ class TestRequireAll:
                 "summary": "Missing required field 'foo'",
                 "msg": "Field 'foo' is required in the 'spec' section but missing.",
             },
+            {
+                "code": "M202",
+                "loc": ("spec", "baz"),
+                "msg": "Field 'baz' is required in the 'spec' section but is currently empty.",
+                "summary": "Missing input in field 'baz'",
+                "type": "failure",
+            },
+        ]
+
+    def test_absent(self):
+        model = SampleModel(foo=None, baz="")
+        diagnoses = list(require_all(model, fields=["foo", "bar"], accept_empty=True))
+        assert diagnoses == [
+            {
+                "type": "failure",
+                "code": "M101",
+                "loc": ("foo",),
+                "summary": "Missing required field 'foo'",
+                "msg": "Field 'foo' is required in current context but missing.",
+            }
         ]
 
 

@@ -120,18 +120,40 @@ def mutually_exclusive(
 
 
 def require_all(
-    *, model: Any, loc: Sequence[str | int], fields: Iterable[str]
+    model: BaseModel,
+    *,
+    fields: Iterable[str],
+    loc: Sequence[str | int] = (),
+    accept_empty: bool = False,
 ) -> Iterator[Diagnosis]:
     """
     Requires that all of the specified fields in the model are set.
 
+    Parameters
+    ----------
+    model : BaseModel
+        The model to check.
+    fields : Iterable[str]
+        The attributes that are required.
+    loc : Sequence[str | int]
+        The location prefix for the reported diagnosis.
+    accept_empty : bool
+        Whether empty values (e.g., empty strings, empty lists) are accepted
+        as valid input.
+
     Yield
     -----
     :rule:`m101` when any of the fields are absent.
+    :rule:`m202` when any of the fields are empty, only if `accept_empty` is ``False``.
     """
-    for field_name in fields:
-        if getattr(model, field_name, None) is None:
-            field_alias = get_alias(model, field_name)
+    for name in fields:
+        # early exit if value is set
+        if value := getattr(model, name, None):
+            continue
+
+        # field absent
+        if value is None:
+            field_alias = get_alias(model, name)
             context_name = get_context_name(loc)
             yield {
                 "type": "failure",
@@ -141,29 +163,9 @@ def require_all(
                 "msg": f"Field '{field_alias}' is required in {context_name} but missing.",
             }
 
-
-def require_non_empty(
-    *, model: Any, loc: Sequence[str | int], fields: Iterable[str]
-) -> Iterator[Diagnosis]:
-    """
-    Requires that all of the specified fields are set and not empty.
-
-    Yield
-    -----
-    :rule:`m101` when any of the fields are absent.
-    :rule:`m202` when any of the fields are empty.
-    """
-    # check absent
-    yield from require_all(model=model, loc=loc, fields=fields)
-
-    # check empty
-    for field_name in fields:
-        field_value = getattr(model, field_name, None)
-        if not field_value:
-            if field_value is None or field_value is False:
-                continue  # false positive
-
-            field_alias = get_alias(model, field_name)
+        # field empty
+        elif not accept_empty:
+            field_alias = get_alias(model, name)
             context_name = get_context_name(loc)
             yield {
                 "type": "failure",
