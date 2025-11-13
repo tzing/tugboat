@@ -81,18 +81,18 @@ class TestMutuallyExclusive:
             {
                 "type": "failure",
                 "code": "M201",
-                "loc": ("spec", "baz"),
-                "summary": "Mutually exclusive field set",
-                "msg": "Field 'baz' and 'foo' are mutually exclusive.",
-                "input": Field("baz"),
-            },
-            {
-                "type": "failure",
-                "code": "M201",
                 "loc": ("spec", "foo"),
                 "summary": "Mutually exclusive field set",
                 "msg": "Field 'baz' and 'foo' are mutually exclusive.",
                 "input": Field("foo"),
+            },
+            {
+                "type": "failure",
+                "code": "M201",
+                "loc": ("spec", "baz"),
+                "summary": "Mutually exclusive field set",
+                "msg": "Field 'baz' and 'foo' are mutually exclusive.",
+                "input": Field("baz"),
             },
         ]
 

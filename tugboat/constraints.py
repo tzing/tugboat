@@ -74,33 +74,47 @@ def accept_none(
 
 
 def mutually_exclusive(
-    *, model: Any, loc: Sequence[str | int], fields: Iterable[str]
+    model: BaseModel,
+    *,
+    fields: Iterable[str],
+    loc: Sequence[str | int] = (),
 ) -> Iterator[Diagnosis]:
     """
     Ensures that at most one of the specified fields in the model is set, but
     does not require any of them to be set.
 
+    Parameters
+    ----------
+    model : BaseModel
+        The model to check.
+    fields : Iterable[str]
+        The attributes that are mutually exclusive.
+    loc : Sequence[str | int]
+        The location prefix for the reported diagnosis.
+
     Yield
     -----
     :rule:`m201` when more than one were set.
     """
-    fields_with_values = [
-        field for field in fields if getattr(model, field, None) is not None
-    ]
-    if len(fields_with_values) <= 1:
-        return
+    active_fields = []
+    for name in fields:
+        if getattr(model, name, None) is not None:
+            active_fields.append(name)
 
-    get_alias_ = functools.partial(get_alias, model)
-    exclusive_fields = join_with_and(map(get_alias_, fields))
-    fields_with_values = sorted(map(get_alias_, fields_with_values))
+    if len(active_fields) <= 1:
+        return  # no issues :)
 
-    for field_alias in fields_with_values:
+    # build error message
+    conflicting_fields = join_with_and(map(lambda f: get_alias(model, f), fields))
+
+    for name in active_fields:
+        field_alias = get_alias(model, name)
         yield {
             "type": "failure",
             "code": "M201",
             "loc": (*loc, field_alias),
             "summary": "Mutually exclusive field set",
-            "msg": f"Field {exclusive_fields} are mutually exclusive.",
+            "msg": f"Field {conflicting_fields} are mutually exclusive.",
             "input": Field(field_alias),
         }
 
