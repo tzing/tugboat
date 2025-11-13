@@ -10,7 +10,7 @@ from tugboat.constraints import (
     accept_none,
     mutually_exclusive,
     require_exactly_one,
-    require_non_empty,
+    require_all,
 )
 from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_step_context
@@ -99,7 +99,7 @@ def check_argument_parameters(
 def _check_argument_parameter_fields(
     param: Parameter, context: Context
 ) -> Iterable[Diagnosis]:
-    yield from require_non_empty(
+    yield from require_all(
         model=param,
         loc=(),
         fields=["name"],
@@ -240,7 +240,7 @@ def check_argument_artifacts(
 def _check_argument_artifact_fields(
     artifact: Artifact, context: Context
 ) -> Iterable[Diagnosis]:
-    yield from require_non_empty(
+    yield from require_all(
         model=artifact,
         loc=(),
         fields=["name"],

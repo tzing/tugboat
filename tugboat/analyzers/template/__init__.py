@@ -4,7 +4,7 @@ import collections
 import typing
 
 from tugboat.analyzers.metrics import check_prometheus
-from tugboat.constraints import require_exactly_one, require_non_empty
+from tugboat.constraints import require_exactly_one, require_all
 from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_template_context
 from tugboat.utils import prepend_loc
@@ -20,7 +20,7 @@ if typing.TYPE_CHECKING:
 
 @hookimpl
 def analyze_template(template: Template) -> Iterable[Diagnosis]:
-    yield from require_non_empty(
+    yield from require_all(
         model=template,
         loc=(),
         fields=["name"],

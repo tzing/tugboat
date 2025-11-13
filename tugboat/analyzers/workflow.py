@@ -7,7 +7,7 @@ from rapidfuzz.process import extractOne
 
 from tugboat.analyzers.kubernetes import check_resource_name
 from tugboat.analyzers.metrics import check_prometheus
-from tugboat.constraints import accept_none, require_exactly_one, require_non_empty
+from tugboat.constraints import accept_none, require_exactly_one, require_all
 from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_workflow_context
 from tugboat.utils import (
@@ -85,7 +85,7 @@ def check_spec(workflow: Workflow) -> Iterator[Diagnosis]:
     )
 
     if not workflow.spec.workflowTemplateRef:
-        yield from require_non_empty(
+        yield from require_all(
             model=workflow.spec,
             loc=("spec",),
             fields=["entrypoint"],
@@ -149,7 +149,7 @@ def check_argument_parameters(workflow: WorkflowCompatible) -> Iterator[Diagnosi
     for idx, param in enumerate(workflow.spec.arguments.parameters or []):
         loc = ("spec", "arguments", "parameters", idx)
 
-        yield from require_non_empty(
+        yield from require_all(
             model=param,
             loc=loc,
             fields=["name"],

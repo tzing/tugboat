@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import typing
 
-from tugboat.constraints import require_exactly_one, require_non_empty
+from tugboat.constraints import require_exactly_one, require_all
 from tugboat.utils import check_model_fields_references
 
 if typing.TYPE_CHECKING:
@@ -19,7 +19,7 @@ def check_prometheus(prometheus: Prometheus, context: Context) -> Iterator[Diagn
     Check :py:class:``tugboat.schemas.metrics.Prometheus`` for errors.
     """
 
-    yield from require_non_empty(
+    yield from require_all(
         model=prometheus,
         loc=(),
         fields=["name", "help"],
