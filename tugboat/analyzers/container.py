@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing
 
-from tugboat.constraints import require_all, require_exactly_one
+from tugboat.constraints import mutually_exclusive, require_all
 from tugboat.core import hookimpl
 from tugboat.references import get_template_context
 from tugboat.utils import check_model_fields_references, prepend_loc
@@ -117,13 +117,14 @@ def check_shared_fields(
             loc=("env", i),
             fields=["name"],
         )
-        yield from require_exactly_one(
+        yield from mutually_exclusive(
             model=envvar,
             loc=("env", i),
             fields=["value", "valueFrom"],
+            require_one=True,
         )
         if envvar.valueFrom:
-            yield from require_exactly_one(
+            yield from mutually_exclusive(
                 model=envvar.valueFrom,
                 loc=("env", i, "valueFrom"),
                 fields=[
@@ -132,14 +133,16 @@ def check_shared_fields(
                     "resourceFieldRef",
                     "secretKeyRef",
                 ],
+                require_one=True,
             )
 
     # field `envFrom`
     for i, env_from in enumerate(node.envFrom or ()):
-        yield from require_exactly_one(
+        yield from mutually_exclusive(
             model=env_from,
             loc=("envFrom", i),
             fields=["configMapRef", "secretRef"],
+            require_one=True,
         )
 
     # field `resources`

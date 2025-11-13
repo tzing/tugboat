@@ -5,7 +5,7 @@ import typing
 
 import tugboat.analyzers.workflow
 from tugboat.analyzers.kubernetes import check_resource_name
-from tugboat.constraints import require_exactly_one
+from tugboat.constraints import mutually_exclusive
 from tugboat.core import hookimpl
 from tugboat.types import Field
 from tugboat.utils import prepend_loc
@@ -19,10 +19,11 @@ if typing.TYPE_CHECKING:
 
 @hookimpl(specname="analyze_workflow_template")
 def check_metadata(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
-    yield from require_exactly_one(
-        model=workflow_template.metadata,
+    yield from mutually_exclusive(
+        workflow_template.metadata,
         loc=("metadata",),
         fields=["name", "generateName"],
+        require_one=True,
     )
 
     if workflow_template.metadata.name:
@@ -44,10 +45,11 @@ def check_metadata(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
 
 @hookimpl(specname="analyze_workflow_template")
 def check_spec(workflow_template: WorkflowTemplate) -> Iterator[Diagnosis]:
-    yield from require_exactly_one(
-        model=workflow_template.spec,
+    yield from mutually_exclusive(
+        workflow_template.spec,
         loc=("spec",),
         fields=["templates", "workflowTemplateRef"],
+        require_one=True,
     )
 
 

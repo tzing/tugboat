@@ -6,7 +6,6 @@ from tugboat.constraints import (
     accept_none,
     mutually_exclusive,
     require_all,
-    require_all,
 )
 from tugboat.core import hookimpl
 from tugboat.references import get_workflow_context

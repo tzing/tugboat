@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import typing
 
-from tugboat.constraints import require_exactly_one, require_all
+from tugboat.constraints import mutually_exclusive, require_all
 from tugboat.utils import check_model_fields_references
 
 if typing.TYPE_CHECKING:
@@ -21,13 +21,12 @@ def check_prometheus(prometheus: Prometheus, context: Context) -> Iterator[Diagn
 
     yield from require_all(
         model=prometheus,
-        loc=(),
         fields=["name", "help"],
     )
-    yield from require_exactly_one(
-        model=prometheus,
-        loc=(),
+    yield from mutually_exclusive(
+        prometheus,
         fields=["counter", "gauge", "histogram"],
+        require_one=True,
     )
     yield from check_model_fields_references(
         model=prometheus,

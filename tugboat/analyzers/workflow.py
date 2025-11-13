@@ -7,14 +7,10 @@ from rapidfuzz.process import extractOne
 
 from tugboat.analyzers.kubernetes import check_resource_name
 from tugboat.analyzers.metrics import check_prometheus
-from tugboat.constraints import accept_none, require_exactly_one, require_all
+from tugboat.constraints import accept_none, mutually_exclusive, require_all
 from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_workflow_context
-from tugboat.utils import (
-    find_duplicate_names,
-    join_with_and,
-    prepend_loc,
-)
+from tugboat.utils import find_duplicate_names, join_with_and, prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
@@ -58,10 +54,11 @@ def analyze(manifest: WorkflowCompatible) -> Iterator[Diagnosis]:
 
 @hookimpl(specname="analyze_workflow")
 def check_metadata(workflow: Workflow) -> Iterator[Diagnosis]:
-    yield from require_exactly_one(
-        model=workflow.metadata,
+    yield from mutually_exclusive(
+        workflow.metadata,
         loc=("metadata",),
         fields=["name", "generateName"],
+        require_one=True,
     )
 
     if workflow.metadata.name:
@@ -78,10 +75,11 @@ def check_metadata(workflow: Workflow) -> Iterator[Diagnosis]:
 
 @hookimpl(specname="analyze_workflow")
 def check_spec(workflow: Workflow) -> Iterator[Diagnosis]:
-    yield from require_exactly_one(
+    yield from mutually_exclusive(
         model=workflow.spec,
         loc=("spec",),
         fields=["templates", "workflowTemplateRef"],
+        require_one=True,
     )
 
     if not workflow.spec.workflowTemplateRef:
@@ -161,23 +159,25 @@ def check_argument_parameters(workflow: WorkflowCompatible) -> Iterator[Diagnosi
         )
 
         if workflow.kind == "Workflow":
-            yield from require_exactly_one(
-                model=param,
+            yield from mutually_exclusive(
+                param,
                 loc=loc,
                 fields=["value", "valueFrom"],
+                require_one=True,
             )
 
         if param.valueFrom:
-            yield from require_exactly_one(
-                model=param.valueFrom,
+            yield from mutually_exclusive(
+                param.valueFrom,
                 loc=(*loc, "valueFrom"),
                 fields=[
                     "configMapKeyRef",
                     "expression",
                 ],
+                require_one=True,
             )
             yield from accept_none(
-                model=param.valueFrom,
+                param.valueFrom,
                 loc=(*loc, "valueFrom"),
                 fields=[
                     "default",
@@ -210,8 +210,8 @@ def check_argument_artifacts(workflow: WorkflowCompatible) -> Iterator[Diagnosis
     for idx, artifact in enumerate(workflow.spec.arguments.artifacts or []):
         loc = ("spec", "arguments", "artifacts", idx)
 
-        yield from require_exactly_one(
-            model=artifact,
+        yield from mutually_exclusive(
+            artifact,
             loc=loc,
             fields=[
                 "artifactory",
@@ -224,6 +224,7 @@ def check_argument_artifacts(workflow: WorkflowCompatible) -> Iterator[Diagnosis
                 "raw",
                 "s3",
             ],
+            require_one=True,
         )
         yield from accept_none(
             model=artifact,

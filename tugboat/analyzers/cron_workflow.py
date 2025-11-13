@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 
 from tugboat.analyzers.kubernetes import GENERATED_SUFFIX_LENGTH, check_resource_name
-from tugboat.constraints import require_exactly_one
+from tugboat.constraints import mutually_exclusive
 from tugboat.core import hookimpl
 
 if typing.TYPE_CHECKING:
@@ -35,10 +35,11 @@ Ref: https://github.com/argoproj/argo-workflows/blob/v3.5.6/workflow/validate/va
 
 
 def check_metadata(workflow: CronWorkflow) -> Iterator[Diagnosis]:
-    yield from require_exactly_one(
-        model=workflow.metadata,
+    yield from mutually_exclusive(
+        workflow.metadata,
         loc=("metadata",),
         fields=["name", "generateName"],
+        require_one=True,
     )
 
     if workflow.metadata.name:

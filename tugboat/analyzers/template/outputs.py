@@ -2,12 +2,7 @@ from __future__ import annotations
 
 import typing
 
-from tugboat.constraints import (
-    accept_none,
-    mutually_exclusive,
-    require_exactly_one,
-    require_all,
-)
+from tugboat.constraints import accept_none, mutually_exclusive, require_all
 from tugboat.core import hookimpl
 from tugboat.references import get_template_context
 from tugboat.utils import (
@@ -85,8 +80,8 @@ def _check_output_parameter(
         reject_fields = {"event", "jqFilter", "jsonPath", "path", "supplied"}
         reject_fields.difference_update(accept_fields)
 
-        yield from require_exactly_one(
-            model=param.valueFrom, loc=("valueFrom",), fields=accept_fields
+        yield from mutually_exclusive(
+            param.valueFrom, fields=accept_fields, require_one=True
         )
         yield from accept_none(
             model=param.valueFrom, loc=("valueFrom",), fields=reject_fields
@@ -162,18 +157,17 @@ def _check_output_artifact(
     else:
         reject_source_fields.append("path")
 
-    yield from require_exactly_one(model=artifact, loc=(), fields=accept_source_fields)
-    yield from accept_none(model=artifact, loc=(), fields=reject_source_fields)
+    yield from mutually_exclusive(
+        artifact, fields=accept_source_fields, require_one=True
+    )
+    yield from accept_none(artifact, fields=reject_source_fields)
 
     if artifact.archive:
-        yield from require_exactly_one(
-            model=artifact.archive,
+        yield from mutually_exclusive(
+            artifact.archive,
             loc=("archive",),
-            fields=[
-                "none",
-                "tar",
-                "zip",
-            ],
+            fields=["none", "tar", "zip"],
+            require_one=True,
         )
 
     if artifact.from_:
