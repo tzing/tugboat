@@ -1,7 +1,7 @@
 """
 This module provides some generic constraints that can be used on linting models.
 
-All functions in this module are generators that yield :py:class:`tugboat.Diagnosis`
+All functions in this module are generators that yield :py:class:`~tugboat.Diagnosis`
 objects when a constraint is not met. These functions can be used in analysis
 hooks, yielding results using the :py:keyword:`yield from <yield>` syntax.
 
@@ -15,9 +15,9 @@ A typical usage of these functions is as follows:
    @hookimpl
    def analyze_workflow(workflow: Workflow) -> Iterator[Diagnosis]:
        yield from require_exactly_one(
-           model=workflow.metadata,
-           loc=("metadata",),
+           workflow.metadata,
            fields=["name", "generateName"],
+           loc=("metadata",),
        )
 """
 
@@ -39,18 +39,30 @@ if typing.TYPE_CHECKING:
 
 
 def accept_none(
-    *, model: BaseModel, loc: Sequence[str | int], fields: Iterable[str]
+    model: BaseModel,
+    *,
+    fields: Iterable[str],
+    loc: Sequence[str | int] = (),
 ) -> Iterator[Diagnosis]:
     """
     Check if all the specified fields are not set.
+
+    Parameters
+    ----------
+    model : BaseModel
+        The model to check.
+    fields : Iterable[str]
+        The attributes that should not be set.
+    loc : Sequence[str | int]
+        The location prefix for the reported diagnosis.
 
     Yield
     -----
     :rule:`m102` for each unexpected field.
     """
-    for field_name in fields:
-        if getattr(model, field_name, None) is not None:
-            field_alias = get_alias(model, field_name)
+    for name in fields:
+        if getattr(model, name, None) is not None:
+            field_alias = get_alias(model, name)
             yield {
                 "type": "failure",
                 "code": "M102",
