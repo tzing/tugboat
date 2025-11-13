@@ -10,14 +10,15 @@ A typical usage of these functions is as follows:
 .. code-block:: python
 
    from tugboat import hookimpl
-   from tugboat.constraints import require_exactly_one
+   from tugboat.constraints import mutually_exclusive
 
    @hookimpl
    def analyze_workflow(workflow: Workflow) -> Iterator[Diagnosis]:
-       yield from require_exactly_one(
+       yield from mutually_exclusive(
            workflow.metadata,
            fields=["name", "generateName"],
            loc=("metadata",),
+           require_one=True,
        )
 """
 
@@ -31,7 +32,6 @@ from tugboat.utils import get_alias, get_context_name, join_with_and, join_with_
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
-    from typing import Any
 
     from pydantic import BaseModel
 
@@ -78,6 +78,7 @@ def mutually_exclusive(
     *,
     fields: Iterable[str],
     loc: Sequence[str | int] = (),
+    require_one: bool = False,
 ) -> Iterator[Diagnosis]:
     """
     Ensures that at most one of the specified fields in the model is set, but
@@ -91,9 +92,12 @@ def mutually_exclusive(
         The attributes that are mutually exclusive.
     loc : Sequence[str | int]
         The location prefix for the reported diagnosis.
+    require_one : bool
+        Whether exactly one field is required to be set.
 
     Yield
     -----
+    :rule:`m101` when none of the fields are set, if ``require_one`` is :obj:`True`.
     :rule:`m201` when more than one were set.
     """
     active_fields = []
@@ -101,22 +105,38 @@ def mutually_exclusive(
         if getattr(model, name, None) is not None:
             active_fields.append(name)
 
-    if len(active_fields) <= 1:
-        return  # no issues :)
+    match len(active_fields):
+        case 1:
+            return  # no issues :)
 
-    # build error message
-    conflicting_fields = join_with_and(map(lambda f: get_alias(model, f), fields))
+        case 0 if require_one:
+            required_fields = map(functools.partial(get_alias, model), fields)
+            yield {
+                "type": "failure",
+                "code": "M101",
+                "loc": tuple(loc),
+                "summary": "Missing required field",
+                "msg": (
+                    f"""
+                    Missing required field for {get_context_name(loc)}.
+                    One of the following fields is required: {join_with_or(required_fields)}.
+                    """
+                ),
+            }
 
-    for name in active_fields:
-        field_alias = get_alias(model, name)
-        yield {
-            "type": "failure",
-            "code": "M201",
-            "loc": (*loc, field_alias),
-            "summary": "Mutually exclusive field set",
-            "msg": f"Field {conflicting_fields} are mutually exclusive.",
-            "input": Field(field_alias),
-        }
+        case _:
+            conflicting_fields = map(functools.partial(get_alias, model), fields)
+            conflicting_fields = join_with_and(conflicting_fields)
+            for name in active_fields:
+                field_alias = get_alias(model, name)
+                yield {
+                    "type": "failure",
+                    "code": "M201",
+                    "loc": (*loc, field_alias),
+                    "summary": "Mutually exclusive field set",
+                    "msg": f"Field {conflicting_fields} are mutually exclusive.",
+                    "input": Field(field_alias),
+                }
 
 
 def require_all(
@@ -144,7 +164,7 @@ def require_all(
     Yield
     -----
     :rule:`m101` when any of the fields are absent.
-    :rule:`m202` when any of the fields are empty, only if `accept_empty` is ``False``.
+    :rule:`m202` when any of the fields are empty, only if ``accept_empty`` is :obj:`False`.
     """
     for name in fields:
         # early exit if value is set
@@ -174,38 +194,3 @@ def require_all(
                 "summary": f"Missing input in field '{field_alias}'",
                 "msg": f"Field '{field_alias}' is required in {context_name} but is currently empty.",
             }
-
-
-def require_exactly_one(
-    *, model: Any, loc: Sequence[str | int], fields: Iterable[str]
-) -> Iterator[Diagnosis]:
-    """
-    Requires that exactly one of the specified fields in the model is set.
-
-    Yield
-    -----
-    :rule:`m101` when none of the fields are set.
-    :rule:`m201` when more than one were set.
-    """
-    # check if any of the fields are set
-    any_field_set = False
-    for field_name in fields:
-        value = getattr(model, field_name, None)
-        if value is not None:
-            any_field_set = True
-            break
-
-    if not any_field_set:
-        required_fields = map(functools.partial(get_alias, model), fields)
-        yield {
-            "type": "failure",
-            "code": "M101",
-            "loc": tuple(loc),
-            "summary": "Missing required field",
-            "msg": f"""
-                    Missing required field for {get_context_name(loc)}.
-                    One of the following fields is required: {join_with_or(required_fields)}.
-                    """,
-        }
-
-    yield from mutually_exclusive(model=model, loc=loc, fields=fields)
