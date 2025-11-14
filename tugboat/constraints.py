@@ -69,12 +69,13 @@ def accept_none(
     for name in fields:
         if getattr(model, name, None) is not None:
             alias = _alias(model, name)
+            here = _here("under", loc)
             yield {
                 "type": "failure",
                 "code": "M102",
                 "loc": (*loc, alias),
                 "summary": f"Unexpected field '{alias}'",
-                "msg": f"Field '{alias}' is not allowed {_here(loc)}. Remove it.",
+                "msg": f"Field '{alias}' is not allowed {here}. Remove it.",
                 "input": Field(alias),
             }
 
@@ -113,10 +114,11 @@ def mutually_exclusive(
 
     match len(active_fields):
         case 1:
-            return  # no issues :)
+            return  # no issue :)
 
         case 0 if require_one:
-            required_fields = map(functools.partial(_get_alias, model), fields)
+            required_fields = map(functools.partial(_alias, model), fields)
+            here = _here("in", loc)
             yield {
                 "type": "failure",
                 "code": "M101",
@@ -124,23 +126,26 @@ def mutually_exclusive(
                 "summary": "Missing required field",
                 "msg": (
                     f"""
-                    Missing required field for {get_context_name(loc)}.
-                    One of the following fields is required: {join_with_or(required_fields)}.
+                    Missing required field {here}.
+                    Set either one of these fields: {join_with_or(required_fields)}.
                     """
                 ),
             }
 
         case _:
-            conflicting_fields = map(functools.partial(_get_alias, model), fields)
-            conflicting_fields = join_with_and(conflicting_fields)
+            conflicting_fields = map(functools.partial(_alias, model), active_fields)
+            message = f"""
+                Found multiple mutually exclusive fields set {_here("in", loc)}.
+                These fields cannot be used at the same time: {join_with_and(conflicting_fields)}
+                """
             for name in active_fields:
-                field_alias = _get_alias(model, name)
+                field_alias = _alias(model, name)
                 yield {
                     "type": "failure",
                     "code": "M201",
                     "loc": (*loc, field_alias),
-                    "summary": "Mutually exclusive field set",
-                    "msg": f"Field {conflicting_fields} are mutually exclusive.",
+                    "summary": "Conflicting fields",
+                    "msg": message,
                     "input": Field(field_alias),
                 }
 
@@ -208,7 +213,7 @@ def _alias(model: BaseModel, name: str) -> str:
     return field.alias or name
 
 
-def _here(loc: Sequence[str | int]) -> str:
+def _here(conj: str, loc: Sequence[str | int], default: str = "here") -> str:
     """
     Convert the location tuple into human-readable string.
 
@@ -218,10 +223,10 @@ def _here(loc: Sequence[str | int]) -> str:
     * ("spec", 0, "foo") -> "under @.spec[].foo"
     """
     if not loc:
-        return "here"
+        return default
 
     with io.StringIO() as buf:
-        buf.write("under @")
+        buf.write(f"{conj} @")
 
         for part in loc:
             if isinstance(part, int):

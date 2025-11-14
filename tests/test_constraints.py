@@ -1,4 +1,5 @@
 import pydantic
+from dirty_equals import AnyThing
 
 from tests.dirty_equals import HasSubstring
 from tugboat.constraints import accept_none, mutually_exclusive, require_all
@@ -35,16 +36,14 @@ class TestAcceptNone:
 
     def test_picked_2(self):
         model = SampleModel(baz="baz")
-        diagnoses = list(
-            accept_none(model=model, loc=["spec", 0, 1], fields=["foo", "bar"])
-        )
+        diagnoses = list(accept_none(model, fields=["foo", "bar"]))
         assert diagnoses == [
             {
                 "type": "failure",
                 "code": "M102",
-                "loc": ("spec", 0, 1, "baz"),
+                "loc": ("baz",),
                 "summary": "Unexpected field 'baz'",
-                "msg": "Field 'baz' is not allowed under @.spec[][]. Remove it.",
+                "msg": "Field 'baz' is not allowed here. Remove it.",
                 "input": Field("baz"),
             }
         ]
@@ -53,45 +52,21 @@ class TestAcceptNone:
 class TestMutuallyExclusive:
 
     def test_pass(self):
-        model = SampleModel(baz="baz")
+        model = SampleModel.model_validate({"baz": "baz"})
         diagnoses = list(
             mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
         )
         assert diagnoses == []
 
     def test_none(self):
-        model = SampleModel()
+        model = SampleModel.model_validate({})
         diagnoses = list(
             mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
         )
         assert diagnoses == []
 
-    def test_too_many(self):
-        model = SampleModel(foo="foo", baz="baz")
-        diagnoses = list(
-            mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
-        )
-        assert diagnoses == [
-            {
-                "type": "failure",
-                "code": "M201",
-                "loc": ("spec", "foo"),
-                "summary": "Mutually exclusive field set",
-                "msg": "Field 'baz' and 'foo' are mutually exclusive.",
-                "input": Field("foo"),
-            },
-            {
-                "type": "failure",
-                "code": "M201",
-                "loc": ("spec", "baz"),
-                "summary": "Mutually exclusive field set",
-                "msg": "Field 'baz' and 'foo' are mutually exclusive.",
-                "input": Field("baz"),
-            },
-        ]
-
     def test_require_one(self):
-        model = SampleModel()
+        model = SampleModel.model_validate({})
         diagnoses = list(
             mutually_exclusive(
                 model, loc=["spec"], fields=["foo", "bar"], require_one=True
@@ -103,10 +78,52 @@ class TestMutuallyExclusive:
                 "code": "M101",
                 "loc": ("spec",),
                 "summary": "Missing required field",
-                "msg": HasSubstring(
-                    "One of the following fields is required: 'baz' or 'foo'."
+                "msg": (
+                    AnyThing()
+                    & HasSubstring("Missing required field in @.spec.")
+                    & HasSubstring("Set either one of these fields: 'baz' or 'foo'")
                 ),
             }
+        ]
+
+    def test_too_many(self):
+        model = SampleModel(foo="foo", baz="baz")
+        diagnoses = list(
+            mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar", "qux"])
+        )
+        assert diagnoses == [
+            {
+                "type": "failure",
+                "code": "M201",
+                "loc": ("spec", "foo"),
+                "summary": "Conflicting fields",
+                "msg": (
+                    AnyThing()
+                    & HasSubstring(
+                        "Found multiple mutually exclusive fields set in @.spec."
+                    )
+                    & HasSubstring(
+                        "These fields cannot be used at the same time: 'baz' and 'foo'"
+                    )
+                ),
+                "input": Field("foo"),
+            },
+            {
+                "type": "failure",
+                "code": "M201",
+                "loc": ("spec", "baz"),
+                "summary": "Conflicting fields",
+                "msg": (
+                    AnyThing()
+                    & HasSubstring(
+                        "Found multiple mutually exclusive fields set in @.spec."
+                    )
+                    & HasSubstring(
+                        "These fields cannot be used at the same time: 'baz' and 'foo'"
+                    )
+                ),
+                "input": Field("baz"),
+            },
         ]
 
 
