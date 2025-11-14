@@ -30,6 +30,7 @@ A typical usage of these functions is as follows:
 from __future__ import annotations
 
 import functools
+import io
 import typing
 
 from tugboat.types import Field
@@ -67,14 +68,14 @@ def accept_none(
     """
     for name in fields:
         if getattr(model, name, None) is not None:
-            field_alias = _get_alias(model, name)
+            alias = _alias(model, name)
             yield {
                 "type": "failure",
                 "code": "M102",
-                "loc": (*loc, field_alias),
-                "summary": f"Found redundant field '{field_alias}'",
-                "msg": f"Field '{field_alias}' is not valid within {get_context_name(loc)}.",
-                "input": Field(field_alias),
+                "loc": (*loc, alias),
+                "summary": f"Unexpected field '{alias}'",
+                "msg": f"Field '{alias}' is not allowed {_here(loc)}. Remove it.",
+                "input": Field(alias),
             }
 
 
@@ -201,7 +202,30 @@ def require_all(
             }
 
 
-def _get_alias(model: BaseModel, name: str) -> str:
+def _alias(model: BaseModel, name: str) -> str:
     """Get the alias of a field in a pydantic model."""
     field = type(model).model_fields[name]
     return field.alias or name
+
+
+def _here(loc: Sequence[str | int]) -> str:
+    """
+    Convert the location tuple into human-readable string.
+
+    Outputs:
+
+    * () -> "here"
+    * ("spec", 0, "foo") -> "under @.spec[].foo"
+    """
+    if not loc:
+        return "here"
+
+    with io.StringIO() as buf:
+        buf.write("under @")
+
+        for part in loc:
+            if isinstance(part, int):
+                buf.write("[]")
+            else:
+                buf.write(f".{part}")
+        return buf.getvalue()

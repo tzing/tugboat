@@ -1,7 +1,7 @@
 import pydantic
 
 from tests.dirty_equals import HasSubstring
-from tugboat.constraints import _get_alias, accept_none, mutually_exclusive, require_all
+from tugboat.constraints import accept_none, mutually_exclusive, require_all
 from tugboat.types import Field
 
 
@@ -20,15 +20,15 @@ class TestAcceptNone:
     def test_picked_1(self):
         model = SampleModel(baz="baz")
         diagnoses = list(
-            accept_none(model=model, loc=["spec", 0, 1, "baz"], fields=["foo", "bar"])
+            accept_none(model=model, loc=["spec", 0, 1], fields=["foo", "bar"])
         )
         assert diagnoses == [
             {
                 "type": "failure",
                 "code": "M102",
-                "loc": ("spec", 0, 1, "baz", "baz"),
-                "summary": "Found redundant field 'baz'",
-                "msg": "Field 'baz' is not valid within the 'baz' section.",
+                "loc": ("spec", 0, 1, "baz"),
+                "summary": "Unexpected field 'baz'",
+                "msg": "Field 'baz' is not allowed under @.spec[][]. Remove it.",
                 "input": Field("baz"),
             }
         ]
@@ -43,8 +43,8 @@ class TestAcceptNone:
                 "type": "failure",
                 "code": "M102",
                 "loc": ("spec", 0, 1, "baz"),
-                "summary": "Found redundant field 'baz'",
-                "msg": "Field 'baz' is not valid within the 'spec' section.",
+                "summary": "Unexpected field 'baz'",
+                "msg": "Field 'baz' is not allowed under @.spec[][]. Remove it.",
                 "input": Field("baz"),
             }
         ]
@@ -149,9 +149,3 @@ class TestRequireAll:
                 "msg": "Field 'foo' is required in current context but missing.",
             }
         ]
-
-
-def test_get_alias():
-    m = SampleModel.model_validate({})
-    assert _get_alias(m, "foo") == "foo"
-    assert _get_alias(m, "bar") == "baz"
