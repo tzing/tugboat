@@ -20,6 +20,11 @@ A typical usage of these functions is as follows:
            loc=("metadata",),
            require_one=True,
        )
+
+.. tip::
+
+   The ``loc`` parameter provides a convenient way to specify the location
+   context without needing to wrap constraint functions with :func:`~tugboat.utils.prepend_loc`.
 """
 
 from __future__ import annotations
