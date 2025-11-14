@@ -33,7 +33,7 @@ import functools
 import typing
 
 from tugboat.types import Field
-from tugboat.utils import get_alias, get_context_name, join_with_and, join_with_or
+from tugboat.utils import get_context_name, join_with_and, join_with_or
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
@@ -67,7 +67,7 @@ def accept_none(
     """
     for name in fields:
         if getattr(model, name, None) is not None:
-            field_alias = get_alias(model, name)
+            field_alias = _get_alias(model, name)
             yield {
                 "type": "failure",
                 "code": "M102",
@@ -115,7 +115,7 @@ def mutually_exclusive(
             return  # no issues :)
 
         case 0 if require_one:
-            required_fields = map(functools.partial(get_alias, model), fields)
+            required_fields = map(functools.partial(_get_alias, model), fields)
             yield {
                 "type": "failure",
                 "code": "M101",
@@ -130,10 +130,10 @@ def mutually_exclusive(
             }
 
         case _:
-            conflicting_fields = map(functools.partial(get_alias, model), fields)
+            conflicting_fields = map(functools.partial(_get_alias, model), fields)
             conflicting_fields = join_with_and(conflicting_fields)
             for name in active_fields:
-                field_alias = get_alias(model, name)
+                field_alias = _get_alias(model, name)
                 yield {
                     "type": "failure",
                     "code": "M201",
@@ -178,7 +178,7 @@ def require_all(
 
         # field absent
         if value is None:
-            field_alias = get_alias(model, name)
+            field_alias = _get_alias(model, name)
             context_name = get_context_name(loc)
             yield {
                 "type": "failure",
@@ -190,7 +190,7 @@ def require_all(
 
         # field empty
         elif not accept_empty:
-            field_alias = get_alias(model, name)
+            field_alias = _get_alias(model, name)
             context_name = get_context_name(loc)
             yield {
                 "type": "failure",
@@ -199,3 +199,9 @@ def require_all(
                 "summary": f"Missing input in field '{field_alias}'",
                 "msg": f"Field '{field_alias}' is required in {context_name} but is currently empty.",
             }
+
+
+def _get_alias(model: BaseModel, name: str) -> str:
+    """Get the alias of a field in a pydantic model."""
+    field = type(model).model_fields[name]
+    return field.alias or name

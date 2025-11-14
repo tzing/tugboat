@@ -1,7 +1,7 @@
 import pydantic
 
 from tests.dirty_equals import HasSubstring
-from tugboat.constraints import accept_none, mutually_exclusive, require_all
+from tugboat.constraints import _get_alias, accept_none, mutually_exclusive, require_all
 from tugboat.types import Field
 
 
@@ -149,3 +149,9 @@ class TestRequireAll:
                 "msg": "Field 'foo' is required in current context but missing.",
             }
         ]
+
+
+def test_get_alias():
+    m = SampleModel.model_validate({})
+    assert _get_alias(m, "foo") == "foo"
+    assert _get_alias(m, "bar") == "baz"
