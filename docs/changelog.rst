@@ -4,6 +4,11 @@ Changelog
 Unreleased
 ----------
 
+:octicon:`plug` Enhancements
+++++++++++++++++++++++++++++
+
+* Use JSONPath-like syntax for specifying locations in output reports.
+
 :octicon:`code-review` API Changes
 ++++++++++++++++++++++++++++++++++
 
