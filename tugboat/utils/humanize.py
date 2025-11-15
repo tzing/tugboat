@@ -13,8 +13,6 @@ if typing.TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
     from typing import Any
 
-    from pydantic import BaseModel
-
 
 def join_with_and(
     items: Iterable[Any],
