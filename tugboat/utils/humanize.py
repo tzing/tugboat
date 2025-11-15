@@ -4,13 +4,11 @@ Helper functions for generating human readable text.
 
 from __future__ import annotations
 
-import contextlib
-import functools
 import io
 import typing
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Sequence
+    from collections.abc import Callable, Iterable
     from typing import Any
 
 
@@ -146,19 +144,3 @@ def _quote(item: Any) -> str:
     if "'" in text:
         return f'"{text}"'
     return f"'{text}'"
-
-
-def get_context_name(loc: Sequence[str | int]) -> str:
-    """Get the parent context name for a location."""
-    if not isinstance(loc, tuple):
-        loc = tuple(loc)
-    return _get_context_name(loc)
-
-
-@functools.lru_cache(16)
-def _get_context_name(loc: tuple[str | int, ...]) -> str:
-    with contextlib.suppress(StopIteration):
-        # find the first string in the parents
-        parent = next(filter(lambda x: isinstance(x, str), reversed(loc)))
-        return f"the '{parent}' section"
-    return "current context"

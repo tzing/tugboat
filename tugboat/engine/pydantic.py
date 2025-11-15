@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import collections
+import contextlib
+import io
 import json
 import typing
 from collections.abc import Mapping, Sequence
@@ -8,7 +10,7 @@ from collections.abc import Mapping, Sequence
 from rapidfuzz.process import extractOne
 
 from tugboat.types import Field
-from tugboat.utils.humanize import get_context_name, join_with_or
+from tugboat.utils.humanize import join_with_or
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -32,12 +34,12 @@ def bulk_translate_pydantic_errors(
 
     Parameters
     ----------
-    errors : ~collections.abc.Iterable[~pydantic_core.ErrorDetails]
+    errors : Iterable[pydantic_core.ErrorDetails]
         An iterable of Pydantic error objects. These objects could be obtained from
         :py:meth:`ValidationError.errors <pydantic_core.ValidationError.errors>` method.
 
-    Yields
-    ------
+    Returns
+    -------
     list[Diagnosis]
         A list of diagnosis objects that contain the error messages
     """
@@ -104,7 +106,7 @@ def bulk_translate_pydantic_errors(
         expected_type_expr = join_with_or(expected_types, quote=False)
 
         # build a more concise message
-        _, field = _get_field_name(loc)
+        field = _get_field(loc)
         input_type = get_type_name(errors[0]["input"])
 
         diagnoes.append(
@@ -114,7 +116,7 @@ def bulk_translate_pydantic_errors(
                 "loc": loc,
                 "summary": "Input type mismatch",
                 "msg": (
-                    f"Expected {expected_type_expr} for field {field}, but received a {input_type}."
+                    f"Expected {expected_type_expr} for field '{field}', but received a {input_type}."
                 ),
                 "input": errors[0]["input"],
             }
@@ -200,7 +202,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
     """
     match error["type"]:
         case "bool_parsing" | "bool_type":
-            _, field = _get_field_name(error["loc"])
+            field = _get_field(error["loc"])
             input_type = get_type_name(error["input"])
             return {
                 "type": "failure",
@@ -208,14 +210,14 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                 "loc": error["loc"],
                 "summary": "Input should be a valid boolean",
                 "msg": (
-                    f"Expected a boolean for field {field}, but received a {input_type}.\n"
-                    "Try using 'true' or 'false' without quotes."
+                    f"Expected a boolean for field '{field}', but received a {input_type}.\n"
+                    "Use 'true' or 'false' without quotes for boolean values."
                 ),
                 "input": error["input"],
             }
 
         case "dict_type" | "mapping_type":
-            _, field = _get_field_name(error["loc"])
+            field = _get_field(error["loc"])
             input_type = get_type_name(error["input"])
 
             if not error["input"]:
@@ -225,7 +227,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                     "loc": error["loc"],
                     "summary": "Input should be a valid mapping",
                     "msg": (
-                        f"Expected a mapping for field {field}, but received a {input_type}.\n"
+                        f"Expected a mapping for field '{field}', but received a {input_type}.\n"
                         "If an empty mapping is intended, use '{}'."
                     ),
                     "input": error["input"],
@@ -237,56 +239,27 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                 "code": "M103",
                 "loc": error["loc"],
                 "summary": "Input should be a valid mapping",
-                "msg": f"Expected a mapping for field {field}, but received a {input_type}.",
+                "msg": f"Expected a mapping for field '{field}', but received a {input_type}.",
                 "input": error["input"],
             }
 
         case "decimal_parsing" | "decimal_type" | "float_parsing" | "float_type":
-            _, field = _get_field_name(error["loc"])
+            field = _get_field(error["loc"])
             input_type = get_type_name(error["input"])
             return {
                 "type": "failure",
                 "code": "M103",
                 "loc": error["loc"],
                 "summary": "Input should be a valid number",
-                "msg": f"Expected a number for field {field}, but received a {input_type}.",
+                "msg": f"Expected a number for field '{field}', but received a {input_type}.",
                 "input": error["input"],
             }
 
         case "enum" | "literal_error":
-            expected_literal = error.get("ctx", {}).get("expected", "")
-            expected = _extract_expects(expected_literal)
-
-            _, field = _get_field_name(error["loc"])
-
-            fix = None
-            if result := extractOne(input_ := error["input"], expected):
-                fix, _, _ = result
-
-            return {
-                "type": "failure",
-                "code": "M104",
-                "loc": error["loc"],
-                "summary": error["msg"],
-                "msg": (
-                    f"Input '{input_}' is not a valid value for field {field}.\n"
-                    f"Expected {expected_literal}."
-                ),
-                "input": error["input"],
-                "fix": fix,
-            }
+            return translate_pydantic_enum_error(error)
 
         case "extra_forbidden":
-            raw_field_name, formatted_field = _get_field_name(error["loc"])
-            *parents, _ = error["loc"]
-            return {
-                "type": "failure",
-                "code": "M102",
-                "loc": error["loc"],
-                "summary": "Found redundant field",
-                "msg": f"Field {formatted_field} is not valid within {get_context_name(parents)}.",
-                "input": Field(raw_field_name),
-            }
+            return translate_pydantic_extra_forbidden_error(error)
 
         case (
             "frozen_set_type"
@@ -295,7 +268,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
             | "set_type"
             | "tuple_type"
         ):
-            _, field = _get_field_name(error["loc"])
+            field = _get_field(error["loc"])
             input_type = get_type_name(error["input"])
 
             if not error["input"]:
@@ -305,7 +278,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                     "loc": error["loc"],
                     "summary": "Input should be a valid array",
                     "msg": (
-                        f"Expected an array for field {field}, but received a {input_type}.\n"
+                        f"Expected an array for field '{field}', but received a {input_type}.\n"
                         "If an empty array is intended, use '[]'."
                     ),
                     "input": error["input"],
@@ -317,42 +290,34 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                 "code": "M103",
                 "loc": error["loc"],
                 "summary": "Input should be a valid array",
-                "msg": f"Expected an array for field {field}, but received a {input_type}.",
+                "msg": f"Expected an array for field '{field}', but received a {input_type}.",
                 "input": error["input"],
             }
 
         case "int_parsing" | "int_type":
-            _, field = _get_field_name(error["loc"])
+            field = _get_field(error["loc"])
             input_type = get_type_name(error["input"])
             return {
                 "type": "failure",
                 "code": "M103",
                 "loc": error["loc"],
                 "summary": "Input should be a valid integer",
-                "msg": f"Expected a integer for field {field}, but received a {input_type}.",
+                "msg": f"Expected a integer for field '{field}', but received a {input_type}.",
                 "input": error["input"],
             }
 
         case "missing":
-            _, field = _get_field_name(error["loc"])
+            field = _get_field(error["loc"])
             return {
                 "type": "failure",
                 "code": "M101",
                 "loc": error["loc"],
                 "summary": "Missing required field",
-                "msg": f"Field {field} is required but missing",
+                "msg": f"Field '{field}' is required but missing",
             }
 
         case "string_type":
-            _, field = _get_field_name(error["loc"])
-            return {
-                "type": "failure",
-                "code": "M103",
-                "loc": error["loc"],
-                "summary": "Input should be a valid string",
-                "msg": "\n".join(_compose_string_error_message(field, error["input"])),
-                "input": error["input"],
-            }
+            return translate_pydantic_string_type_error(error)
 
         case "artifact_prohibited_value_field":
             diagnosis: Diagnosis = {
@@ -364,39 +329,13 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                 "input": Field("value"),
             }
 
-            try:
+            with contextlib.suppress(Exception):
                 diagnosis["fix"] = json.dumps({"raw": {"data": error["input"]}})
-            except Exception:
-                ...
 
             return diagnosis
 
         case "parameter_value_type_error":
-            input_type = get_type_name(error["input"])
-
-            diagnosis: Diagnosis = {
-                "type": "failure",
-                "code": "M103",
-                "loc": error["loc"],
-                "summary": "Input should be a string",
-                "msg": (
-                    f"Expected string for parameter value, but received a {input_type}."
-                ),
-                "input": error["input"],
-            }
-
-            if isinstance(error["input"], dict | list):
-                try:
-                    diagnosis["fix"] = json.dumps(error["input"], indent=2)
-                except Exception:
-                    ...
-
-                diagnosis["msg"] += (
-                    "\n"
-                    "If a complex structure is intended, serialize it as a JSON string."
-                )
-
-            return diagnosis
+            return translate_parameter_value_type_error(error)
 
     return {
         "type": "failure",
@@ -428,21 +367,50 @@ def get_type_name(value: Any) -> str:
     return type(value).__name__
 
 
-def _get_field_name(loc: tuple[int | str, ...]) -> tuple[str | None, str]:
+def _get_field[T](loc: tuple[int | str, ...], default: T = "<unknown>") -> str | T:
     """
     Get the last string in the location tuple as the field name.
 
     Returns
     -------
-    raw : str
-        The raw field name.
     quoted : str
         The quoted field name for display.
     """
     for item in reversed(loc):
         if isinstance(item, str):
-            return item, f"'{item}'"
-    return None, "<unnamed>"
+            return item
+    return default
+
+
+def translate_pydantic_enum_error(error: ErrorDetails) -> Diagnosis:
+    """
+    Translate a Pydantic `enum`_ error to a diagnosis object.
+
+    .. _enum: https://docs.pydantic.dev/latest/errors/validation_errors/#enum
+    """
+    assert error["type"] in ("enum", "literal_error")
+
+    expects_literal = error.get("ctx", {}).get("expected", "")
+    expects_items = _extract_expects(expects_literal)
+
+    field = _get_field(error["loc"])
+
+    fix = None
+    if result := extractOne(input_ := error["input"], expects_items):
+        fix, _, _ = result
+
+    return {
+        "type": "failure",
+        "code": "M104",
+        "loc": error["loc"],
+        "summary": error["msg"],
+        "msg": (
+            f"Input '{input_}' is not a valid value for field '{field}'.\n"
+            f"Expected {expects_literal}."
+        ),
+        "input": input_,
+        "fix": fix,
+    }
 
 
 def _extract_expects(literal: str) -> Iterator[str]:
@@ -471,32 +439,87 @@ def _extract_expects(literal: str) -> Iterator[str]:
             idx += 1
 
 
-def _compose_string_error_message(field: str, value: Any) -> Iterator[str]:
+def translate_pydantic_extra_forbidden_error(error: ErrorDetails) -> Diagnosis:
     """
-    Construct an error message for string type validation.
-    Includes user suggestions based on the value and common YAML parsing pitfalls.
+    Translate a Pydantic `extra_forbidden`_ error to a diagnosis object.
 
-    Ref: https://ruudvanasseldonk.com/2023/01/11/the-yaml-document-from-hell
+    .. _extra_forbidden: https://docs.pydantic.dev/latest/errors/validation_errors/#extra_forbidden
     """
-    input_type = get_type_name(value)
-    yield f"Expected a string for field {field}, but received a {input_type}."
+    assert error["type"] == "extra_forbidden"
 
-    # the Norway problem
-    if isinstance(value, bool):
-        if value is True:
-            yield "Note that these inputs will be interpreted as boolean true: 'True', 'Yes', 'On', 'Y'."
-        else:
-            yield "Note that these inputs will be interpreted as boolean false: 'False', 'No', 'Off', 'N'."
+    loc = error["loc"]
+    field = _get_field(loc, default=None)
+    assert field  # must present
 
-    # sexagesimal
-    if isinstance(value, int) and 60 < value <= 3600:
-        sexagesimal = _to_sexagesimal(value)
-        yield (
-            f"Numbers separated by colons (e.g. {sexagesimal}) will be interpreted as sexagesimal."
+    here = "here"
+    if len(loc) > 1:
+        parent = _get_field(loc[:-1])
+        here = f"within '{parent}'"
+
+    return {
+        "type": "failure",
+        "code": "M102",
+        "loc": error["loc"],
+        "summary": f"Unexpected field '{field}'",
+        "msg": f"Field '{field}' is not allowed {here}. Remove it.",
+        "input": Field(field),
+    }
+
+
+def translate_pydantic_string_type_error(error: ErrorDetails) -> Diagnosis:
+    """
+    Translate a Pydantic `string_type`_ error to a diagnosis object.
+
+    This function constructs more helpful error message for string type validation
+    errors, including suggestions based on the value and common YAML parsing pitfalls.
+
+    .. _string_type: https://docs.pydantic.dev/latest/errors/validation_errors/#string_type
+
+    See also
+    --------
+    `The yaml document from hell
+       <https://ruudvanasseldonk.com/2023/01/11/the-yaml-document-from-hell>`_
+    """
+    assert error["type"] == "string_type"
+
+    field = _get_field(error["loc"])
+    input_value = error["input"]
+    input_type = get_type_name(input_value)
+
+    with io.StringIO() as buf:
+        buf.write(
+            f"Expected a string for field '{field}', but received a {input_type}.\n"
         )
 
-    # general suggestion
-    yield "Try using quotes for strings to fix this issue."
+        # the Norway problem
+        if input_value is True:
+            buf.write(
+                "Unquoted values like 'True', 'Yes', 'On', 'Y' are parsed as booleans.\n"
+            )
+        elif input_value is False:
+            buf.write(
+                "Unquoted values like 'False', 'No', 'Off', 'N' are parsed as booleans.\n"
+            )
+
+        # sexagesimal
+        if isinstance(input_value, int) and 60 < input_value <= 3600:
+            sexagesimal = _to_sexagesimal(input_value)
+            buf.write(
+                f"Numbers separated by colons (e.g. {sexagesimal}) will be parsed as sexagesimal.\n"
+            )
+
+        # general suggestion
+        buf.write("Quote string values to avoid parsing issues.")
+        message = buf.getvalue()
+
+    return {
+        "type": "failure",
+        "code": "M103",
+        "loc": error["loc"],
+        "summary": "Input should be a valid string",
+        "msg": message,
+        "input": error["input"],
+    }
 
 
 def _to_sexagesimal(value: int) -> str:
@@ -513,3 +536,35 @@ def _to_sexagesimal(value: int) -> str:
         value //= 60
 
     return sign + ":".join(str(d) for d in reversed(digits))
+
+
+def translate_parameter_value_type_error(error: ErrorDetails) -> Diagnosis:
+    """Customized translator for ``parameter_value_type_error``."""
+    assert error["type"] == "parameter_value_type_error"
+
+    with io.StringIO() as buf:
+        input_type = get_type_name(error["input"])
+        buf.write(f"Expected string for parameter value, but received a {input_type}.")
+
+        if isinstance(error["input"], dict | list):
+            buf.write("\n")
+            buf.write(
+                "If a complex structure is intended, serialize it as a JSON string."
+            )
+
+        message = buf.getvalue()
+
+    diagnosis: Diagnosis = {
+        "type": "failure",
+        "code": "M103",
+        "loc": error["loc"],
+        "summary": "Input should be a string",
+        "msg": message,
+        "input": error["input"],
+    }
+
+    if isinstance(error["input"], dict | list):
+        with contextlib.suppress(Exception):
+            diagnosis["fix"] = json.dumps(error["input"], indent=2)
+
+    return diagnosis

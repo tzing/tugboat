@@ -100,8 +100,8 @@ def test_analyze_manifest_manifest_validation_failed():
             "code": "M102",
             "input": "foo",
             "loc": ("spec", "foo"),
-            "msg": "Field 'foo' is not valid within the 'spec' section.",
-            "summary": "Found redundant field",
+            "summary": "Unexpected field 'foo'",
+            "msg": "Field 'foo' is not allowed within 'spec'. Remove it.",
             "type": "failure",
             "ctx": {
                 "manifest": {

@@ -12,17 +12,16 @@ from pydantic import (
 )
 from pydantic_core import ErrorDetails
 
-from tugboat.schemas import Artifact, Parameter
-from tugboat.schemas.basic import Array, Dict
-from tugboat.types import Field
-from tugboat.utils.pydantic import (
-    _compose_string_error_message,
+from tugboat.engine.pydantic import (
     _extract_expects,
     _to_sexagesimal,
     bulk_translate_pydantic_errors,
     get_type_name,
     translate_pydantic_error,
 )
+from tugboat.schemas import Artifact, Parameter
+from tugboat.schemas.basic import Array, Dict
+from tugboat.types import Field
 
 
 class TestBulkTranslatePydanticError:
@@ -43,7 +42,7 @@ class TestBulkTranslatePydanticError:
                 "summary": "Input should be a valid boolean",
                 "msg": (
                     "Expected a boolean for field 'x', but received a null.\n"
-                    "Try using 'true' or 'false' without quotes."
+                    "Use 'true' or 'false' without quotes for boolean values."
                 ),
                 "input": None,
             },
@@ -72,7 +71,7 @@ class TestTranslatePydanticError:
             "summary": "Input should be a valid boolean",
             "msg": (
                 "Expected a boolean for field 'x', but received a integer.\n"
-                "Try using 'true' or 'false' without quotes."
+                "Use 'true' or 'false' without quotes for boolean values."
             ),
             "input": 1234,
         }
@@ -146,8 +145,8 @@ class TestTranslatePydanticError:
             "type": "failure",
             "code": "M102",
             "loc": ("x", 0, "z"),
-            "summary": "Found redundant field",
-            "msg": "Field 'z' is not valid within the 'x' section.",
+            "summary": "Unexpected field 'z'",
+            "msg": "Field 'z' is not allowed within 'x'. Remove it.",
             "input": Field("z"),
         }
 
@@ -157,8 +156,8 @@ class TestTranslatePydanticError:
             "type": "failure",
             "code": "M102",
             "loc": ("z",),
-            "summary": "Found redundant field",
-            "msg": "Field 'z' is not valid within current context.",
+            "summary": "Unexpected field 'z'",
+            "msg": "Field 'z' is not allowed here. Remove it.",
             "input": Field("z"),
         }
 
@@ -265,7 +264,7 @@ class TestTranslatePydanticError:
             "summary": "Input should be a valid string",
             "msg": (
                 "Expected a string for field 'x', but received a null.\n"
-                "Try using quotes for strings to fix this issue."
+                "Quote string values to avoid parsing issues."
             ),
             "input": None,
         }
@@ -297,7 +296,7 @@ class TestTranslatePydanticError:
             "code": "M103",
             "loc": (),
             "summary": "Input should be a valid integer",
-            "msg": "Expected a integer for field <unnamed>, but received a string.",
+            "msg": "Expected a integer for field '<unknown>', but received a string.",
             "input": "foo",
         }
 
@@ -345,6 +344,68 @@ class TestTranslatePydanticError:
         }
 
 
+class TestTranslatePydanticStringTypeError:
+
+    def test_basic(self):
+        error = get_validation_error(str, None)
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M103",
+            "loc": (),
+            "summary": "Input should be a valid string",
+            "msg": (
+                "Expected a string for field '<unknown>', but received a null.\n"
+                "Quote string values to avoid parsing issues."
+            ),
+            "input": None,
+        }
+
+    def test_norway_problem_yes(self):
+        error = get_validation_error(str, True)
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M103",
+            "loc": (),
+            "summary": "Input should be a valid string",
+            "msg": (
+                "Expected a string for field '<unknown>', but received a boolean.\n"
+                "Unquoted values like 'True', 'Yes', 'On', 'Y' are parsed as booleans.\n"
+                "Quote string values to avoid parsing issues."
+            ),
+            "input": True,
+        }
+
+    def test_norway_problem_no(self):
+        error = get_validation_error(str, False)
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M103",
+            "loc": (),
+            "summary": "Input should be a valid string",
+            "msg": (
+                "Expected a string for field '<unknown>', but received a boolean.\n"
+                "Unquoted values like 'False', 'No', 'Off', 'N' are parsed as booleans.\n"
+                "Quote string values to avoid parsing issues."
+            ),
+            "input": False,
+        }
+
+    def test_sexagesimal(self):
+        error = get_validation_error(str, 1234)
+        assert translate_pydantic_error(error) == {
+            "type": "failure",
+            "code": "M103",
+            "loc": (),
+            "summary": "Input should be a valid string",
+            "msg": (
+                "Expected a string for field '<unknown>', but received a integer.\n"
+                "Numbers separated by colons (e.g. 20:34) will be parsed as sexagesimal.\n"
+                "Quote string values to avoid parsing issues."
+            ),
+            "input": 1234,
+        }
+
+
 class TestExtractExpects:
     def test_enum(self):
         class MyEnum(enum.StrEnum):
@@ -381,28 +442,6 @@ class TestGetTypeName:
     )
     def test(self, input_, expected):
         assert get_type_name(input_) == expected
-
-
-class TestComposeStringErrorMessage:
-
-    def test_norway_problem(self):
-        assert list(_compose_string_error_message("FOO", True)) == [
-            "Expected a string for field FOO, but received a boolean.",
-            "Note that these inputs will be interpreted as boolean true: 'True', 'Yes', 'On', 'Y'.",
-            "Try using quotes for strings to fix this issue.",
-        ]
-        assert list(_compose_string_error_message("FOO", False)) == [
-            "Expected a string for field FOO, but received a boolean.",
-            "Note that these inputs will be interpreted as boolean false: 'False', 'No', 'Off', 'N'.",
-            "Try using quotes for strings to fix this issue.",
-        ]
-
-    def test_sexagesimal(self):
-        assert list(_compose_string_error_message("FOO", 1342)) == [
-            "Expected a string for field FOO, but received a integer.",
-            "Numbers separated by colons (e.g. 22:22) will be interpreted as sexagesimal.",
-            "Try using quotes for strings to fix this issue.",
-        ]
 
 
 class TestToSexagesimal:

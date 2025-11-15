@@ -146,8 +146,8 @@ class TestAnalyzeYamlStream:
                     "type": "failure",
                     "code": "M102",
                     "loc": ("spec", "foo"),
-                    "summary": "Found redundant field",
-                    "msg": "Field 'foo' is not valid within the 'spec' section.",
+                    "summary": "Unexpected field 'foo'",
+                    "msg": "Field 'foo' is not allowed within 'spec'. Remove it.",
                     "input": "foo",
                     "extras": {
                         "file": {
