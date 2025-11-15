@@ -60,7 +60,7 @@ class TestConsoleFormatter:
               @Template:templates/workflow.yaml
 
               1 | apiVersion: argoproj.io/v1alpha1
-                | └ T01 at .
+                | └ T01 at $
               2 | kind: Workflow
               3 | metadata:
 
@@ -114,7 +114,7 @@ class TestConsoleFormatter:
                8 |     - name: hello
                9 |       script:
               10 |         image: alpine:latest
-                 |         └ T02 at .spec.templates[0].script
+                 |         └ T02 at $.spec.templates[0].script
 
               Field 'source' is required but missing
 
@@ -158,7 +158,7 @@ class TestConsoleFormatter:
                9 |       container:
               10 |         image: busybox
                  |                ^^^^^^^
-                 |                └ T03 at .spec.templates[0].container.image
+                 |                └ T03 at $.spec.templates[0].container.image
               11 |         command: [echo]
               12 |         args: ["hello world"]
 

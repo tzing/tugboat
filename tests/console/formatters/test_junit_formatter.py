@@ -162,9 +162,9 @@ class TestJUnitFormatter:
                   <property name="string:manifest-kind" value="demo.example.com"/>
                   <property name="string:manifest-name" value="diagnoses"/>
                 </properties>
-                <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
-                <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
-                <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
+                <testcase name="$" classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
+                <testcase name="$" classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
+                <testcase name="$" classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
               </testsuite>
 
               <!-- GROUP B: different filepath -->
@@ -173,7 +173,7 @@ class TestJUnitFormatter:
                   <property name="string:manifest-kind" value="demo.example.com"/>
                   <property name="string:manifest-name" value="diagnoses"/>
                 </properties>
-                <testcase classname="T01" errors="1" file="another-manifest.yaml" line="1" name="."><error message="test">test</error></testcase>
+                <testcase classname="T01" errors="1" file="another-manifest.yaml" line="1" name="$"><error message="test">test</error></testcase>
               </testsuite>
 
               <!-- GROUP C: different manifest name -->
@@ -182,7 +182,7 @@ class TestJUnitFormatter:
                   <property name="string:manifest-kind" value="demo.example.com"/>
                   <property name="string:manifest-name" value="other-diagnoses"/>
                 </properties>
-                <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
+                <testcase name="$" classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
               </testsuite>
 
               <!-- GROUP D: different manifest kind -->
@@ -191,13 +191,13 @@ class TestJUnitFormatter:
                   <property name="string:manifest-kind" value="another.example.com"/>
                   <property name="string:manifest-name" value="diagnoses"/>
                 </properties>
-                <testcase name="." classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
+                <testcase name="$" classname="T01" failures="1" file="manifest.yaml" line="1"><failure message="test">test</failure></testcase>
               </testsuite>
 
               <!-- GROUP E: missing path and manifest -->
               <testsuite errors="1">
                 <properties/>
-                <testcase classname="T01" errors="1" line="1" name="."><error message="test">test</error></testcase>
+                <testcase classname="T01" errors="1" line="1" name="$"><error message="test">test</error></testcase>
               </testsuite>
 
             </testsuites>
@@ -233,7 +233,7 @@ class TestElementTestSuite:
                 <property name="string:manifest-kind" value="demo.example.com"/>
                 <property name="string:manifest-name" value="test"/>
               </properties>
-              <testcase classname="T01" name="." line="10" failures="1">
+              <testcase classname="T01" name="$" line="10" failures="1">
                 <failure message="test failure">test failure</failure>
               </testcase>
             </testsuite>
@@ -288,7 +288,7 @@ class TestElementTestCase:
         )
         assert elem == IsElementEqual(
             """
-            <testcase classname="T01" name=".foo.bar" line="10" file="/path/to/file" errors="1">
+            <testcase classname="T01" name="$.foo.bar" line="10" file="/path/to/file" errors="1">
               <error message="mock summary">test error</error>
             </testcase>
             """
@@ -310,7 +310,7 @@ class TestElementTestCase:
         )
         assert elem == IsElementEqual(
             """
-            <testcase classname="T02" name=".foo[0]" line="10" failures="1">
+            <testcase classname="T02" name="$.foo[0]" line="10" failures="1">
               <failure message="mock summary">test failure</failure>
             </testcase>
             """
@@ -332,7 +332,7 @@ class TestElementTestCase:
         )
         assert elem == IsElementEqual(
             """
-            <testcase classname="T03" name="." line="10" skipped="1">
+            <testcase classname="T03" name="$" line="10" skipped="1">
               <skipped message="mock summary">test warning</skipped>
             </testcase>
             """
