@@ -15,6 +15,8 @@ Unreleased
   * :py:func:`~tugboat.constraints.require_all` accepts an ``accept_empty`` parameter.
   * ``require_non_empty`` and ``require_exactly_one`` have been removed in favor of the expanded functions above.
 
+* Remove :py:mod:`tugboat.utils.pydantic` module
+
 0.6.2
 -----
 
