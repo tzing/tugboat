@@ -4,13 +4,11 @@ Helper functions for generating human readable text.
 
 from __future__ import annotations
 
-import contextlib
-import functools
 import io
 import typing
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Sequence
+    from collections.abc import Callable, Iterable
     from typing import Any
 
 
