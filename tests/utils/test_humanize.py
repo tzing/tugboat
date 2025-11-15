@@ -1,6 +1,4 @@
-
 from tugboat.utils.humanize import (
-    get_context_name,
     join,
     join_with_and,
     join_with_or,
@@ -33,12 +31,3 @@ class TestJoin:
         assert join_with_or(["foo", "bar"], quote=False) == "bar or foo"
         assert join_with_or(["foo", "bar"], sort=False) == "'foo' or 'bar'"
         assert join_with_or([]) == "(none)"
-
-
-class TestGetContextName:
-
-    def test(self):
-        assert get_context_name(["foo"]) == "the 'foo' section"
-        assert get_context_name(("foo", 0, 1)) == "the 'foo' section"
-        assert get_context_name(("foo", 0, 1, "bar")) == "the 'bar' section"
-        assert get_context_name(()) == "current context"
