@@ -358,10 +358,8 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                 "input": Field("value"),
             }
 
-            try:
+            with contextlib.suppress(Exception):
                 diagnosis["fix"] = json.dumps({"raw": {"data": error["input"]}})
-            except Exception:
-                ...
 
             return diagnosis
 
@@ -380,10 +378,8 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
             }
 
             if isinstance(error["input"], dict | list):
-                try:
+                with contextlib.suppress(Exception):
                     diagnosis["fix"] = json.dumps(error["input"], indent=2)
-                except Exception:
-                    ...
 
                 diagnosis["msg"] += (
                     "\n"
