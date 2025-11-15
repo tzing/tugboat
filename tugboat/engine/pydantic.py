@@ -34,12 +34,12 @@ def bulk_translate_pydantic_errors(
 
     Parameters
     ----------
-    errors : ~collections.abc.Iterable[~pydantic_core.ErrorDetails]
+    errors : Iterable[pydantic_core.ErrorDetails]
         An iterable of Pydantic error objects. These objects could be obtained from
         :py:meth:`ValidationError.errors <pydantic_core.ValidationError.errors>` method.
 
-    Yields
-    ------
+    Returns
+    -------
     list[Diagnosis]
         A list of diagnosis objects that contain the error messages
     """

@@ -12,16 +12,16 @@ from pydantic import (
 )
 from pydantic_core import ErrorDetails
 
-from tugboat.schemas import Artifact, Parameter
-from tugboat.schemas.basic import Array, Dict
-from tugboat.types import Field
-from tugboat.utils.pydantic import (
+from tugboat.engine.pydantic import (
     _extract_expects,
     _to_sexagesimal,
     bulk_translate_pydantic_errors,
     get_type_name,
     translate_pydantic_error,
 )
+from tugboat.schemas import Artifact, Parameter
+from tugboat.schemas.basic import Array, Dict
+from tugboat.types import Field
 
 
 class TestBulkTranslatePydanticError:

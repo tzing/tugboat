@@ -7,8 +7,8 @@ import typing
 from pydantic import ValidationError
 
 from tugboat.core import get_plugin_manager
+from tugboat.engine.pydantic import bulk_translate_pydantic_errors
 from tugboat.schemas import Manifest
-from tugboat.utils import bulk_translate_pydantic_errors
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
