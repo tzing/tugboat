@@ -10,7 +10,7 @@ from collections.abc import Mapping, Sequence
 from rapidfuzz.process import extractOne
 
 from tugboat.types import Field
-from tugboat.utils.humanize import get_context_name, join_with_or
+from tugboat.utils.humanize import join_with_or
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -125,7 +125,7 @@ def bulk_translate_pydantic_errors(
     return diagnoes
 
 
-def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
+def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:
     """
     Translate a Pydantic error to a diagnosis object.
 
@@ -259,16 +259,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
             return translate_pydantic_enum_error(error)
 
         case "extra_forbidden":
-            raw_field_name, formatted_field = _get_field_name(error["loc"])
-            *parents, _ = error["loc"]
-            return {
-                "type": "failure",
-                "code": "M102",
-                "loc": error["loc"],
-                "summary": "Found redundant field",
-                "msg": f"Field {formatted_field} is not valid within {get_context_name(parents)}.",
-                "input": Field(raw_field_name),
-            }
+            return translate_pydantic_extra_forbidden_error(error)
 
         case (
             "frozen_set_type"
@@ -376,7 +367,7 @@ def get_type_name(value: Any) -> str:
     return type(value).__name__
 
 
-def _get_field(loc: tuple[int | str, ...]) -> str:
+def _get_field[T](loc: tuple[int | str, ...], default: T = "<unknown>") -> str | T:
     """
     Get the last string in the location tuple as the field name.
 
@@ -388,7 +379,7 @@ def _get_field(loc: tuple[int | str, ...]) -> str:
     for item in reversed(loc):
         if isinstance(item, str):
             return item
-    return "<unknown>"
+    return default
 
 
 def translate_pydantic_enum_error(error: ErrorDetails) -> Diagnosis:
@@ -446,6 +437,33 @@ def _extract_expects(literal: str) -> Iterator[str]:
 
         else:
             idx += 1
+
+
+def translate_pydantic_extra_forbidden_error(error: ErrorDetails) -> Diagnosis:
+    """
+    Translate a Pydantic `extra_forbidden`_ error to a diagnosis object.
+
+    .. _extra_forbidden: https://docs.pydantic.dev/latest/errors/validation_errors/#extra_forbidden
+    """
+    assert error["type"] == "extra_forbidden"
+
+    loc = error["loc"]
+    field = _get_field(loc, default=None)
+    assert field  # must present
+
+    here = "here"
+    if len(loc) > 1:
+        parent = _get_field(loc[:-1])
+        here = f"within '{parent}'"
+
+    return {
+        "type": "failure",
+        "code": "M102",
+        "loc": error["loc"],
+        "summary": f"Unexpected field '{field}'",
+        "msg": f"Field '{field}' is not allowed {here}. Remove it.",
+        "input": Field(field),
+    }
 
 
 def translate_pydantic_string_type_error(error: ErrorDetails) -> Diagnosis:

@@ -42,7 +42,7 @@ class TestBulkTranslatePydanticError:
                 "summary": "Input should be a valid boolean",
                 "msg": (
                     "Expected a boolean for field 'x', but received a null.\n"
-                    "Try using 'true' or 'false' without quotes."
+                    "Use 'true' or 'false' without quotes for boolean values."
                 ),
                 "input": None,
             },
@@ -145,8 +145,8 @@ class TestTranslatePydanticError:
             "type": "failure",
             "code": "M102",
             "loc": ("x", 0, "z"),
-            "summary": "Found redundant field",
-            "msg": "Field 'z' is not valid within the 'x' section.",
+            "summary": "Unexpected field 'z'",
+            "msg": "Field 'z' is not allowed within 'x'. Remove it.",
             "input": Field("z"),
         }
 
@@ -156,8 +156,8 @@ class TestTranslatePydanticError:
             "type": "failure",
             "code": "M102",
             "loc": ("z",),
-            "summary": "Found redundant field",
-            "msg": "Field 'z' is not valid within current context.",
+            "summary": "Unexpected field 'z'",
+            "msg": "Field 'z' is not allowed here. Remove it.",
             "input": Field("z"),
         }
 
