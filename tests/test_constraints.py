@@ -142,14 +142,14 @@ class TestRequireAll:
                 "type": "failure",
                 "code": "M101",
                 "loc": ("spec", "foo"),
-                "summary": "Missing required field 'foo'",
-                "msg": "Field 'foo' is required in the 'spec' section but missing.",
+                "summary": "Missing 'foo'",
+                "msg": "Required field 'foo' is missing from @.spec.",
             },
             {
                 "code": "M202",
                 "loc": ("spec", "baz"),
-                "msg": "Field 'baz' is required in the 'spec' section but is currently empty.",
-                "summary": "Missing input in field 'baz'",
+                "summary": "Empty required field 'baz'",
+                "msg": "Field 'baz' is required but empty in @.spec.",
                 "type": "failure",
             },
         ]
@@ -162,7 +162,7 @@ class TestRequireAll:
                 "type": "failure",
                 "code": "M101",
                 "loc": ("foo",),
-                "summary": "Missing required field 'foo'",
-                "msg": "Field 'foo' is required in current context but missing.",
-            }
+                "summary": "Missing 'foo'",
+                "msg": "Required field 'foo' is missing here.",
+            },
         ]
