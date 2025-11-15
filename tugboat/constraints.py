@@ -222,7 +222,11 @@ def _here(conj: str, loc: Sequence[str | int], default: str = "here") -> str:
     """
     if not loc:
         return default
+    return __here(conj, *loc)
 
+
+@functools.lru_cache(16)
+def __here(conj: str, *loc: str | int) -> str:
     with io.StringIO() as buf:
         buf.write(f"{conj} @")
 
