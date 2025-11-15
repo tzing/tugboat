@@ -140,7 +140,7 @@ class DiagnosisModel(BaseModel):
 
     @property
     def loc_path(self) -> str:
-        """Return a JSONPath-like string representation of the `loc` field."""
+        """Return a JSONPath representation of the `loc` field."""
         with io.StringIO() as buf:
             for part in self.loc:
                 if isinstance(part, int):
@@ -149,9 +149,9 @@ class DiagnosisModel(BaseModel):
                     buf.write(f".{part}")
 
             if path := buf.getvalue():
-                return path
+                return "$" + path
 
-        return "."
+        return "$"
 
 
 class Extras(BaseModel):

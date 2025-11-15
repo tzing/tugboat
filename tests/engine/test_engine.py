@@ -34,7 +34,7 @@ class TestDiagnosisModel:
 
         assert diagnosis.code == "T01"
         assert diagnosis.summary == "Test 1"
-        assert diagnosis.loc_path == "."
+        assert diagnosis.loc_path == "$"
         assert diagnosis.extras.file is None
         assert diagnosis.extras.helm is None
         assert diagnosis.extras.manifest is None
@@ -63,7 +63,7 @@ class TestDiagnosisModel:
         )
 
         assert diagnosis.summary == "Test 2 with"
-        assert diagnosis.loc_path == ".foo[0].bar"
+        assert diagnosis.loc_path == "$.foo[0].bar"
 
         assert diagnosis.extras.file
         assert diagnosis.extras.file.filepath == "/path/to/file.yaml"
@@ -368,7 +368,7 @@ class TestAnalyzeYamlDocument:
             assert list(diagnoses) == []
 
         assert (
-            "Diagnosis T01 (<no summary>) at test-:.spec.foo is suppressed by comment"
+            "Diagnosis T01 (<no summary>) at test-:$.spec.foo is suppressed by comment"
             in caplog.text
         )
 
