@@ -6,12 +6,7 @@ import typing
 
 from rapidfuzz.process import extractOne
 
-from tugboat.constraints import (
-    accept_none,
-    mutually_exclusive,
-    require_exactly_one,
-    require_non_empty,
-)
+from tugboat.constraints import accept_none, mutually_exclusive, require_all
 from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_step_context
 from tugboat.schemas import Arguments
@@ -48,14 +43,13 @@ logger = logging.getLogger(__name__)
 def analyze_step(
     step: Step, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
-    yield from require_exactly_one(
-        model=step,
-        loc=(),
+    yield from mutually_exclusive(
+        step,
         fields=["template", "templateRef", "inline"],
+        require_one=True,
     )
     yield from mutually_exclusive(
-        model=step,
-        loc=(),
+        step,
         fields=["withItems", "withParam", "withSequence"],
     )
 
@@ -99,29 +93,22 @@ def check_argument_parameters(
 def _check_argument_parameter_fields(
     param: Parameter, context: Context
 ) -> Iterable[Diagnosis]:
-    yield from require_non_empty(
-        model=param,
-        loc=(),
-        fields=["name"],
-    )
-    yield from mutually_exclusive(
-        model=param,
-        loc=(),
-        fields=["value", "valueFrom"],
-    )
+    yield from require_all(param, fields=["name"])
+    yield from mutually_exclusive(param, fields=["value", "valueFrom"])
 
     if param.valueFrom:
-        yield from require_exactly_one(
-            model=param.valueFrom,
+        yield from mutually_exclusive(
+            param.valueFrom,
             loc=("valueFrom",),
             fields=[
                 "configMapKeyRef",
                 "expression",
                 "parameter",
             ],
+            require_one=True,
         )
         yield from accept_none(
-            model=param.valueFrom,
+            param.valueFrom,
             loc=("valueFrom",),
             fields=[
                 "event",
@@ -240,7 +227,7 @@ def check_argument_artifacts(
 def _check_argument_artifact_fields(
     artifact: Artifact, context: Context
 ) -> Iterable[Diagnosis]:
-    yield from require_non_empty(
+    yield from require_all(
         model=artifact,
         loc=(),
         fields=["name"],

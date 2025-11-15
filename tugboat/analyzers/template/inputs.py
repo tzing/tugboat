@@ -6,7 +6,6 @@ from tugboat.constraints import (
     accept_none,
     mutually_exclusive,
     require_all,
-    require_non_empty,
 )
 from tugboat.core import hookimpl
 from tugboat.references import get_workflow_context
@@ -66,7 +65,7 @@ def _check_input_parameter(
     context: Context,
 ) -> Iterable[Diagnosis]:
     # generic checks for all parameters
-    yield from require_non_empty(
+    yield from require_all(
         model=param,
         loc=(),
         fields=["name"],
@@ -172,7 +171,7 @@ def _check_input_artifact(
     template: Template, artifact: Artifact, context: Context
 ) -> Iterable[Diagnosis]:
     # generic checks for all artifacts
-    yield from require_non_empty(
+    yield from require_all(
         model=artifact,
         loc=(),
         fields=["name"],

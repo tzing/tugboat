@@ -13,8 +13,6 @@ if typing.TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
     from typing import Any
 
-    from pydantic import BaseModel
-
 
 def join_with_and(
     items: Iterable[Any],
@@ -164,9 +162,3 @@ def _get_context_name(loc: tuple[str | int, ...]) -> str:
         parent = next(filter(lambda x: isinstance(x, str), reversed(loc)))
         return f"the '{parent}' section"
     return "current context"
-
-
-def get_alias(model: BaseModel, name: str) -> str:
-    """Get the alias of a field in a model."""
-    field = type(model).model_fields[name]
-    return field.alias or name

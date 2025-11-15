@@ -1,6 +1,20 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+:octicon:`code-review` API Changes
+++++++++++++++++++++++++++++++++++
+
+* Refactor :py:mod:`tugboat.constraints` to provide more flexible validation functions:
+
+  * Diagnostic messages have been improved for clarity.
+  * The ``loc`` parameter is now optional and defaults automatically.
+  * :py:func:`~tugboat.constraints.mutually_exclusive` now supports exact-one validation.
+  * :py:func:`~tugboat.constraints.require_all` accepts an ``accept_empty`` parameter.
+  * ``require_non_empty`` and ``require_exactly_one`` have been removed in favor of the expanded functions above.
+
 0.6.2
 -----
 

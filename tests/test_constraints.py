@@ -1,13 +1,8 @@
 import pydantic
+from dirty_equals import AnyThing
 
-from tests.dirty_equals import ContainsSubStrings
-from tugboat.constraints import (
-    accept_none,
-    mutually_exclusive,
-    require_all,
-    require_exactly_one,
-    require_non_empty,
-)
+from tests.dirty_equals import HasSubstring
+from tugboat.constraints import accept_none, mutually_exclusive, require_all
 from tugboat.types import Field
 
 
@@ -26,22 +21,6 @@ class TestAcceptNone:
     def test_picked_1(self):
         model = SampleModel(baz="baz")
         diagnoses = list(
-            accept_none(model=model, loc=["spec", 0, 1, "baz"], fields=["foo", "bar"])
-        )
-        assert diagnoses == [
-            {
-                "type": "failure",
-                "code": "M102",
-                "loc": ("spec", 0, 1, "baz", "baz"),
-                "summary": "Found redundant field 'baz'",
-                "msg": "Field 'baz' is not valid within the 'baz' section.",
-                "input": Field("baz"),
-            }
-        ]
-
-    def test_picked_2(self):
-        model = SampleModel(baz="baz")
-        diagnoses = list(
             accept_none(model=model, loc=["spec", 0, 1], fields=["foo", "bar"])
         )
         assert diagnoses == [
@@ -49,8 +28,22 @@ class TestAcceptNone:
                 "type": "failure",
                 "code": "M102",
                 "loc": ("spec", 0, 1, "baz"),
-                "summary": "Found redundant field 'baz'",
-                "msg": "Field 'baz' is not valid within the 'spec' section.",
+                "summary": "Unexpected field 'baz'",
+                "msg": "Field 'baz' is not allowed under @.spec[][]. Remove it.",
+                "input": Field("baz"),
+            }
+        ]
+
+    def test_picked_2(self):
+        model = SampleModel(baz="baz")
+        diagnoses = list(accept_none(model, fields=["foo", "bar"]))
+        assert diagnoses == [
+            {
+                "type": "failure",
+                "code": "M102",
+                "loc": ("baz",),
+                "summary": "Unexpected field 'baz'",
+                "msg": "Field 'baz' is not allowed here. Remove it.",
                 "input": Field("baz"),
             }
         ]
@@ -59,72 +52,77 @@ class TestAcceptNone:
 class TestMutuallyExclusive:
 
     def test_pass(self):
-        model = SampleModel(baz="baz")
+        model = SampleModel.model_validate({"baz": "baz"})
         diagnoses = list(
             mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
         )
         assert diagnoses == []
 
     def test_none(self):
-        model = SampleModel()
+        model = SampleModel.model_validate({})
         diagnoses = list(
             mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
         )
         assert diagnoses == []
 
-    def test_too_many(self):
-        model = SampleModel(foo="foo", baz="baz")
+    def test_require_one(self):
+        model = SampleModel.model_validate({})
         diagnoses = list(
-            mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar"])
-        )
-        assert diagnoses == [
-            {
-                "type": "failure",
-                "code": "M201",
-                "loc": ("spec", "baz"),
-                "summary": "Mutually exclusive field set",
-                "msg": "Field 'baz' and 'foo' are mutually exclusive.",
-                "input": Field("baz"),
-            },
-            {
-                "type": "failure",
-                "code": "M201",
-                "loc": ("spec", "foo"),
-                "summary": "Mutually exclusive field set",
-                "msg": "Field 'baz' and 'foo' are mutually exclusive.",
-                "input": Field("foo"),
-            },
-        ]
-
-
-class TestRequireNonEmpty:
-
-    def test_pass(self):
-        model = SampleModel(foo="foo", baz="baz")
-        diagnoses = list(
-            require_non_empty(model=model, loc=["spec"], fields=["foo", "bar"])
-        )
-        assert diagnoses == []
-
-    def test_missing(self):
-        model = SampleModel(foo=None, baz="")
-        diagnoses = list(
-            require_non_empty(model=model, loc=["spec"], fields=["foo", "bar"])
+            mutually_exclusive(
+                model, loc=["spec"], fields=["foo", "bar"], require_one=True
+            )
         )
         assert diagnoses == [
             {
                 "type": "failure",
                 "code": "M101",
+                "loc": ("spec",),
+                "summary": "Missing required field",
+                "msg": (
+                    AnyThing()
+                    & HasSubstring("Missing required field in @.spec.")
+                    & HasSubstring("Set either one of these fields: 'baz' or 'foo'")
+                ),
+            }
+        ]
+
+    def test_too_many(self):
+        model = SampleModel(foo="foo", baz="baz")
+        diagnoses = list(
+            mutually_exclusive(model=model, loc=["spec"], fields=["foo", "bar", "qux"])
+        )
+        assert diagnoses == [
+            {
+                "type": "failure",
+                "code": "M201",
                 "loc": ("spec", "foo"),
-                "summary": "Missing required field 'foo'",
-                "msg": "Field 'foo' is required in the 'spec' section but missing.",
+                "summary": "Conflicting fields",
+                "msg": (
+                    AnyThing()
+                    & HasSubstring(
+                        "Found multiple mutually exclusive fields set in @.spec."
+                    )
+                    & HasSubstring(
+                        "These fields cannot be used at the same time: 'baz' and 'foo'"
+                    )
+                ),
+                "input": Field("foo"),
             },
             {
                 "type": "failure",
-                "code": "M202",
+                "code": "M201",
                 "loc": ("spec", "baz"),
-                "summary": "Missing input in field 'baz'",
-                "msg": "Field 'baz' is required in the 'spec' section but is currently empty.",
+                "summary": "Conflicting fields",
+                "msg": (
+                    AnyThing()
+                    & HasSubstring(
+                        "Found multiple mutually exclusive fields set in @.spec."
+                    )
+                    & HasSubstring(
+                        "These fields cannot be used at the same time: 'baz' and 'foo'"
+                    )
+                ),
+                "input": Field("baz"),
             },
         ]
 
@@ -136,7 +134,7 @@ class TestRequireAll:
         diagnoses = list(require_all(model=model, loc=["spec"], fields=["foo", "bar"]))
         assert diagnoses == []
 
-    def test_missing(self):
+    def test_strict(self):
         model = SampleModel(foo=None, baz="")
         diagnoses = list(require_all(model=model, loc=["spec"], fields=["foo", "bar"]))
         assert diagnoses == [
@@ -144,59 +142,27 @@ class TestRequireAll:
                 "type": "failure",
                 "code": "M101",
                 "loc": ("spec", "foo"),
-                "summary": "Missing required field 'foo'",
-                "msg": "Field 'foo' is required in the 'spec' section but missing.",
+                "summary": "Missing 'foo'",
+                "msg": "Required field 'foo' is missing from @.spec.",
+            },
+            {
+                "code": "M202",
+                "loc": ("spec", "baz"),
+                "summary": "Empty required field 'baz'",
+                "msg": "Field 'baz' is required but empty in @.spec.",
+                "type": "failure",
             },
         ]
 
-
-class TestRequireExactlyOne:
-
-    def test_pass(self):
-        model = SampleModel(foo=None, baz="bar")
-        diagnoses = list(
-            require_exactly_one(model=model, loc=["spec"], fields=["foo", "bar"])
-        )
-        assert diagnoses == []
-
-    def test_missing(self):
-        model = SampleModel()
-        diagnoses = list(
-            require_exactly_one(model=model, loc=["spec"], fields=["foo", "bar"])
-        )
+    def test_absent(self):
+        model = SampleModel(foo=None, baz="")
+        diagnoses = list(require_all(model, fields=["foo", "bar"], accept_empty=True))
         assert diagnoses == [
             {
                 "type": "failure",
                 "code": "M101",
-                "loc": ("spec",),
-                "summary": "Missing required field",
-                "msg": ContainsSubStrings(
-                    "Missing required field for the 'spec' section.",
-                    "One of the following fields is required: 'baz' or 'foo'.",
-                ),
-            }
-        ]
-
-    def test_too_many(self):
-        model = SampleModel(foo="foo", baz="bar")
-        diagnoses = list(
-            require_exactly_one(model=model, loc=["spec"], fields=["foo", "bar"])
-        )
-        assert diagnoses == [
-            {
-                "type": "failure",
-                "code": "M201",
-                "loc": ("spec", "baz"),
-                "summary": "Mutually exclusive field set",
-                "msg": "Field 'baz' and 'foo' are mutually exclusive.",
-                "input": "baz",
-            },
-            {
-                "type": "failure",
-                "code": "M201",
-                "loc": ("spec", "foo"),
-                "summary": "Mutually exclusive field set",
-                "msg": "Field 'baz' and 'foo' are mutually exclusive.",
-                "input": "foo",
+                "loc": ("foo",),
+                "summary": "Missing 'foo'",
+                "msg": "Required field 'foo' is missing here.",
             },
         ]
