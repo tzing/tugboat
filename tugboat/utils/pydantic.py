@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import collections
+import contextlib
+import io
 import json
 import typing
 from collections.abc import Mapping, Sequence
@@ -344,15 +346,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
             }
 
         case "string_type":
-            _, field = _get_field_name(error["loc"])  # TODO
-            return {
-                "type": "failure",
-                "code": "M103",
-                "loc": error["loc"],
-                "summary": "Input should be a valid string",
-                "msg": "\n".join(_compose_string_error_message(field, error["input"])),
-                "input": error["input"],
-            }
+            return translate_pydantic_string_type_error(error)
 
         case "artifact_prohibited_value_field":
             diagnosis: Diagnosis = {
@@ -407,6 +401,62 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
         "ctx": {
             "pydantic_error": typing.cast("Bundle", error),
         },
+    }
+
+
+def translate_pydantic_string_type_error(error: ErrorDetails) -> Diagnosis:
+    """
+    Translate a Pydantic `string_type`_ error to a diagnosis object.
+
+    This function constructs more helpful error message for string type validation
+    errors, including suggestions based on the value and common YAML parsing pitfalls.
+
+    .. _string_type: https://docs.pydantic.dev/latest/errors/validation_errors/#string_type
+
+    See also
+    --------
+    `The yaml document from hell
+       <https://ruudvanasseldonk.com/2023/01/11/the-yaml-document-from-hell>`_
+    """
+    assert error["type"] == "string_type"
+
+    field = _get_field(error["loc"])
+    input_value = error["input"]
+    input_type = get_type_name(input_value)
+
+    with io.StringIO() as buf:
+        buf.write(
+            f"Expected a string for field '{field}', but received a {input_type}.\n"
+        )
+
+        # the Norway problem
+        if input_value is True:
+            buf.write(
+                "Unquoted values like 'True', 'Yes', 'On', 'Y' are parsed as booleans.\n"
+            )
+        elif input_value is False:
+            buf.write(
+                "Unquoted values like 'False', 'No', 'Off', 'N' are parsed as booleans.\n"
+            )
+
+        # sexagesimal
+        if isinstance(input_value, int) and 60 < input_value <= 3600:
+            sexagesimal = _to_sexagesimal(input_value)
+            buf.write(
+                f"Numbers separated by colons (e.g. {sexagesimal}) will be parsed as sexagesimal.\n"
+            )
+
+        # general suggestion
+        buf.write("Quote string values to avoid parsing issues.")
+        message = buf.getvalue()
+
+    return {
+        "type": "failure",
+        "code": "M103",
+        "loc": error["loc"],
+        "summary": "Input should be a valid string",
+        "msg": message,
+        "input": error["input"],
     }
 
 
@@ -467,34 +517,6 @@ def _extract_expects(literal: str) -> Iterator[str]:
 
         else:
             idx += 1
-
-
-def _compose_string_error_message(field: str, value: Any) -> Iterator[str]:
-    """
-    Construct an error message for string type validation.
-    Includes user suggestions based on the value and common YAML parsing pitfalls.
-
-    Ref: https://ruudvanasseldonk.com/2023/01/11/the-yaml-document-from-hell
-    """
-    input_type = get_type_name(value)
-    yield f"Expected a string for field {field}, but received a {input_type}."
-
-    # the Norway problem
-    if isinstance(value, bool):
-        if value is True:
-            yield "Note that these inputs will be interpreted as boolean true: 'True', 'Yes', 'On', 'Y'."
-        else:
-            yield "Note that these inputs will be interpreted as boolean false: 'False', 'No', 'Off', 'N'."
-
-    # sexagesimal
-    if isinstance(value, int) and 60 < value <= 3600:
-        sexagesimal = _to_sexagesimal(value)
-        yield (
-            f"Numbers separated by colons (e.g. {sexagesimal}) will be interpreted as sexagesimal."
-        )
-
-    # general suggestion
-    yield "Try using quotes for strings to fix this issue."
 
 
 def _to_sexagesimal(value: int) -> str:
