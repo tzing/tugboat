@@ -72,7 +72,7 @@ class TestTranslatePydanticError:
             "summary": "Input should be a valid boolean",
             "msg": (
                 "Expected a boolean for field 'x', but received a integer.\n"
-                "Try using 'true' or 'false' without quotes."
+                "Use 'true' or 'false' without quotes for boolean values."
             ),
             "input": 1234,
         }

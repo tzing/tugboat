@@ -200,7 +200,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
     """
     match error["type"]:
         case "bool_parsing" | "bool_type":
-            _, field = _get_field_name(error["loc"])
+            field = _get_field(error["loc"])
             input_type = get_type_name(error["input"])
             return {
                 "type": "failure",
@@ -208,8 +208,8 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                 "loc": error["loc"],
                 "summary": "Input should be a valid boolean",
                 "msg": (
-                    f"Expected a boolean for field {field}, but received a {input_type}.\n"
-                    "Try using 'true' or 'false' without quotes."
+                    f"Expected a boolean for field '{field}', but received a {input_type}.\n"
+                    "Use 'true' or 'false' without quotes for boolean values."
                 ),
                 "input": error["input"],
             }
@@ -426,6 +426,21 @@ def get_type_name(value: Any) -> str:
     if isinstance(value, Sequence):
         return "array"
     return type(value).__name__
+
+
+def _get_field(loc: tuple[int | str, ...]) -> str:
+    """
+    Get the last string in the location tuple as the field name.
+
+    Returns
+    -------
+    quoted : str
+        The quoted field name for display.
+    """
+    for item in reversed(loc):
+        if isinstance(item, str):
+            return item
+    return "<unknown>"
 
 
 def _get_field_name(loc: tuple[int | str, ...]) -> tuple[str | None, str]:
