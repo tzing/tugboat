@@ -215,7 +215,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
             }
 
         case "dict_type" | "mapping_type":
-            _, field = _get_field_name(error["loc"])
+            field = _get_field(error["loc"])
             input_type = get_type_name(error["input"])
 
             if not error["input"]:
@@ -225,7 +225,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                     "loc": error["loc"],
                     "summary": "Input should be a valid mapping",
                     "msg": (
-                        f"Expected a mapping for field {field}, but received a {input_type}.\n"
+                        f"Expected a mapping for field '{field}', but received a {input_type}.\n"
                         "If an empty mapping is intended, use '{}'."
                     ),
                     "input": error["input"],
@@ -237,19 +237,19 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                 "code": "M103",
                 "loc": error["loc"],
                 "summary": "Input should be a valid mapping",
-                "msg": f"Expected a mapping for field {field}, but received a {input_type}.",
+                "msg": f"Expected a mapping for field '{field}', but received a {input_type}.",
                 "input": error["input"],
             }
 
         case "decimal_parsing" | "decimal_type" | "float_parsing" | "float_type":
-            _, field = _get_field_name(error["loc"])
+            field = _get_field(error["loc"])
             input_type = get_type_name(error["input"])
             return {
                 "type": "failure",
                 "code": "M103",
                 "loc": error["loc"],
                 "summary": "Input should be a valid number",
-                "msg": f"Expected a number for field {field}, but received a {input_type}.",
+                "msg": f"Expected a number for field '{field}', but received a {input_type}.",
                 "input": error["input"],
             }
 
@@ -257,7 +257,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
             expected_literal = error.get("ctx", {}).get("expected", "")
             expected = _extract_expects(expected_literal)
 
-            _, field = _get_field_name(error["loc"])
+            field = _get_field(error["loc"])
 
             fix = None
             if result := extractOne(input_ := error["input"], expected):
@@ -269,10 +269,10 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                 "loc": error["loc"],
                 "summary": error["msg"],
                 "msg": (
-                    f"Input '{input_}' is not a valid value for field {field}.\n"
+                    f"Input '{input_}' is not a valid value for field '{field}'.\n"
                     f"Expected {expected_literal}."
                 ),
-                "input": error["input"],
+                "input": input_,
                 "fix": fix,
             }
 
