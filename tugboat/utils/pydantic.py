@@ -256,27 +256,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
             }
 
         case "enum" | "literal_error":
-            expected_literal = error.get("ctx", {}).get("expected", "")
-            expected = _extract_expects(expected_literal)
-
-            field = _get_field(error["loc"])
-
-            fix = None
-            if result := extractOne(input_ := error["input"], expected):
-                fix, _, _ = result
-
-            return {
-                "type": "failure",
-                "code": "M104",
-                "loc": error["loc"],
-                "summary": error["msg"],
-                "msg": (
-                    f"Input '{input_}' is not a valid value for field '{field}'.\n"
-                    f"Expected {expected_literal}."
-                ),
-                "input": input_,
-                "fix": fix,
-            }
+            return translate_pydantic_enum_error(error)
 
         case "extra_forbidden":
             raw_field_name, formatted_field = _get_field_name(error["loc"])
@@ -360,7 +340,6 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
 
             with contextlib.suppress(Exception):
                 diagnosis["fix"] = json.dumps({"raw": {"data": error["input"]}})
-                # diagnosis["fix"] = {"raw": {"data": error["input"]}}
 
             return diagnosis
 
@@ -377,6 +356,96 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
             "pydantic_error": typing.cast("Bundle", error),
         },
     }
+
+
+def get_type_name(value: Any) -> str:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, int):
+        return "integer"
+    if isinstance(value, str):
+        return "string"
+    if isinstance(value, float):
+        return "number"
+    if isinstance(value, Mapping):
+        return "mapping"
+    if isinstance(value, Sequence):
+        return "array"
+    return type(value).__name__
+
+
+def _get_field(loc: tuple[int | str, ...]) -> str:
+    """
+    Get the last string in the location tuple as the field name.
+
+    Returns
+    -------
+    quoted : str
+        The quoted field name for display.
+    """
+    for item in reversed(loc):
+        if isinstance(item, str):
+            return item
+    return "<unknown>"
+
+
+def translate_pydantic_enum_error(error: ErrorDetails) -> Diagnosis:
+    """
+    Translate a Pydantic `enum`_ error to a diagnosis object.
+
+    .. _enum: https://docs.pydantic.dev/latest/errors/validation_errors/#enum
+    """
+    assert error["type"] in ("enum", "literal_error")
+
+    expects_literal = error.get("ctx", {}).get("expected", "")
+    expects_items = _extract_expects(expects_literal)
+
+    field = _get_field(error["loc"])
+
+    fix = None
+    if result := extractOne(input_ := error["input"], expects_items):
+        fix, _, _ = result
+
+    return {
+        "type": "failure",
+        "code": "M104",
+        "loc": error["loc"],
+        "summary": error["msg"],
+        "msg": (
+            f"Input '{input_}' is not a valid value for field '{field}'.\n"
+            f"Expected {expects_literal}."
+        ),
+        "input": input_,
+        "fix": fix,
+    }
+
+
+def _extract_expects(literal: str) -> Iterator[str]:
+    """
+    Extract the expected values from pydantic's error message.
+
+    The expected value string is like:
+
+    .. code-block:: none
+
+       "hello'", 'world' or 'hola'
+    """
+    idx = 0
+    while idx < len(literal):
+        if literal[idx] == "'":
+            idx_end = literal.find("'", idx + 1)
+            yield literal[idx + 1 : idx_end]
+            idx = idx_end + 1
+
+        elif literal[idx] == '"':
+            idx_end = literal.find('"', idx + 1)
+            yield literal[idx + 1 : idx_end]
+            idx = idx_end + 1
+
+        else:
+            idx += 1
 
 
 def translate_pydantic_string_type_error(error: ErrorDetails) -> Diagnosis:
@@ -435,6 +504,22 @@ def translate_pydantic_string_type_error(error: ErrorDetails) -> Diagnosis:
     }
 
 
+def _to_sexagesimal(value: int) -> str:
+    """Convert an integer to a sexagesimal string."""
+    if value < 0:
+        sign = "-"
+        value = -value
+    else:
+        sign = ""
+
+    digits = []
+    while value:
+        digits.append(value % 60)
+        value //= 60
+
+    return sign + ":".join(str(d) for d in reversed(digits))
+
+
 def translate_parameter_value_type_error(error: ErrorDetails) -> Diagnosis:
     """Customized translator for ``parameter_value_type_error``."""
     assert error["type"] == "parameter_value_type_error"
@@ -465,78 +550,3 @@ def translate_parameter_value_type_error(error: ErrorDetails) -> Diagnosis:
             diagnosis["fix"] = json.dumps(error["input"], indent=2)
 
     return diagnosis
-
-
-def get_type_name(value: Any) -> str:
-    if value is None:
-        return "null"
-    if isinstance(value, bool):
-        return "boolean"
-    if isinstance(value, int):
-        return "integer"
-    if isinstance(value, str):
-        return "string"
-    if isinstance(value, float):
-        return "number"
-    if isinstance(value, Mapping):
-        return "mapping"
-    if isinstance(value, Sequence):
-        return "array"
-    return type(value).__name__
-
-
-def _get_field(loc: tuple[int | str, ...]) -> str:
-    """
-    Get the last string in the location tuple as the field name.
-
-    Returns
-    -------
-    quoted : str
-        The quoted field name for display.
-    """
-    for item in reversed(loc):
-        if isinstance(item, str):
-            return item
-    return "<unknown>"
-
-
-def _extract_expects(literal: str) -> Iterator[str]:
-    """
-    Extract the expected values from pydantic's error message.
-
-    The expected value string is like:
-
-    .. code-block:: none
-
-       "hello'", 'world' or 'hola'
-    """
-    idx = 0
-    while idx < len(literal):
-        if literal[idx] == "'":
-            idx_end = literal.find("'", idx + 1)
-            yield literal[idx + 1 : idx_end]
-            idx = idx_end + 1
-
-        elif literal[idx] == '"':
-            idx_end = literal.find('"', idx + 1)
-            yield literal[idx + 1 : idx_end]
-            idx = idx_end + 1
-
-        else:
-            idx += 1
-
-
-def _to_sexagesimal(value: int) -> str:
-    """Convert an integer to a sexagesimal string."""
-    if value < 0:
-        sign = "-"
-        value = -value
-    else:
-        sign = ""
-
-    digits = []
-    while value:
-        digits.append(value % 60)
-        value //= 60
-
-    return sign + ":".join(str(d) for d in reversed(digits))
