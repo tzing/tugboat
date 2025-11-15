@@ -104,7 +104,7 @@ def bulk_translate_pydantic_errors(
         expected_type_expr = join_with_or(expected_types, quote=False)
 
         # build a more concise message
-        _, field = _get_field_name(loc)
+        field = _get_field(loc)
         input_type = get_type_name(errors[0]["input"])
 
         diagnoes.append(
@@ -114,7 +114,7 @@ def bulk_translate_pydantic_errors(
                 "loc": loc,
                 "summary": "Input type mismatch",
                 "msg": (
-                    f"Expected {expected_type_expr} for field {field}, but received a {input_type}."
+                    f"Expected {expected_type_expr} for field '{field}', but received a {input_type}."
                 ),
                 "input": errors[0]["input"],
             }
@@ -295,7 +295,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
             | "set_type"
             | "tuple_type"
         ):
-            _, field = _get_field_name(error["loc"])
+            field = _get_field(error["loc"])
             input_type = get_type_name(error["input"])
 
             if not error["input"]:
@@ -305,7 +305,7 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                     "loc": error["loc"],
                     "summary": "Input should be a valid array",
                     "msg": (
-                        f"Expected an array for field {field}, but received a {input_type}.\n"
+                        f"Expected an array for field '{field}', but received a {input_type}.\n"
                         "If an empty array is intended, use '[]'."
                     ),
                     "input": error["input"],
@@ -317,34 +317,34 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
                 "code": "M103",
                 "loc": error["loc"],
                 "summary": "Input should be a valid array",
-                "msg": f"Expected an array for field {field}, but received a {input_type}.",
+                "msg": f"Expected an array for field '{field}', but received a {input_type}.",
                 "input": error["input"],
             }
 
         case "int_parsing" | "int_type":
-            _, field = _get_field_name(error["loc"])
+            field = _get_field(error["loc"])
             input_type = get_type_name(error["input"])
             return {
                 "type": "failure",
                 "code": "M103",
                 "loc": error["loc"],
                 "summary": "Input should be a valid integer",
-                "msg": f"Expected a integer for field {field}, but received a {input_type}.",
+                "msg": f"Expected a integer for field '{field}', but received a {input_type}.",
                 "input": error["input"],
             }
 
         case "missing":
-            _, field = _get_field_name(error["loc"])
+            field = _get_field(error["loc"])
             return {
                 "type": "failure",
                 "code": "M101",
                 "loc": error["loc"],
                 "summary": "Missing required field",
-                "msg": f"Field {field} is required but missing",
+                "msg": f"Field '{field}' is required but missing",
             }
 
         case "string_type":
-            _, field = _get_field_name(error["loc"])
+            _, field = _get_field_name(error["loc"])  # TODO
             return {
                 "type": "failure",
                 "code": "M103",
@@ -441,23 +441,6 @@ def _get_field(loc: tuple[int | str, ...]) -> str:
         if isinstance(item, str):
             return item
     return "<unknown>"
-
-
-def _get_field_name(loc: tuple[int | str, ...]) -> tuple[str | None, str]:
-    """
-    Get the last string in the location tuple as the field name.
-
-    Returns
-    -------
-    raw : str
-        The raw field name.
-    quoted : str
-        The quoted field name for display.
-    """
-    for item in reversed(loc):
-        if isinstance(item, str):
-            return item, f"'{item}'"
-    return None, "<unnamed>"
 
 
 def _extract_expects(literal: str) -> Iterator[str]:

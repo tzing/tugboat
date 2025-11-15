@@ -297,7 +297,7 @@ class TestTranslatePydanticError:
             "code": "M103",
             "loc": (),
             "summary": "Input should be a valid integer",
-            "msg": "Expected a integer for field <unnamed>, but received a string.",
+            "msg": "Expected a integer for field '<unknown>', but received a string.",
             "input": "foo",
         }
 
