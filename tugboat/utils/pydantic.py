@@ -360,33 +360,12 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
 
             with contextlib.suppress(Exception):
                 diagnosis["fix"] = json.dumps({"raw": {"data": error["input"]}})
+                # diagnosis["fix"] = {"raw": {"data": error["input"]}}
 
             return diagnosis
 
         case "parameter_value_type_error":
-            input_type = get_type_name(error["input"])
-
-            diagnosis: Diagnosis = {
-                "type": "failure",
-                "code": "M103",
-                "loc": error["loc"],
-                "summary": "Input should be a string",
-                "msg": (
-                    f"Expected string for parameter value, but received a {input_type}."
-                ),
-                "input": error["input"],
-            }
-
-            if isinstance(error["input"], dict | list):
-                with contextlib.suppress(Exception):
-                    diagnosis["fix"] = json.dumps(error["input"], indent=2)
-
-                diagnosis["msg"] += (
-                    "\n"
-                    "If a complex structure is intended, serialize it as a JSON string."
-                )
-
-            return diagnosis
+            return translate_parameter_value_type_error(error)
 
     return {
         "type": "failure",
@@ -454,6 +433,38 @@ def translate_pydantic_string_type_error(error: ErrorDetails) -> Diagnosis:
         "msg": message,
         "input": error["input"],
     }
+
+
+def translate_parameter_value_type_error(error: ErrorDetails) -> Diagnosis:
+    """Customized translator for ``parameter_value_type_error``."""
+    assert error["type"] == "parameter_value_type_error"
+
+    with io.StringIO() as buf:
+        input_type = get_type_name(error["input"])
+        buf.write(f"Expected string for parameter value, but received a {input_type}.")
+
+        if isinstance(error["input"], dict | list):
+            buf.write("\n")
+            buf.write(
+                "If a complex structure is intended, serialize it as a JSON string."
+            )
+
+        message = buf.getvalue()
+
+    diagnosis: Diagnosis = {
+        "type": "failure",
+        "code": "M103",
+        "loc": error["loc"],
+        "summary": "Input should be a string",
+        "msg": message,
+        "input": error["input"],
+    }
+
+    if isinstance(error["input"], dict | list):
+        with contextlib.suppress(Exception):
+            diagnosis["fix"] = json.dumps(error["input"], indent=2)
+
+    return diagnosis
 
 
 def get_type_name(value: Any) -> str:
