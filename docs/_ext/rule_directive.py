@@ -22,10 +22,14 @@ from __future__ import annotations
 import functools
 import typing
 from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import cast
 
+import docutils.frontend
 from docutils import nodes
-from docutils.core import publish_doctree
+from docutils.parsers.rst import Parser
+from docutils.parsers.rst.states import Inliner
+from docutils.utils import new_document
 from sphinx.addnodes import pending_xref
 from sphinx.domains import Domain, ObjType
 from sphinx.roles import XRefRole
@@ -36,7 +40,7 @@ if typing.TYPE_CHECKING:
     from collections.abc import Set
     from typing import Any, ClassVar
 
-    from docutils.nodes import Element, Node, document, system_message
+    from docutils.nodes import Element, Node, document, reference, system_message
     from sphinx.application import Sphinx
     from sphinx.builders import Builder
     from sphinx.environment import BuildEnvironment
@@ -73,6 +77,30 @@ class RuleEntry:
     @functools.cached_property
     def node_id(self) -> str:
         return nodes.make_id(self.ref_name)
+
+    def title_nodes(self) -> list[Node]:
+        settings = docutils.frontend.get_default_settings(Parser())
+        doc = new_document("<rule-title>", settings=settings)
+
+        inliner = Inliner()
+        inliner.init_customizations(settings)
+        memo = SimpleNamespace(document=doc, reporter=doc.reporter, language=None)
+
+        text_nodes, _ = inliner.parse(self.title, 1, memo, doc)
+        return text_nodes
+
+    def title_stripped(self) -> str:
+        return "".join(node.astext() for node in self.title_nodes())
+
+    def node(self):
+        """Create reference node for this rule."""
+        container = nodes.inline(classes=["inline-rule-ref"])
+        container += [
+            nodes.inline(text=self.code, classes=["rule-code"]),
+            nodes.Text(" "),
+            *self.title_nodes(),
+        ]
+        return container
 
 
 class RuleDirective(SphinxDirective):
@@ -141,23 +169,13 @@ class RuleRole(XRefRole):
         rule_code: str = node["reftarget"]
 
         domain = cast("TugboatDomain", env.get_domain("tg"))
-        data = domain.rules.get(rule_code)
-        if data and not node.get("explicit"):
+        entry = domain.rules.get(rule_code.upper())
+
+        if entry and not node.get("explicit"):
             node.clear()
-            node += make_rule_contnode(rule_code, data.rule_name)
+            node += entry.node()
 
         return [node], []
-
-
-def make_rule_contnode(rule_code: str, rule_name: str) -> Node:
-    """Create content node for a rule reference."""
-    container = nodes.inline(classes=["inline-rule-ref"])
-    container += [
-        nodes.inline(text=rule_code, classes=["rule-code"]),
-        nodes.Text(" "),
-        nodes.Text(rule_name),
-    ]
-    return container
 
 
 class TugboatDomain(Domain):
@@ -196,7 +214,7 @@ class TugboatDomain(Domain):
             doc_name=self.env.docname,
         )
 
-        self.rules[rule_code.upper()] = entry
+        self.rules[entry.code] = entry
 
         # register the label in Sphinx's standard domain
         std_domain = self.env.domains.standard_domain
@@ -204,7 +222,7 @@ class TugboatDomain(Domain):
             name=entry.ref_name,
             docname=self.env.docname,
             node_id=entry.node_id,
-            title=f"{rule_code} ({strip_rst(rule_name)})",
+            title=f"{entry.code} ({entry.title_stripped()})",
         )
 
         return entry
@@ -235,20 +253,15 @@ class TugboatDomain(Domain):
         target: str,
         node: pending_xref,
         contnode: Element,
-    ) -> Element | None:
-        if data := self.rules.get(target):
+    ) -> reference | None:
+        if entry := self.rules.get(target):
             return make_refnode(
                 builder,
                 fromdocname,
-                data.doc_name,
-                data.node_id,
-                make_rule_contnode(target, data.title),
-                data.node_id,
+                entry.doc_name,
+                entry.node_id,
+                entry.node(),
+                entry.title,
             )
+
         return None
-
-
-def strip_rst(text: str) -> str:
-    """Strip reStructuredText markup from the given text."""
-    doctree = publish_doctree(text)
-    return doctree.astext()
