@@ -205,3 +205,14 @@ def _check_referenced_template(
             "input": target_template_name,
             "fix": suggestion,
         }
+
+
+@hookimpl(specname="analyze_task")
+def check_inline_template(
+    task: DagTask, workflow: WorkflowCompatible
+) -> Iterable[Diagnosis]:
+    for diagnosis in step_analyzer.check_inline_template(task, workflow):
+        match diagnosis["code"]:
+            case "STP401":
+                diagnosis["code"] = "DAG401"
+        yield diagnosis

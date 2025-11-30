@@ -467,7 +467,7 @@ def check_fields_references(
 
 @hookimpl(specname="analyze_step")
 def check_inline_template(
-    step: Step, workflow: WorkflowCompatible
+    step: TaskCompatible, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     if not step.inline:
         return

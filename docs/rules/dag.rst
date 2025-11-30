@@ -318,6 +318,34 @@ Code ``DAG`` is used for errors related to the `DAG`_ in a `template`_.
                 - name: input-data
 
 
+.. STP4xx definition issues
+
+.. rule:: DAG401 Invalid task definition
+
+   The task definition is invalid according to the schema.
+   This can happen when fields have the wrong type or unexpected values.
+
+   For example, nested a dag inside a task is not allowed:
+
+   .. code-block:: yaml
+      :emphasize-lines: 12-14
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: dag-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            dag:
+              tasks:
+                - name: process
+                  inline:
+                    dag:
+                      tasks: []
+
+
 .. DAG9xx deprecated items
 
 .. rule:: DAG901 Deprecated Field: ``onExit``

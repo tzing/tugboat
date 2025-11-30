@@ -289,3 +289,42 @@ def test_check_referenced_template(caplog: pytest.LogCaptureFixture, diagnoses_l
         "Task 'external': Referenced template 'another-workflow' is not the same as current workflow 'demo'. Skipping."
         in caplog.text
     )
+
+
+def test_check_inline_template(diagnoses_logger):
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: test-
+        spec:
+          entrypoint: main
+          templates:
+            - name: main
+              dag:
+                tasks:
+                  - name: task1
+                    inline:
+                      dag:
+                        tasks: []
+        """
+    )
+    diagnoses_logger(diagnoses)
+
+    assert (
+        IsPartialModel(
+            code="DAG401",
+            loc=(
+                "spec",
+                "templates",
+                0,
+                "dag",
+                "tasks",
+                0,
+                "inline",
+                "dag",
+            ),
+        )
+        in diagnoses
+    )
