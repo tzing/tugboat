@@ -10,11 +10,7 @@ from tugboat.constraints import mutually_exclusive
 from tugboat.core import hookimpl
 from tugboat.references import get_task_context
 from tugboat.types import Field
-from tugboat.utils import (
-    find_duplicate_names,
-    join_with_or,
-    prepend_loc,
-)
+from tugboat.utils import find_duplicate_names, join_with_or, prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
@@ -132,6 +128,19 @@ def check_argument_parameters_usage(
                 diag["code"] = "DAG304"
             case "STP305":
                 diag["code"] = "DAG305"
+        yield diag
+
+
+@hookimpl(specname="analyze_task")
+def check_argument_artifact_usage(
+    task: DagTask, workflow: WorkflowCompatible
+) -> Iterable[Diagnosis]:
+    for diag in step_analyzer.check_argument_artifact_usage(task, workflow):
+        match diag["code"]:
+            case "STP306":
+                diag["code"] = "DAG306"
+            case "STP307":
+                diag["code"] = "DAG307"
         yield diag
 
 

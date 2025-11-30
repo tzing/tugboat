@@ -182,6 +182,44 @@ def test_check_argument_artifacts(diagnoses_logger):
     )
 
 
+def test_check_argument_artifact_usage(diagnoses_logger):
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: test-
+        spec:
+          entrypoint: main
+          templates:
+            - name: main
+              dag:
+                tasks:
+                  - name: hello
+                    template: print-message
+                    arguments:
+                      artifacts:
+                        - name: role
+                          from: "{{ workflow.artifact-role }}"
+                        - name: extra-artifact
+                          from: "{{ workflow.artifact-extra }}"
+
+            - name: print-message
+              inputs:
+                artifacts:
+                  - name: message
+                  - name: role
+                    optional: true
+        """
+    )
+    diagnoses_logger(diagnoses)
+
+    loc_prefix = ("spec", "templates", 0, "dag", "tasks", 0, "arguments", "artifacts")
+
+    assert IsPartialModel(code="DAG306", loc=(*loc_prefix, 1, "name")) in diagnoses
+    assert IsPartialModel(code="DAG307", loc=loc_prefix) in diagnoses
+
+
 def test_check_referenced_template(caplog: pytest.LogCaptureFixture, diagnoses_logger):
     with caplog.at_level("DEBUG", "tugboat.analyzers.dag"):
         diagnoses = analyze_yaml_stream(

@@ -322,7 +322,7 @@ def check_argument_artifact_fields(
 
 @hookimpl(specname="analyze_step")
 def check_argument_artifact_usage(
-    step: Step, workflow: WorkflowCompatible
+    step: TaskCompatible, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     # early exit: referenced template not found
     ref_template = _get_template_by_ref(step, workflow)
