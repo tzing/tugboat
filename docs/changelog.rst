@@ -12,6 +12,8 @@ Unreleased
 :octicon:`code-review` API Changes
 ++++++++++++++++++++++++++++++++++
 
+* The :py:attr:`Diagnosis.fix <tugboat.Diagnosis.fix>` field now accepts :py:class:`dict` types in addition to :py:class:`str`.
+  Use :py:class:`dict` when suggesting fixes that involve multiple fields or complex object replacements, while :py:class:`str` remain suitable for simple value corrections.
 * Refactor :py:mod:`tugboat.constraints` to provide more flexible validation functions:
 
   * Diagnostic messages have been improved for clarity.

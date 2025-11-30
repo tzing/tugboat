@@ -36,9 +36,9 @@ class Diagnosis(TypedDict):
     The diagnosis type.
     When not provided, it defaults to "failure".
 
-    * ``error`` indicates a critical issue that prevents the analyzer from running.
-    * ``failure`` indicates an issue that the analyzer has detected.
-    * ``warning`` indicates a potential issue that the analyzer has detected.
+    - ``error`` indicates a critical issue that prevents the analyzer from running.
+    - ``failure`` indicates an issue that the analyzer has detected.
+    - ``warning`` indicates a potential issue that the analyzer has detected.
       This is not a critical issue, but it may require attention.
     """
 
@@ -75,8 +75,13 @@ class Diagnosis(TypedDict):
     Use :py:class:`Field` to indicate a specific field rather than a value.
     """
 
-    fix: NotRequired[str | None]
-    """Possible alternative value to fix the issue."""
+    fix: NotRequired[str | dict[str, Any] | None]
+    """
+    Suggested fix for the detected issue.
+
+    - Provided as a string: Represents the exact replacement text for the problematic field value.
+    - Provided as a dictionary: Represents a structured fix containing multiple field modifications.
+    """
 
     ctx: NotRequired[dict[str, Bundle]]
     """

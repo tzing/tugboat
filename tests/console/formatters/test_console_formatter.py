@@ -173,16 +173,74 @@ class TestConsoleFormatter:
             """
         ), f"Output:\n{report}"
 
+    def test_4(self, fixture_dir: Path):
+        manifest_path = fixture_dir / "sample-workflow.yaml"
+
+        formatter = ConsoleFormatter()
+        formatter.update(
+            content=manifest_path.read_text(),
+            diagnoses=[
+                DiagnosisModel.model_validate(
+                    {
+                        "type": "failure",
+                        "line": 5,
+                        "column": 1,
+                        "code": "T04",
+                        "loc": ("spec",),
+                        "msg": "Test failure message",
+                        "fix": {
+                            "entries": [
+                                {"name": "entry1", "value": 123},
+                            ]
+                        },
+                    }
+                )
+            ],
+        )
+
+        with io.StringIO() as buffer:
+            formatter.dump(buffer)
+            report = buffer.getvalue()
+
+        assert report == IsOutputEqual(
+            """\
+            T04 Test failure message
+              @:5:1
+
+              3 | metadata:
+              4 |   generateName: hello-world-
+              5 | spec:
+                | └ T04 at $.spec
+              6 |   entrypoint: hello-world
+              7 |   templates:
+
+              Test failure message
+
+              Do you mean:
+                entries:
+                - name: entry1
+                  value: 123
+
+            """
+        ), f"Output:\n{report}"
+
 
 class IsOutputEqual(DirtyEquals[str]):
 
     def __init__(self, text: str):
-        text = textwrap.dedent(text).rstrip(" ")
-        super().__init__(text)
-        self.text = text
+        super().__init__(textwrap.dedent(text))
 
     def equals(self, other):
-        return self.text == other
+        expected_content: str
+        (expected_content,) = self._repr_args
+        for expected_line, actual_line in zip(
+            expected_content.splitlines(),
+            other.splitlines(),
+            strict=True,
+        ):
+            if expected_line.rstrip() != actual_line.rstrip():
+                return False
+        return True
 
 
 class TestCalcHighlightRange:

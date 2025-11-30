@@ -330,7 +330,11 @@ def translate_pydantic_error(error: ErrorDetails) -> Diagnosis:  # noqa: C901
             }
 
             with contextlib.suppress(Exception):
-                diagnosis["fix"] = json.dumps({"raw": {"data": error["input"]}})
+                diagnosis["fix"] = {
+                    "raw": {
+                        "data": error["input"],
+                    },
+                }
 
             return diagnosis
 

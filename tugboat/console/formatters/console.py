@@ -7,6 +7,8 @@ import typing
 from dataclasses import dataclass
 
 import click
+import ruamel.yaml
+from ruamel.yaml.scalarstring import LiteralScalarString
 
 from tugboat.console.formatters.base import OutputFormatter
 from tugboat.settings import settings
@@ -220,12 +222,31 @@ class DiagnosticMessageBuilder:
             buf.write("  ")
             buf.write(Style.DoYouMean.fmt("Do you mean: "))
 
-            if "\n" in self.diagnosis.fix:
+            # case: structured suggestion
+            if isinstance(self.diagnosis.fix, dict):
+                buf.write("\n")
+
+                suggested_structure = transform_multiline_strings(self.diagnosis.fix)
+                with io.StringIO() as yaml_buf:
+                    yaml_dumper = ruamel.yaml.YAML()
+                    yaml_dumper.preserve_quotes = True
+                    yaml_dumper.default_flow_style = False
+                    yaml_dumper.dump(suggested_structure, yaml_buf)
+
+                    yaml_buf.seek(0)
+                    for line in yaml_buf:
+                        buf.write("    ")
+                        buf.write(Style.Suggestion.fmt(line))
+
+            # case: multi-line string
+            elif "\n" in self.diagnosis.fix:
                 buf.write("|-\n")
                 for line in self.diagnosis.fix.splitlines():
                     buf.write("  ")
                     buf.write(Style.Suggestion.fmt(line))
                     buf.write("\n")
+
+            # case: single-line string or other types
             else:
                 buf.write(Style.Suggestion.fmt(self.diagnosis.fix))
                 buf.write("\n")
@@ -314,3 +335,18 @@ def calc_highlight_range(line: str, offset: int, substr: Any) -> tuple[int, int]
 
     col_end = col_start + len(value)
     return col_start, col_end
+
+
+def transform_multiline_strings(obj):
+    """
+    Ensure that multi-line strings in the object are represented as literal
+    scalars.
+    """
+    if isinstance(obj, dict):
+        return {k: transform_multiline_strings(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [transform_multiline_strings(item) for item in obj]
+    elif isinstance(obj, str) and "\n" in obj:
+        return LiteralScalarString(obj)
+    else:
+        return obj
