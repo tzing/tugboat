@@ -1,27 +1,16 @@
 from __future__ import annotations
 
 import logging
-import re
 import typing
 
 from rapidfuzz.process import extractOne
 
 import tugboat.analyzers.step as step_analyzer
-from tugboat.constraints import (
-    accept_none,
-    mutually_exclusive,
-    require_exactly_one,
-    require_non_empty,
-)
-from tugboat.core import get_plugin_manager, hookimpl
+from tugboat.constraints import mutually_exclusive
+from tugboat.core import hookimpl
 from tugboat.references import get_task_context
-from tugboat.schemas import Arguments
 from tugboat.types import Field
 from tugboat.utils import (
-    check_model_fields_references,
-    check_value_references,
-    critique_relaxed_artifact,
-    critique_relaxed_parameter,
     find_duplicate_names,
     join_with_or,
     prepend_loc,
@@ -30,9 +19,7 @@ from tugboat.utils import (
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from tugboat.references import Context
-    from tugboat.schemas import DagTask, Step, Template, Workflow, WorkflowTemplate
-    from tugboat.schemas.arguments import RelaxedArtifact, RelaxedParameter
+    from tugboat.schemas import DagTask, Template, Workflow, WorkflowTemplate
     from tugboat.types import Diagnosis
 
     type WorkflowCompatible = Workflow | WorkflowTemplate
@@ -44,24 +31,23 @@ logger = logging.getLogger(__name__)
 def analyze_task(
     task: DagTask, template: Template, workflow: Workflow | WorkflowTemplate
 ) -> Iterable[Diagnosis]:
-    yield from require_exactly_one(
-        model=task,
-        loc=(),
+    yield from mutually_exclusive(
+        task,
         fields=["template", "templateRef", "inline"],
+        require_one=True,
     )
     yield from mutually_exclusive(
-        model=task,
-        loc=(),
+        task,
         fields=["withItems", "withParam", "withSequence"],
     )
     yield from mutually_exclusive(
-        model=task,
-        loc=(),
+        task,
         fields=["depends", "dependencies"],
     )
 
     if task.onExit:
         yield {
+            "type": "warning",
             "code": "DAG901",
             "loc": ("onExit",),
             "summary": "Deprecated field",

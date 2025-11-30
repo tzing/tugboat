@@ -86,9 +86,6 @@ def test_check_argument_parameter_fields(diagnoses_logger):
                             path: /tmp/message
                         - name: invalid-ref
                           value: "{{ workflow.invalid }}"
-                        - name: structured
-                          value:
-                            foo: bar
                         - name: ""
                           value: foo
                         - name: both
@@ -109,10 +106,9 @@ def test_check_argument_parameter_fields(diagnoses_logger):
     )
     assert IsPartialModel(code="M101", loc=(*loc_prefix, 0, "valueFrom")) in diagnoses
     assert IsPartialModel(code="DAG301", loc=(*loc_prefix, 1, "value")) in diagnoses
-    assert IsPartialModel(code="M103", loc=(*loc_prefix, 2, "value")) in diagnoses
-    assert IsPartialModel(code="M202", loc=(*loc_prefix, 3, "name")) in diagnoses
-    assert IsPartialModel(code="M201", loc=(*loc_prefix, 4, "value")) in diagnoses
-    assert IsPartialModel(code="M201", loc=(*loc_prefix, 4, "valueFrom")) in diagnoses
+    assert IsPartialModel(code="M202", loc=(*loc_prefix, 2, "name")) in diagnoses
+    assert IsPartialModel(code="M201", loc=(*loc_prefix, 3, "value")) in diagnoses
+    assert IsPartialModel(code="M201", loc=(*loc_prefix, 3, "valueFrom")) in diagnoses
 
 
 def test_check_argument_parameters_usage(diagnoses_logger):
@@ -147,10 +143,7 @@ def test_check_argument_parameters_usage(diagnoses_logger):
     diagnoses_logger(diagnoses)
 
     loc_prefix = ("spec", "templates", 0, "dag", "tasks", 0, "arguments", "parameters")
-    assert (
-        IsPartialModel(code="DAG304", loc=(*loc_prefix, 1, "name"))
-        in diagnoses
-    )
+    assert IsPartialModel(code="DAG304", loc=(*loc_prefix, 1, "name")) in diagnoses
     assert IsPartialModel(code="DAG305", loc=loc_prefix) in diagnoses
 
 
