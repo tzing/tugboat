@@ -62,9 +62,11 @@ def check_argument_parameters(
 ) -> Iterable[Diagnosis]:
     if not task.arguments:
         return
+    if not task.arguments.parameters:
+        return
 
     # report duplicate names
-    for idx, name in find_duplicate_names(task.arguments.parameters or ()):
+    for idx, name in find_duplicate_names(task.arguments.parameters):
         yield {
             "code": "DAG102",
             "loc": ("arguments", "parameters", idx, "name"),
@@ -76,7 +78,7 @@ def check_argument_parameters(
     # check fields for each parameter
     ctx = get_task_context(workflow, template, task)
 
-    for idx, param in enumerate(task.arguments.parameters or ()):
+    for idx, param in enumerate(task.arguments.parameters):
         for diag in step_analyzer.check_argument_parameter_fields(param, ctx):
             diag["loc"] = ["arguments", "parameters", idx, *diag["loc"]]
 
@@ -92,9 +94,11 @@ def check_argument_artifacts(
 ) -> Iterable[Diagnosis]:
     if not task.arguments:
         return
+    if not task.arguments.artifacts:
+        return
 
     # report duplicate names
-    for idx, name in find_duplicate_names(task.arguments.artifacts or ()):
+    for idx, name in find_duplicate_names(task.arguments.artifacts):
         yield {
             "code": "DAG103",
             "loc": ("arguments", "artifacts", idx, "name"),
@@ -106,7 +110,7 @@ def check_argument_artifacts(
     # check fields for each parameter
     ctx = get_task_context(workflow, template, task)
 
-    for idx, artifact in enumerate(task.arguments.artifacts or ()):
+    for idx, artifact in enumerate(task.arguments.artifacts):
         for diag in step_analyzer.check_argument_artifact_fields(artifact, ctx):
             diag["loc"] = ["arguments", "artifacts", idx, *diag["loc"]]
 
