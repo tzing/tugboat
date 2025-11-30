@@ -50,9 +50,9 @@ class DiagnosisModel(BaseModel):
             default="failure",
             description=(
                 "Diagnostic severity reported by the analyzer.\n"
-                "* `error`: analysis stopped because processing could not continue.\n"
-                "* `failure`: definite rule violation that prevents success.\n"
-                "* `warning`: potential issue that should be reviewed.\n"
+                "- `error`: analysis stopped because processing could not continue.\n"
+                "- `failure`: definite rule violation that prevents success.\n"
+                "- `warning`: potential issue that should be reviewed.\n"
             ),
         ),
     ]
@@ -111,7 +111,10 @@ class DiagnosisModel(BaseModel):
         Field(
             default=None,
             description=(
-                "Analyzer's suggested fix. Treat this as guidance, not a guaranteed solution."
+                "Suggested fix for the detected issue. This is guidance only, not a guaranteed solution.\n"
+                "- String: Exact replacement text for the problematic field value.\n"
+                "- Dictionary: Structured fix with multiple field modifications.\n"
+                "- None: No automatic fix available."
             ),
         ),
     ]
