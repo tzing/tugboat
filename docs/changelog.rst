@@ -4,6 +4,11 @@ Changelog
 Unreleased
 ----------
 
+:octicon:`codescan-checkmark` Rules
++++++++++++++++++++++++++++++++++++
+
+* New rule set :doc:`rules/dag` to validate DAG templates and their tasks.
+
 :octicon:`plug` Enhancements
 ++++++++++++++++++++++++++++
 
