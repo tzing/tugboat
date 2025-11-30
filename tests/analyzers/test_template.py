@@ -74,6 +74,49 @@ class TestGeneralRules:
             in diagnoses
         )
 
+    def test_check_duplicate_task_names(self, diagnoses_logger):
+        diagnoses = analyze_yaml_stream(
+            """
+            apiVersion: argoproj.io/v1alpha1
+            kind: Workflow
+            metadata:
+              generateName: steps-
+            spec:
+              entrypoint: hello-hello
+              templates:
+                - name: hello-hello
+                  dag:
+                    tasks:
+                      - name: hello
+                        template: print-message
+                        arguments:
+                          parameters:
+                            - name: message
+                              value: "hello-1"
+                      - name: hello
+                        template: print-message
+                        arguments:
+                          parameters:
+                            - name: message
+                              value: "hello-2"
+            """
+        )
+        diagnoses_logger(diagnoses)
+        assert (
+            IsPartialModel(
+                code="DAG101",
+                loc=("spec", "templates", 0, "dag", "tasks", 0, "name"),
+            )
+            in diagnoses
+        )
+        assert (
+            IsPartialModel(
+                code="DAG101",
+                loc=("spec", "templates", 0, "dag", "tasks", 1, "name"),
+            )
+            in diagnoses
+        )
+
 
 MANIFEST_AMBIGUOUS_TYPE = """
 apiVersion: argoproj.io/v1alpha1

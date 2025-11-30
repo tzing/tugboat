@@ -155,6 +155,7 @@ For more information on how to use Tugboat, runs its help command:
    :caption: Rules
 
    rules/cron-workflow
+   rules/dag
    rules/fatal-errors
    rules/manifest-errors
    rules/step

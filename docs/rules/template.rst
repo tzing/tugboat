@@ -25,7 +25,7 @@ Argo Workflows offers various types of templates. However, Tugboat currently sup
 
     * - `DAG template <https://argo-workflows.readthedocs.io/en/latest/walk-through/dag/>`_
       - :octicon:`alert` Partial (:py:class:`~tugboat.schemas.DagTask`)
-      - :octicon:`x`
+      - :octicon:`check` :doc:`dag`
 
     * - `Data template <https://argo-workflows.readthedocs.io/en/latest/data-sourcing-and-transformation/>`_
       - :octicon:`x`

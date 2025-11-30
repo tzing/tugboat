@@ -23,6 +23,7 @@ def get_plugin_manager() -> pluggy.PluginManager:
     # built-in hook implementations
     import tugboat.analyzers.container
     import tugboat.analyzers.cron_workflow
+    import tugboat.analyzers.dag
     import tugboat.analyzers.step
     import tugboat.analyzers.template
     import tugboat.analyzers.template.inputs
@@ -33,6 +34,7 @@ def get_plugin_manager() -> pluggy.PluginManager:
 
     pm.register(tugboat.analyzers.container)
     pm.register(tugboat.analyzers.cron_workflow)
+    pm.register(tugboat.analyzers.dag)
     pm.register(tugboat.analyzers.step)
     pm.register(tugboat.analyzers.template)
     pm.register(tugboat.analyzers.template.inputs)

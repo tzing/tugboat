@@ -26,6 +26,7 @@ if typing.TYPE_CHECKING:
     from tugboat.references import Context
     from tugboat.schemas import (
         Artifact,
+        DagTask,
         Parameter,
         Step,
         Template,
@@ -34,6 +35,7 @@ if typing.TYPE_CHECKING:
     )
     from tugboat.types import Diagnosis
 
+    type TaskCompatible = DagTask | Step
     type WorkflowCompatible = Workflow | WorkflowTemplate
 
 logger = logging.getLogger(__name__)
@@ -86,11 +88,11 @@ def check_argument_parameters(
     for idx, param in enumerate(step.arguments.parameters or ()):
         yield from prepend_loc(
             ("arguments", "parameters", idx),
-            _check_argument_parameter_fields(param, ctx),
+            check_argument_parameter_fields(param, ctx),
         )
 
 
-def _check_argument_parameter_fields(
+def check_argument_parameter_fields(
     param: Parameter, context: Context
 ) -> Iterable[Diagnosis]:
     yield from require_all(param, fields=["name"])
@@ -134,7 +136,7 @@ def _check_argument_parameter_fields(
 
 @hookimpl(specname="analyze_step")
 def check_argument_parameters_usage(
-    step: Step, workflow: WorkflowCompatible
+    step: TaskCompatible, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     # early exit: referenced template not found
     ref_template = _get_template_by_ref(step, workflow)
@@ -189,7 +191,9 @@ def check_argument_parameters_usage(
             }
 
 
-def _get_template_by_ref(step: Step, workflow: WorkflowCompatible) -> Template | None:
+def _get_template_by_ref(
+    step: TaskCompatible, workflow: WorkflowCompatible
+) -> Template | None:
     if step.template:
         return workflow.template_dict.get(step.template)
     if step.templateRef and step.templateRef.name == workflow.metadata.name:
@@ -220,11 +224,11 @@ def check_argument_artifacts(
     for idx, artifact in enumerate(step.arguments.artifacts or []):
         yield from prepend_loc(
             ("arguments", "artifacts", idx),
-            _check_argument_artifact_fields(artifact, ctx),
+            check_argument_artifact_fields(artifact, ctx),
         )
 
 
-def _check_argument_artifact_fields(
+def check_argument_artifact_fields(
     artifact: Artifact, context: Context
 ) -> Iterable[Diagnosis]:
     yield from require_all(
@@ -318,7 +322,7 @@ def _check_argument_artifact_fields(
 
 @hookimpl(specname="analyze_step")
 def check_argument_artifact_usage(
-    step: Step, workflow: WorkflowCompatible
+    step: TaskCompatible, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     # early exit: referenced template not found
     ref_template = _get_template_by_ref(step, workflow)
@@ -463,7 +467,7 @@ def check_fields_references(
 
 @hookimpl(specname="analyze_step")
 def check_inline_template(
-    step: Step, workflow: WorkflowCompatible
+    step: TaskCompatible, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     if not step.inline:
         return
