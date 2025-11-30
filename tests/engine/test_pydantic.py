@@ -314,7 +314,7 @@ class TestTranslatePydanticError:
                 "Use 'raw' artifact type instead."
             ),
             "input": "value",
-            "fix": '{"raw": {"data": "foobar"}}',
+            "fix": {"raw": {"data": "foobar"}},
         }
 
     def test_parameter_value_type_error_1(self):
