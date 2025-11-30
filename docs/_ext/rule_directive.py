@@ -19,7 +19,9 @@ For referencing the rule, you can leverage the following syntax::
 
 from __future__ import annotations
 
+import functools
 import typing
+from dataclasses import dataclass
 from typing import cast
 
 from docutils import nodes
@@ -54,10 +56,23 @@ def setup(app: Sphinx):
     }
 
 
-class RuleEntry(typing.NamedTuple):
+@dataclass(frozen=True)
+class RuleEntry:
+
+    code: str
+    title: str
     doc_name: str
-    node_id: str
-    rule_name: str
+
+    def __post_init__(self):
+        object.__setattr__(self, "code", self.code.upper())
+
+    @functools.cached_property
+    def ref_name(self) -> str:
+        return "tg.rule." + self.code.lower()
+
+    @functools.cached_property
+    def node_id(self) -> str:
+        return nodes.make_id(self.ref_name)
 
 
 class RuleDirective(SphinxDirective):
@@ -74,7 +89,7 @@ class RuleDirective(SphinxDirective):
 
         # register the rule in tugboat domain
         tugboat_domain = cast("TugboatDomain", self.env.get_domain("tg"))
-        node_id = tugboat_domain.note_rule(rule_code, rule_name)
+        entry = tugboat_domain.note_rule(rule_code, rule_name)
 
         # create section and populate it with title and content
         rule_name_nodes, _ = self.parse_inline(rule_name)
@@ -90,7 +105,7 @@ class RuleDirective(SphinxDirective):
         section += title
         section += self.parse_content_to_nodes()
 
-        target = nodes.target(ids=[node_id])
+        target = nodes.target(ids=[entry.node_id])
 
         return [target, section]
 
@@ -158,7 +173,7 @@ class TugboatDomain(Domain):
     def rules(self) -> dict[str, RuleEntry]:
         return self.data.setdefault("rules", {})
 
-    def note_rule(self, rule_code: str, rule_name: str) -> str:
+    def note_rule(self, rule_code: str, rule_name: str) -> RuleEntry:
         """
         Note a rule in the domain.
 
@@ -174,30 +189,29 @@ class TugboatDomain(Domain):
         node_id : str
             The node ID for the rule target.
         """
-        ref_name = "tg.rule." + rule_code.lower()
-        node_id = nodes.make_id(ref_name)
-
         # register a rule in this domain
-        self.rules[rule_code.upper()] = RuleEntry(
+        entry = RuleEntry(
+            code=rule_code,
+            title=rule_name,
             doc_name=self.env.docname,
-            node_id=node_id,
-            rule_name=rule_name,
         )
+
+        self.rules[rule_code.upper()] = entry
 
         # register the label in Sphinx's standard domain
         std_domain = self.env.domains.standard_domain
         std_domain.note_hyperlink_target(
-            name=ref_name,
+            name=entry.ref_name,
             docname=self.env.docname,
-            node_id=node_id,
+            node_id=entry.node_id,
             title=f"{rule_code} ({strip_rst(rule_name)})",
         )
 
-        return node_id
+        return entry
 
     def get_objects(self):
-        for label, (doc_name, node_id, rule_name) in self.rules.items():
-            yield (label, rule_name, "rule", doc_name, node_id, 1)
+        for label, rule in self.rules.items():
+            yield (label, rule.title, "rule", rule.doc_name, rule.node_id, 1)
 
     def clear_doc(self, docname: str):
         to_remove = []
@@ -228,7 +242,7 @@ class TugboatDomain(Domain):
                 fromdocname,
                 data.doc_name,
                 data.node_id,
-                make_rule_contnode(target, data.rule_name),
+                make_rule_contnode(target, data.title),
                 data.node_id,
             )
         return None
