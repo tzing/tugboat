@@ -23,6 +23,7 @@ import typing
 from typing import cast
 
 from docutils import nodes
+from docutils.core import publish_doctree
 from sphinx.addnodes import pending_xref
 from sphinx.domains import Domain, ObjType
 from sphinx.roles import XRefRole
@@ -71,18 +72,9 @@ class RuleDirective(SphinxDirective):
         rule_code, rule_name = self.arguments
         rule_code = rule_code.upper()
 
-        ref_name = "tg.rule." + rule_code.lower()
-        node_id = nodes.make_id(ref_name)
-
-        # register the label in Sphinx's standard domain
-        std_domain = self.env.domains.standard_domain
-        std_domain.note_hyperlink_target(
-            ref_name, self.env.docname, node_id, f"{rule_code} ({rule_name})"
-        )
-
         # register the rule in tugboat domain
         tugboat_domain = cast("TugboatDomain", self.env.get_domain("tg"))
-        tugboat_domain.note_rule(rule_code, rule_name, node_id)
+        node_id = tugboat_domain.note_rule(rule_code, rule_name)
 
         # create section and populate it with title and content
         rule_name_nodes, _ = self.parse_inline(rule_name)
@@ -166,12 +158,42 @@ class TugboatDomain(Domain):
     def rules(self) -> dict[str, RuleEntry]:
         return self.data.setdefault("rules", {})
 
-    def note_rule(self, rule_code: str, rule_name: str, node_id: str):
+    def note_rule(self, rule_code: str, rule_name: str) -> str:
+        """
+        Note a rule in the domain.
+
+        Parameters
+        ----------
+        rule_code : str
+            The unique code for the rule.
+        rule_name : str
+            The name of the rule.
+
+        Returns
+        -------
+        node_id : str
+            The node ID for the rule target.
+        """
+        ref_name = "tg.rule." + rule_code.lower()
+        node_id = nodes.make_id(ref_name)
+
+        # register a rule in this domain
         self.rules[rule_code.upper()] = RuleEntry(
             doc_name=self.env.docname,
             node_id=node_id,
             rule_name=rule_name,
         )
+
+        # register the label in Sphinx's standard domain
+        std_domain = self.env.domains.standard_domain
+        std_domain.note_hyperlink_target(
+            name=ref_name,
+            docname=self.env.docname,
+            node_id=node_id,
+            title=f"{rule_code} ({strip_rst(rule_name)})",
+        )
+
+        return node_id
 
     def get_objects(self):
         for label, (doc_name, node_id, rule_name) in self.rules.items():
@@ -210,3 +232,9 @@ class TugboatDomain(Domain):
                 data.node_id,
             )
         return None
+
+
+def strip_rst(text: str) -> str:
+    """Strip reStructuredText markup from the given text."""
+    doctree = publish_doctree(text)
+    return doctree.astext()
