@@ -204,8 +204,8 @@ class TugboatDomain(Domain):
 
         Returns
         -------
-        node_id : str
-            The node ID for the rule target.
+        entry : RuleEntry
+            The registered rule entry.
         """
         # register a rule in this domain
         entry = RuleEntry(
