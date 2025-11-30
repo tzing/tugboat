@@ -106,8 +106,7 @@ class DiagnosisModel(BaseModel):
     ]
 
     fix: Annotated[
-        str | dict[str, Any],
-        None,
+        str | dict[str, Any] | None,
         Field(
             default=None,
             description=(
