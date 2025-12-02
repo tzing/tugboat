@@ -21,6 +21,7 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterator
 
     from lark import Token
+    from lark.exceptions import UnexpectedInput
 
     from tugboat.references import ReferenceCollection
     from tugboat.types import Diagnosis
@@ -92,37 +93,8 @@ def check_template_tags(
     """
     try:
         tree = parse_argo_template_tags(source)
-
     except lark.UnexpectedInput as e:
-        with io.StringIO() as buf:
-            buf.write("The field contains a syntax error for Argo template tags.")
-            buf.write("\n\n")
-            buf.write("The parser reported the errors near:\n\n")
-            buf.write(textwrap.indent(e.get_context(source), "  "))
-
-            match type(e):
-                case lark.UnexpectedCharacters:
-                    buf.write(
-                        "\n"
-                        "This error is usually caused by invalid characters in the template tag.\n"
-                        "Please ensure that the template tags are correctly formatted."
-                    )
-                case lark.UnexpectedEOF:
-                    buf.write(
-                        "\n"
-                        "This error is usually caused by an incomplete template tag.\n"
-                        "Please ensure that all template tags are properly closed."
-                    )
-
-            message = buf.getvalue()
-
-        yield {
-            "type": "error",
-            "code": "VAR101",
-            "loc": (),
-            "summary": "Syntax error",
-            "msg": message,
-        }
+        yield transform_lark_error(source, e)
         return
 
     # analyze simple tags
@@ -181,6 +153,38 @@ def check_template_tags(
                 "input": ref_repr,
             }
             continue
+
+
+def transform_lark_error(source: str, e: UnexpectedInput) -> Diagnosis:
+    with io.StringIO() as buf:
+        buf.write("The field contains a syntax error for Argo template tags.")
+        buf.write("\n\n")
+        buf.write("The parser reported the errors near:\n\n")
+        buf.write(textwrap.indent(e.get_context(source), "  "))
+
+        match type(e):
+            case lark.UnexpectedCharacters:
+                buf.write(
+                    "\n"
+                    "This error is usually caused by invalid characters in the template tag.\n"
+                    "Please ensure that the template tags are correctly formatted."
+                )
+            case lark.UnexpectedEOF:
+                buf.write(
+                    "\n"
+                    "This error is usually caused by an incomplete template tag.\n"
+                    "Please ensure that all template tags are properly closed."
+                )
+
+        message = buf.getvalue()
+
+    return {
+        "type": "error",
+        "code": "VAR101",
+        "loc": (),
+        "summary": "Syntax error",
+        "msg": message,
+    }
 
 
 def split_expr_membership(source: str) -> tuple[str, ...]:
