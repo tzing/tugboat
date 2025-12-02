@@ -34,3 +34,58 @@ class TestParseArgoTemplateTags:
             parse_argo_template_tags("{{ inputs. parameters.name }}")
         with pytest.raises(lark.exceptions.UnexpectedEOF):
             parse_argo_template_tags("{{ inputs.parameters.name ")
+
+
+class TestCheckTemplateTags:
+
+    def test_pass(self):
+        references = ReferenceCollection()
+        references.add(("inputs", "parameters", "name"))
+
+        diagnoses = list(
+            check_template_tags("{{ inputs.parameters.name }}", references)
+        )
+
+        assert diagnoses == []
+
+    def test_unexpected_character(self):
+        diagnoses = list(
+            check_template_tags(
+                "{{ inputs. parameters.name }}",
+                Mock(ReferenceCollection),
+            )
+        )
+        assert diagnoses == [
+            IsPartialDict(
+                code="VAR001",
+                summary="Syntax error",
+                msg=(
+                    IsStr()
+                    & HasSubstring("The field contains a syntax error")
+                    & HasSubstring("{{ inputs. parameters.name }}")
+                    & HasSubstring("This error is usually caused by invalid characters")
+                ),
+            )
+        ]
+
+    def test_unexpected_eof(self):
+        diagnoses = list(
+            check_template_tags(
+                "{{ inputs",
+                Mock(ReferenceCollection),
+            )
+        )
+        assert diagnoses == [
+            IsPartialDict(
+                code="VAR001",
+                summary="Syntax error",
+                msg=(
+                    IsStr()
+                    & HasSubstring("The field contains a syntax error")
+                    & HasSubstring("{{ inputs")
+                    & HasSubstring(
+                        "This error is usually caused by an incomplete template tag"
+                    )
+                ),
+            )
+        ]
