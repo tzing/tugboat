@@ -10,6 +10,7 @@ For detailed information about references, see `Workflow Variables`_ in the Argo
 
 __all__ = [
     "Context",
+    "ReferenceCollection",
     "get_global_context",
     "get_step_context",
     "get_task_context",
@@ -17,7 +18,7 @@ __all__ = [
     "get_workflow_context",
 ]
 
-from tugboat.references.context import Context
+from tugboat.references.context import Context, ReferenceCollection
 from tugboat.references.step import get_step_context, get_task_context
 from tugboat.references.template import get_template_context
 from tugboat.references.workflow import get_global_context, get_workflow_context
