@@ -61,7 +61,7 @@ class TestCheckTemplateTags:
         )
         assert diagnoses == [
             IsPartialDict(
-                code="VAR001",
+                code="VAR101",
                 summary="Syntax error",
                 msg=(
                     IsStr()
@@ -81,7 +81,7 @@ class TestCheckTemplateTags:
         )
         assert diagnoses == [
             IsPartialDict(
-                code="VAR001",
+                code="VAR101",
                 summary="Syntax error",
                 msg=(
                     IsStr()
@@ -104,9 +104,20 @@ class TestCheckTemplateTags:
 
         assert diagnoses == [
             IsPartialDict(
-                code="VAR003",
+                code="VAR102",
                 summary="Incorrect template tag format",
                 fix="inputs.parameters.name",
+            )
+        ]
+
+    def test_invalid_input(self):
+        diagnoses = list(
+            check_template_tags("{{ inputs.parameters['name }}", ReferenceCollection())
+        )
+        assert diagnoses == [
+            IsPartialDict(
+                code="VAR101",
+                summary="Syntax error",
             )
         ]
 

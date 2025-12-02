@@ -5,34 +5,21 @@ The code ``VAR`` identifies potential issues with `workflow variables`_, includi
 
 .. _workflow variables: https://argo-workflows.readthedocs.io/en/latest/variables/
 
-Known limitations
------------------
+.. admonition:: Known limitations
+   :class: caution
 
-Currently, Tugboat supports only `simple template tags`_, and does not support `expression template tags`_.
+   Currently, Tugboat supports only `simple tags`_, and does not support `expression tags`_.
 
-This means:
+   This means:
 
-.. code-block:: none
+   * ``{{ inputs.parameters.simple }}`` can be checked
 
-   {{ inputs.parameters.foo }} can be checked
+   * ``{{= inputs.parameters.expression }}`` will be ignored
 
-   but {{= inputs.parameters.foo }} will be ignored
+   We are planning to add support for expression tags in an upcoming release.
 
-We are planning to add support for expression template tags in an upcoming release.
-
-.. _simple template tags: https://argo-workflows.readthedocs.io/en/latest/variables/#simple
-.. _expression template tags: https://argo-workflows.readthedocs.io/en/latest/variables/#expression
-
-
-Rules
------
-
-.. rule:: VAR001 Syntax error
-
-   This error occurs when a workflow variable fails to parse due to a syntax error.
-
-   Note that most parsers report syntax errors as soon as they encounter the first issue.
-   This means the error message might not always indicate the exact location of the problem, but it provides a useful starting point for debugging.
+   .. _simple tags: https://argo-workflows.readthedocs.io/en/latest/variables/#simple
+   .. _expression tags: https://argo-workflows.readthedocs.io/en/latest/variables/#expression
 
 .. rule:: VAR002 Misused reference
 
@@ -74,6 +61,13 @@ Rules
       This means Tugboat cannot verify references that point to the outputs of other steps.
 
 .. VAR1xx syntax errors
+
+.. rule:: VAR101 Syntax error
+
+   This error occurs when a workflow variable fails to parse due to a syntax error.
+
+   Note that most parsers report syntax errors as soon as they encounter the first issue.
+   This means the error message might not always indicate the exact location of the problem, but it provides a useful starting point for debugging.
 
 .. rule:: VAR102 Incorrect template tag format
 

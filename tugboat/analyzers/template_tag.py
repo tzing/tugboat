@@ -117,11 +117,11 @@ def check_template_tags(
             message = buf.getvalue()
 
         yield {
-            "code": "VAR001",
+            "type": "error",
+            "code": "VAR101",
             "loc": (),
             "summary": "Syntax error",
             "msg": message,
-            "input": source,
         }
         return
 
@@ -156,6 +156,31 @@ def check_template_tags(
                     "fix": fix,
                 }
                 continue
+
+            else:
+                # case: the reference does not exist
+                # leave it to the unknown variable checker
+                ref = parts
+                ref_repr = ".".join(parts)
+
+        if any(sym in ref_repr for sym in "'\"[]"):
+            # well-formed bracket notations should have been handled by split_expr_membership above
+            # reaching here means the reference contains unexpected characters
+            yield {
+                "code": "VAR101",
+                "loc": (),
+                "summary": "Syntax error",
+                "msg": (
+                    f"""
+                    The input '{ref_repr}' contains invalid characters for simple template tag.
+
+                    Simple tags only support dot notation (e.g., `inputs.parameters.name`).
+                    For complex expressions, use expression tags instead: `{{{{= ... }}}}`.
+                    """
+                ),
+                "input": ref_repr,
+            }
+            continue
 
 
 def split_expr_membership(source: str) -> tuple[str, ...]:
