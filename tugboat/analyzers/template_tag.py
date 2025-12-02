@@ -20,6 +20,8 @@ import lark
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
 
+    from lark import Token
+
     from tugboat.references import ReferenceCollection
     from tugboat.types import Diagnosis
 
@@ -122,6 +124,38 @@ def check_template_tags(
             "input": source,
         }
         return
+
+    # analyze simple tags
+    for tag in tree.find_data("simple_tag"):
+        (ref_repr,) = tag.find_token("REF")
+        ref_repr = typing.cast("Token", ref_repr)
+
+        ref = tuple(ref_repr.value.split("."))
+
+        # early exit if the reference is known
+        if ref in references:
+            continue
+
+        # case: user mistakenly use the expression tag format
+        if parts := split_expr_membership(ref_repr):
+            if parts in references:
+                # case: the reference exists, but the format is wrong
+                # this is common when the reference is built by coding agents
+                fix = ".".join(parts)
+                yield {
+                    "code": "VAR102",
+                    "loc": (),
+                    "summary": "Incorrect template tag format",
+                    "msg": (
+                        f"""
+                        The reference '{ref_repr}' mistakes the expression tag format in a simple tag.
+                        Use the simple tag format instead, or convert it to an expression tag ({{{{= ... }}}}) if needed.
+                        """
+                    ),
+                    "input": ref_repr,
+                    "fix": fix,
+                }
+                continue
 
 
 def split_expr_membership(source: str) -> tuple[str, ...]:

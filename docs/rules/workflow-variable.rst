@@ -72,3 +72,42 @@ Rules
       The outputs of a step are defined by the template it refers to.
       Tugboat cannot validate these outputs because their definitions are not included in the same manifest.
       This means Tugboat cannot verify references that point to the outputs of other steps.
+
+.. VAR1xx syntax errors
+
+.. rule:: VAR102 Incorrect template tag format
+
+   This error occurs when a reference uses expression tag syntax inside a simple template tag.
+
+   Argo Workflows supports two types of template tags:
+
+   - **Simple tags**: ``{{ inputs.parameters.foo }}``
+   - **Expression tags**: ``{{= inputs.parameters.foo }}``
+
+   The syntax for referencing values differs between these two formats.
+   Simple tags use dot notation only (e.g., ``inputs.parameters.foo``), while expression tags use `expr-lang`_ syntax, which supports both dot notation and bracket notation for member access (e.g., ``inputs.parameters['foo']`` or ``inputs["parameters"]["foo"]``).
+
+   This error is reported when expression tag syntax is mistakenly used inside a simple tag.
+
+   .. code-block:: yaml
+      :emphasize-lines: 14
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: test-
+      spec:
+        entrypoint: whalesay
+        templates:
+          - name: whalesay
+            inputs:
+              parameters:
+                - name: message
+            container:
+              image: docker/whalesay:latest
+              args: ["{{ inputs.parameters['message'] }}"]
+
+   In the example above, ``inputs.parameters['message']`` uses bracket notation, which is valid in expression tags but not in simple tags.
+   The correct format for a simple tag is ``{{ inputs.parameters.message }}``.
+
+   .. _expr-lang: https://expr-lang.org/

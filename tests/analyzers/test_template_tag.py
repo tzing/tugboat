@@ -94,6 +94,22 @@ class TestCheckTemplateTags:
             )
         ]
 
+    def test_incorrect_format(self):
+        references = ReferenceCollection()
+        references.add(("inputs", "parameters", "name"))
+
+        diagnoses = list(
+            check_template_tags("{{ inputs.parameters['name'] }}", references)
+        )
+
+        assert diagnoses == [
+            IsPartialDict(
+                code="VAR003",
+                summary="Incorrect template tag format",
+                fix="inputs.parameters.name",
+            )
+        ]
+
 
 class TestSplitExprMembership:
 
