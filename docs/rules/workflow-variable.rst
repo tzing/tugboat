@@ -5,7 +5,7 @@ The code ``VAR`` identifies potential issues with `workflow variables`_, includi
 
 .. _workflow variables: https://argo-workflows.readthedocs.io/en/latest/variables/
 
-.. admonition:: Known limitations
+.. admonition:: Known Limitations
    :class: caution
 
    Currently, Tugboat supports only `simple tags`_, and does not support `expression tags`_.
@@ -21,44 +21,6 @@ The code ``VAR`` identifies potential issues with `workflow variables`_, includi
    .. _simple tags: https://argo-workflows.readthedocs.io/en/latest/variables/#simple
    .. _expression tags: https://argo-workflows.readthedocs.io/en/latest/variables/#expression
 
-.. rule:: VAR002 Misused reference
-
-   A reference used in the manifest is not defined in the current context.
-
-   Tugboat checks the references used in the manifest against a list of references from the `official documentation <https://argo-workflows.readthedocs.io/en/latest/variables/#reference>`_.
-   If a reference used in the manifest is not found in the defined references, an error is reported.
-
-   .. code-block:: yaml
-      :emphasize-lines: 17
-
-      apiVersion: argoproj.io/v1alpha1
-      kind: Workflow
-      metadata:
-        generateName: test-
-      spec:
-        entrypoint: whalesay
-        templates:
-          - name: whalesay
-            inputs:
-              artifacts:
-                - name: message
-                  raw:
-                    data: Hello Tugboat!
-            container:
-              image: docker/whalesay:latest
-              command: [cowsay]
-              args: ["{{ inputs.artifacts.message }}"]
-
-   In the example above, ``inputs.artifacts.message`` is invalid because referencing artifacts in this field is not allowed.
-
-   .. admonition:: Limited validation of step outputs
-      :class: note
-
-      Tugboat can only validate references within the same manifest.
-
-      The outputs of a step are defined by the template it refers to.
-      Tugboat cannot validate these outputs because their definitions are not included in the same manifest.
-      This means Tugboat cannot verify references that point to the outputs of other steps.
 
 .. VAR1xx syntax errors
 
@@ -105,3 +67,50 @@ The code ``VAR`` identifies potential issues with `workflow variables`_, includi
    The correct format for a simple tag is ``{{ inputs.parameters.message }}``.
 
    .. _expr-lang: https://expr-lang.org/
+
+
+.. VAR2xx invalid references
+
+.. rule:: VAR201 Unknown Argo workflow variable reference
+
+   This error occurs when a reference is not recognized as a valid Argo workflow variable in the current context.
+
+   Tugboat validates references against a list of known Argo workflow variables based on the template type and defined inputs/outputs.
+   If a reference cannot be matched to any known variable, this error is reported.
+
+   .. code-block:: yaml
+      :emphasize-lines: 18
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: test-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            inputs:
+              parameters:
+                - name: message
+            steps:
+              - - name: step-1
+                  template: produce
+                  arguments:
+                    parameters:
+                      - name: msg
+                        value: "{{ inputs.parameters.msg }}"
+              - - name: step-2
+                  template: consume
+                  arguments:
+                    parameters:
+                      - name: msg
+                        value: "{{ steps.step-1.outputs.parameters.massage }}"
+
+   In the example above, ``inputs.parameters.msg`` is reported because the defined parameter is named ``message``, not ``msg``.
+
+   When possible, Tugboat will suggest the closest matching variable name as a fix.
+
+   .. note::
+
+      Tugboat can only validate references within the same manifest.
+      References to step outputs (e.g., ``steps.step-1.outputs.parameters.message``) cannot be fully validated because the output is defined by the referenced template, which may be a WorkflowTemplate defined elsewhere.

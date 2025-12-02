@@ -101,7 +101,6 @@ def check_template_tags(
     for tag in tree.find_data("simple_tag"):
         (ref_repr,) = tag.find_token("REF")
         ref_repr = typing.cast("Token", ref_repr)
-
         if diagnosis := check_simple_tag_reference(ref_repr, references):
             yield diagnosis
 
@@ -190,6 +189,50 @@ def check_simple_tag_reference(
             "input": ref_repr,
         }
 
+    # case: the reference doesn't look like an Argo variable
+    if is_variable(ref_repr) and not has_simple_variable(references):
+        return {
+            "type": "warning",
+            "code": "VAR202",
+            "loc": (),
+            "summary": "Not a Argo workflow variable reference",
+            "msg": (
+                f"""
+                The used reference '{ref_repr}' is invalid for Argo workflow variables.
+
+                If this `{{{{ }}}}` tag is intended for other templating engines (e.g., Jinja),
+                you can ignore this warning, or suppress it by adding a:
+
+                  # noqa: VAR202; non-Argo variable reference
+
+                comment on the field or model using this variable.
+                """
+            ),
+            "input": ref_repr,
+        }
+
+    # case: unknown variable
+    metadata = {
+        "found": ref,
+        "found:str": ref_repr,
+    }
+
+    if closest := references.find_closest(ref):
+        metadata["closest"] = closest
+        metadata["closest:str"] = ".".join(closest)
+
+    return {
+        "code": "VAR201",
+        "loc": (),
+        "summary": "Unknown Argo workflow variable reference",
+        "msg": (
+            f"The reference '{ref_repr}' is not recognized as a valid Argo workflow variable under the current context."
+        ),
+        "input": ref_repr,
+        "fix": metadata.get("closest:str"),
+        "ctx": {"reference": metadata},
+    }
+
 
 def split_expr_membership(source: str) -> tuple[str, ...]:
     """
@@ -229,3 +272,14 @@ def split_expr_membership(source: str) -> tuple[str, ...]:
         parts += filter(None, match_.groups())
 
     return tuple(parts)
+
+
+def is_variable(s: str) -> bool:
+    return re.fullmatch(r"[_a-zA-Z][_a-zA-Z0-9]*", s) is not None
+
+
+def has_simple_variable(references: ReferenceCollection) -> bool:
+    for ref in references:
+        if len(ref) == 1:
+            return True
+    return False

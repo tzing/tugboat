@@ -53,6 +53,10 @@ class TestCheckTemplateTags:
 
         assert diagnoses == []
 
+    def test_simple_tag_picked(self):
+        diagnoses = list(check_template_tags("{{ inputs }}", ReferenceCollection()))
+        assert diagnoses == [IsPartialDict(code="VAR202")]
+
     def test_unexpected_character(self):
         diagnoses = list(
             check_template_tags(
@@ -121,6 +125,29 @@ class TestCheckSimpleTagReference:
         references = ReferenceCollection()
         diagnosis = check_simple_tag_reference("inputs.parameters['name", references)
         assert diagnosis == IsPartialDict(code="VAR101")
+
+    def test_not_a_argo_variable_1(self):
+        references = ReferenceCollection()
+        diagnosis = check_simple_tag_reference("inputs", references)
+        assert diagnosis == IsPartialDict(code="VAR202")
+
+    def test_unknown_variable(self):
+        references = ReferenceCollection()
+        references.add(("demo",))
+
+        diagnosis = check_simple_tag_reference("inputs", references)
+        assert diagnosis == IsPartialDict(
+            code="VAR201",
+            fix="demo",
+            ctx={
+                "reference": {
+                    "found": ("inputs",),
+                    "found:str": "inputs",
+                    "closest": ("demo",),
+                    "closest:str": "demo",
+                }
+            },
+        )
 
 
 class TestSplitExprMembership:
