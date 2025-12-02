@@ -8,6 +8,12 @@ Unreleased
 +++++++++++++++++++++++++++++++++++
 
 * New rule set :doc:`rules/dag` to validate DAG templates and their tasks.
+* Redesign :doc:`rules/workflow-variable` to improve validation of Argo workflow variable references:
+
+  * Rule ``VAR001`` has been renamed to :rule:`var101`.
+  * Rule ``VAR002`` has been renamed to :rule:`var201`.
+  * New rule :rule:`var102` to flag invalid usage of expr-lang format in simple tags.
+  * New rule :rule:`var202` to flag non-Argo variable references.
 
 :octicon:`plug` Enhancements
 ++++++++++++++++++++++++++++
