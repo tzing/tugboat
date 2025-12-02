@@ -5,7 +5,11 @@ import pytest
 from dirty_equals import IsPartialDict, IsStr
 
 from tests.dirty_equals import HasSubstring
-from tugboat.analyzers.template_tag import check_template_tags, parse_argo_template_tags
+from tugboat.analyzers.template_tag import (
+    check_template_tags,
+    parse_argo_template_tags,
+    split_expr_membership,
+)
 from tugboat.references import ReferenceCollection
 
 
@@ -89,3 +93,24 @@ class TestCheckTemplateTags:
                 ),
             )
         ]
+
+
+class TestSplitExprMembership:
+
+    @pytest.mark.parametrize(
+        ("source", "expected"),
+        [
+            # success
+            ("parameters", ("parameters",)),
+            ("parameters.item", ("parameters", "item")),
+            ("parameters['item-1'].subkey", ("parameters", "item-1", "subkey")),
+            ('parameters["item-2"].subkey', ("parameters", "item-2", "subkey")),
+            ("a.b.c['d'].e['f'].g", ("a", "b", "c", "d", "e", "f", "g")),
+            # failed
+            ("0", ()),
+            ("parameters[\"item']", ()),
+        ],
+    )
+    def test(self, source: str, expected: tuple[str, ...]):
+        parts = split_expr_membership(source)
+        assert parts == expected

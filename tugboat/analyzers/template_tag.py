@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import functools
 import io
+import re
 import textwrap
 import typing
 
@@ -41,7 +42,7 @@ def _argo_template_tag_parser():
 
         # simple template tag
         simple_tag: "{{" WS? REF WS? "}}"
-        REF: (LETTER | DIGIT | "_" | "-" | "." | "'" | "[" | "]")+
+        REF: (LETTER | DIGIT | "_" | "-" | "." | "\"" | "'" | "[" | "]")+
 
         # expression template tag
         expression_tag: "{{=" WS? _ANY WS? "}}"
@@ -121,3 +122,43 @@ def check_template_tags(
             "input": source,
         }
         return
+
+
+def split_expr_membership(source: str) -> tuple[str, ...]:
+    """
+    Split an expr lang membership string into its components.
+
+    Parameters
+    ----------
+    source : str
+        The expression membership string.
+
+    Returns
+    -------
+    tuple[str, ...]
+        The components of the expression membership.
+    """
+    # extract first part
+    match_ = re.match(r"[a-zA-Z_]\w*", source)
+    if not match_:
+        return ()
+
+    parts = [match_.group(0)]
+
+    regex_parts = re.compile(
+        r"""
+        \.([a-zA-Z_]\w*)    # dot notation
+        |\['([\w-]+)'\]     # single-quoted bracket notation
+        |\[\"([\w-]+)\"\]   # double-quoted bracket notation
+        """,
+        re.VERBOSE,
+    )
+
+    while match_.end() < len(source):
+        match_ = regex_parts.match(source, match_.end())
+        if not match_:
+            return ()
+
+        parts += filter(None, match_.groups())
+
+    return tuple(parts)
