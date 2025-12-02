@@ -6,6 +6,7 @@ from dirty_equals import IsPartialDict, IsStr
 
 from tests.dirty_equals import HasSubstring
 from tugboat.analyzers.template_tag import (
+    check_simple_tag_reference,
     check_template_tags,
     parse_argo_template_tags,
     split_expr_membership,
@@ -94,32 +95,32 @@ class TestCheckTemplateTags:
             )
         ]
 
+
+class TestCheckSimpleTagReference:
+
+    def test_pass(self):
+        references = ReferenceCollection()
+        references.add(("inputs", "parameters", "name"))
+
+        diagnosis = check_simple_tag_reference("inputs.parameters.name", references)
+        assert diagnosis is None
+
     def test_incorrect_format(self):
         references = ReferenceCollection()
         references.add(("inputs", "parameters", "name"))
 
-        diagnoses = list(
-            check_template_tags("{{ inputs.parameters['name'] }}", references)
+        diagnosis = check_simple_tag_reference("inputs.parameters['name']", references)
+
+        assert diagnosis == IsPartialDict(
+            code="VAR102",
+            summary="Incorrect template tag format",
+            fix="inputs.parameters.name",
         )
 
-        assert diagnoses == [
-            IsPartialDict(
-                code="VAR102",
-                summary="Incorrect template tag format",
-                fix="inputs.parameters.name",
-            )
-        ]
-
-    def test_invalid_input(self):
-        diagnoses = list(
-            check_template_tags("{{ inputs.parameters['name }}", ReferenceCollection())
-        )
-        assert diagnoses == [
-            IsPartialDict(
-                code="VAR101",
-                summary="Syntax error",
-            )
-        ]
+    def test_syntax_error(self):
+        references = ReferenceCollection()
+        diagnosis = check_simple_tag_reference("inputs.parameters['name", references)
+        assert diagnosis == IsPartialDict(code="VAR101")
 
 
 class TestSplitExprMembership:

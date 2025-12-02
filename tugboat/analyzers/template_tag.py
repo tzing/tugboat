@@ -102,57 +102,8 @@ def check_template_tags(
         (ref_repr,) = tag.find_token("REF")
         ref_repr = typing.cast("Token", ref_repr)
 
-        ref = tuple(ref_repr.value.split("."))
-
-        # early exit if the reference is known
-        if ref in references:
-            continue
-
-        # case: user mistakenly use the expression tag format
-        if parts := split_expr_membership(ref_repr):
-            if parts in references:
-                # case: the reference exists, but the format is wrong
-                # this is common when the reference is built by coding agents
-                fix = ".".join(parts)
-                yield {
-                    "code": "VAR102",
-                    "loc": (),
-                    "summary": "Incorrect template tag format",
-                    "msg": (
-                        f"""
-                        The reference '{ref_repr}' mistakes the expression tag format in a simple tag.
-                        Use the simple tag format instead, or convert it to an expression tag ({{{{= ... }}}}) if needed.
-                        """
-                    ),
-                    "input": ref_repr,
-                    "fix": fix,
-                }
-                continue
-
-            else:
-                # case: the reference does not exist
-                # leave it to the unknown variable checker
-                ref = parts
-                ref_repr = ".".join(parts)
-
-        if any(sym in ref_repr for sym in "'\"[]"):
-            # well-formed bracket notations should have been handled by split_expr_membership above
-            # reaching here means the reference contains unexpected characters
-            yield {
-                "code": "VAR101",
-                "loc": (),
-                "summary": "Syntax error",
-                "msg": (
-                    f"""
-                    The input '{ref_repr}' contains invalid characters for simple template tag.
-
-                    Simple tags only support dot notation (e.g., `inputs.parameters.name`).
-                    For complex expressions, use expression tags instead: `{{{{= ... }}}}`.
-                    """
-                ),
-                "input": ref_repr,
-            }
-            continue
+        if diagnosis := check_simple_tag_reference(ref_repr, references):
+            yield diagnosis
 
 
 def transform_lark_error(source: str, e: UnexpectedInput) -> Diagnosis:
@@ -185,6 +136,59 @@ def transform_lark_error(source: str, e: UnexpectedInput) -> Diagnosis:
         "summary": "Syntax error",
         "msg": message,
     }
+
+
+def check_simple_tag_reference(
+    ref_repr: str, references: ReferenceCollection
+) -> Diagnosis | None:
+    # early exit if the reference is known
+    ref = tuple(ref_repr.split("."))
+    if ref in references:
+        return
+
+    # case: user mistakenly use the expression tag format
+    if parts := split_expr_membership(ref_repr):
+        if parts in references:
+            # case: the reference exists, but the format is wrong
+            # this is common when the reference is built by coding agents
+            fix = ".".join(parts)
+            return {
+                "code": "VAR102",
+                "loc": (),
+                "summary": "Incorrect template tag format",
+                "msg": (
+                    f"""
+                    The reference '{ref_repr}' mistakes the expression tag format in a simple tag.
+                    Use the simple tag format instead, or convert it to an expression tag ({{{{= ... }}}}) if needed.
+                    """
+                ),
+                "input": ref_repr,
+                "fix": fix,
+            }
+
+        else:
+            # case: the reference does not exist
+            # leave it to the unknown variable checker
+            ref = parts
+            ref_repr = ".".join(parts)
+
+    if any(sym in ref_repr for sym in "'\"[]"):
+        # well-formed bracket notations should have been handled by split_expr_membership above
+        # reaching here means the reference contains unexpected characters
+        return {
+            "code": "VAR101",
+            "loc": (),
+            "summary": "Syntax error",
+            "msg": (
+                f"""
+                The input '{ref_repr}' contains invalid characters for simple template tag.
+
+                Simple tags only support dot notation (e.g., `inputs.parameters.name`).
+                For complex expressions, use expression tags instead: `{{{{= ... }}}}`.
+                """
+            ),
+            "input": ref_repr,
+        }
 
 
 def split_expr_membership(source: str) -> tuple[str, ...]:
