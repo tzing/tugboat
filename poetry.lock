@@ -3015,4 +3015,4 @@ mcp = ["mcp"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "746bc9daab1c00973e091c7c4c0452e88a9cc9f007a808354c5f7d3c470eb2cd"
+content-hash = "17ce0fa4b51caeebc1de84b97ae0f055384de0feb4af20e101940eb6314d3c2b"
