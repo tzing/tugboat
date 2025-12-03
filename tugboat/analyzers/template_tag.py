@@ -27,33 +27,6 @@ if typing.TYPE_CHECKING:
     from tugboat.types import Diagnosis
 
 
-@functools.cache
-def _argo_template_tag_parser():
-    return lark.Lark(
-        r"""
-        %import common.DIGIT
-        %import common.LETTER
-        %import common.WS
-
-        ?start: template
-
-        template: (_TEXT | expression_tag | simple_tag)+
-
-        # ignore other text
-        _TEXT: /[^{]+/
-            | "{" /[^{]/
-
-        # simple template tag
-        simple_tag: "{{" WS? REF WS? "}}"
-        REF: (LETTER | DIGIT | "_" | "-" | "." | "\"" | "'" | "[" | "]")+
-
-        # expression template tag
-        expression_tag: "{{=" WS? _ANY WS? "}}"
-        _ANY: /[^}]+/
-        """
-    )
-
-
 @functools.lru_cache(32)
 def parse_argo_template_tags(source: str) -> lark.Tree:
     """
@@ -71,6 +44,31 @@ def parse_argo_template_tags(source: str) -> lark.Tree:
     """
     parser = _argo_template_tag_parser()
     return parser.parse(source)
+
+
+@functools.cache
+def _argo_template_tag_parser():
+    return lark.Lark(
+        r"""
+        %import common.DIGIT
+        %import common.LETTER
+        %import common.WS
+
+        ?start: (_TEXT | expression_tag | simple_tag)*
+
+        # ignore other text
+        _TEXT: /[^{]+/
+            | "{" /[^{]/
+
+        # simple template tag
+        simple_tag: "{{" WS? REF WS? "}}"
+        REF: (LETTER | DIGIT | "_" | "-" | "." | "\"" | "'" | "[" | "]")+
+
+        # expression template tag
+        expression_tag: "{{=" _ANY "}}"
+        _ANY: /([^}]|}(?!}))+/
+        """
+    )
 
 
 def check_template_tags(
@@ -101,7 +99,7 @@ def check_template_tags(
     for tag in tree.find_data("simple_tag"):
         (ref_repr,) = tag.find_token("REF")
         ref_repr = typing.cast("Token", ref_repr)
-        if diagnosis := check_simple_tag_reference(ref_repr, references):
+        if diagnosis := _check_simple_tag_reference(ref_repr, references):
             yield diagnosis
 
 
@@ -137,7 +135,7 @@ def transform_lark_error(source: str, e: UnexpectedInput) -> Diagnosis:
     }
 
 
-def check_simple_tag_reference(
+def _check_simple_tag_reference(
     ref_repr: str, references: ReferenceCollection
 ) -> Diagnosis | None:
     # early exit if the reference is known
