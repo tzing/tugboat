@@ -434,51 +434,15 @@ def test_check_metrics(diagnoses_logger):
     )
     diagnoses_logger(diagnoses)
 
+    loc_prom = ("spec", "templates", 0, "metrics", "prometheus", 0)
+    assert IsPartialModel(code="TPL301", loc=(*loc_prom, "name")) in diagnoses
     assert (
-        IsPartialModel(
-            {
-                "code": "TPL301",
-                "loc": ("spec", "templates", 0, "metrics", "prometheus", 0, "name"),
-            }
-        )
-        in diagnoses
+        IsPartialModel(code="TPL302", loc=(*loc_prom, "labels", 0, "key")) in diagnoses
     )
-
-    loc_labels = ("spec", "templates", 0, "metrics", "prometheus", 0, "labels")
     assert (
-        IsPartialModel(
-            {
-                "code": "TPL302",
-                "loc": (*loc_labels, 0, "key"),
-            }
-        )
+        IsPartialModel(code="TPL303", loc=(*loc_prom, "labels", 0, "value"))
         in diagnoses
     )
     assert (
-        IsPartialModel(
-            {
-                "code": "TPL303",
-                "loc": (*loc_labels, 0, "value"),
-            }
-        )
-        in diagnoses
-    )
-
-    assert (
-        IsPartialModel(
-            {
-                "code": "VAR002",
-                "loc": (
-                    "spec",
-                    "templates",
-                    0,
-                    "metrics",
-                    "prometheus",
-                    0,
-                    "counter",
-                    "value",
-                ),
-            }
-        )
-        in diagnoses
+        IsPartialModel(code="VAR201", loc=(*loc_prom, "counter", "value")) in diagnoses
     )

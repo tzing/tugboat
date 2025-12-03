@@ -1,6 +1,6 @@
 from dirty_equals import IsPartialDict
 
-from tests.dirty_equals import ContainsSubStrings
+from tests.dirty_equals import HasSubstring
 from tugboat.analyzers.metrics import check_prometheus
 from tugboat.references import Context
 from tugboat.schemas.metrics import Prometheus
@@ -46,7 +46,7 @@ class TestCheckPrometheus:
                 {
                     "code": "internal:invalid-metric-name",
                     "loc": ("name",),
-                    "msg": ContainsSubStrings("Metric name 'test/metric' is invalid."),
+                    "msg": HasSubstring("Metric name 'test/metric' is invalid."),
                     "input": "test/metric",
                 }
             ),
@@ -70,7 +70,7 @@ class TestCheckPrometheus:
                 {
                     "code": "internal:invalid-metric-name",
                     "loc": ("name",),
-                    "msg": ContainsSubStrings("Metric name is too long."),
+                    "msg": HasSubstring("Metric name is too long."),
                     "input": NAME,
                 }
             ),
@@ -98,7 +98,7 @@ class TestCheckPrometheus:
                 {
                     "code": "internal:invalid-metric-label-name",
                     "loc": ("labels", 0, "key"),
-                    "msg": ContainsSubStrings(
+                    "msg": HasSubstring(
                         "Label name 'test/label' in metric 'test_metric' is invalid."
                     ),
                     "input": "test/label",
@@ -108,7 +108,7 @@ class TestCheckPrometheus:
                 {
                     "code": "internal:invalid-metric-label-name",
                     "loc": ("labels", 1, "key"),
-                    "msg": ContainsSubStrings(
+                    "msg": HasSubstring(
                         "Label name '__reserved' in metric 'test_metric' is invalid."
                     ),
                     "input": "__reserved",
@@ -118,7 +118,7 @@ class TestCheckPrometheus:
                 {
                     "code": "internal:invalid-metric-label-value",
                     "loc": ("labels", 2, "value"),
-                    "msg": ContainsSubStrings(
+                    "msg": HasSubstring(
                         "Label value for label 'valid_label' in metric 'test_metric' is empty."
                     ),
                 },

@@ -3,8 +3,8 @@ from __future__ import annotations
 import re
 import typing
 
+from tugboat.analyzers.template_tag import check_template_tags_recursive
 from tugboat.constraints import mutually_exclusive, require_all
-from tugboat.utils import check_model_fields_references
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterator
@@ -28,10 +28,7 @@ def check_prometheus(prometheus: Prometheus, context: Context) -> Iterator[Diagn
         fields=["counter", "gauge", "histogram"],
         require_one=True,
     )
-    yield from check_model_fields_references(
-        model=prometheus,
-        references=context.parameters,
-    )
+    yield from check_template_tags_recursive(prometheus, context.parameters)
 
     if prometheus.name:
         if not re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", prometheus.name):
