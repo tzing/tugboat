@@ -14,17 +14,79 @@ import io
 import re
 import textwrap
 import typing
+from collections.abc import Sequence
 
 import lark
+from pydantic import BaseModel
+
+from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
+    from typing import Any
 
     from lark import Token
     from lark.exceptions import UnexpectedInput
 
     from tugboat.references import ReferenceCollection
     from tugboat.types import Diagnosis
+
+
+def check_template_tags_recursive(
+    source: Any,
+    references: ReferenceCollection,
+    *,
+    include: Iterable[str] = (),
+    exclude: Iterable[str] = (),
+) -> Iterator[Diagnosis]:
+    """
+    Check each field of the given model for errors in Argo template tags.
+
+    Parameters
+    ----------
+    source : Any
+        The input to check.
+    references : ReferenceCollection
+        The current active references.
+    include : Iterable[str], optional
+        The fields to include for checking.
+    exclude : Iterable[str], optional
+        The fields to exclude from checking.
+
+    Yields
+    ------
+    Diagnosis
+        A diagnosis for each error found.
+    """
+    if isinstance(source, str):
+        yield from check_template_tags(source, references)
+
+    elif isinstance(source, Sequence):
+        for idx, item in enumerate(source):
+            yield from prepend_loc(
+                (idx,),
+                check_template_tags_recursive(
+                    item, references, include=include, exclude=exclude
+                ),
+            )
+
+    elif isinstance(source, BaseModel):
+        include = set(include)
+        exclude = set(exclude)
+
+        for field_name, field_info in type(source).model_fields.items():
+            if include and field_name not in include:
+                continue
+            if field_name in exclude:
+                continue
+
+            alias = field_info.alias or field_name
+            value = getattr(source, field_name)
+
+            yield from prepend_loc(
+                (alias,),
+                check_template_tags_recursive(value, references),
+            )
 
 
 @functools.lru_cache(32)

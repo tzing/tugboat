@@ -3,15 +3,95 @@ from unittest.mock import Mock
 import lark
 import pytest
 from dirty_equals import IsPartialDict, IsStr
+from pydantic import BaseModel
 
 from tests.dirty_equals import HasSubstring
 from tugboat.analyzers.template_tag import (
     _check_simple_tag_reference,
     check_template_tags,
+    check_template_tags_recursive,
     parse_argo_template_tags,
     split_expr_membership,
 )
 from tugboat.references import ReferenceCollection
+
+
+class TestCheckTemplateTagsRecursive:
+
+    def test(self):
+        class Class(BaseModel):
+            class Profile(BaseModel):
+                name: str
+                age: int  # int => should be ignored
+
+            name: str
+            teacher: Profile
+            students: list[Profile]
+
+        model = Class.model_validate(
+            {
+                "name": "{{ inputs.parameters.class_name }}",
+                "teacher": {
+                    "name": "Mr. {{ inputs.parameters.teacher_name }}",
+                    "age": 40,
+                },
+                "students": [
+                    {"name": "{{ inputs.parameters.student1_name }}", "age": 20},
+                    {"name": "{{ inputs.parameters.student2_name }}", "age": 20},
+                ],
+            }
+        )
+
+        references = ReferenceCollection(
+            [
+                ("inputs", "parameters", "teacher_name"),
+                ("inputs", "parameters", "student1_name"),
+            ]
+        )
+
+        diagnoses = list(check_template_tags_recursive(model, references))
+        assert diagnoses == [
+            IsPartialDict(
+                code="VAR201",
+                loc=("name",),
+                input="inputs.parameters.class_name",
+                fix="inputs.parameters.teacher_name",
+            ),
+            IsPartialDict(
+                code="VAR201",
+                loc=("students", 1, "name"),
+                input="inputs.parameters.student2_name",
+                fix="inputs.parameters.student1_name",
+            ),
+        ]
+
+    def test_include(self):
+        class Model(BaseModel):
+            x: str
+            y: str
+
+        model = Model.model_validate(
+            {
+                "x": "{{ inputs.parameters.name }}",
+                "y": "foobar",
+            }
+        )
+
+        diagnoses = list(
+            check_template_tags_recursive(model, ReferenceCollection(), include=["y"])
+        )
+        assert diagnoses == []
+
+    def test_exclude(self):
+        class Model(BaseModel):
+            x: str
+
+        model = Model.model_validate({"x": "{{ inputs.parameters.name }}"})
+
+        diagnoses = list(
+            check_template_tags_recursive(model, ReferenceCollection(), exclude=["x"])
+        )
+        assert diagnoses == []
 
 
 class TestParseArgoTemplateTags:
