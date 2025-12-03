@@ -79,11 +79,11 @@ class TestAnalyzeStream:
                 ),
                 IsPartialDict(
                     {
-                        "code": "VAR002",
+                        "code": "VAR201",
                         "sourceNearby": '        args:\n          - "{{ inputs.parameter.message }}"',
                         "loc": ["spec", "templates", 0, "container", "args", 0],
-                        "input": "{{ inputs.parameter.message }}",
-                        "fix": "{{ inputs.parameters.message }}",
+                        "input": "inputs.parameter.message",
+                        "fix": "inputs.parameters.message",
                     }
                 ),
             ],

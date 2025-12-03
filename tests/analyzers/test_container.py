@@ -3,15 +3,37 @@ from tugboat.engine import analyze_yaml_stream
 
 
 def test_analyze_template(diagnoses_logger):
-    diagnoses = analyze_yaml_stream(MANIFEST_INVALID_REFERENCE)
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          name: test
+        spec:
+          entrypoint: main
+          templates:
+            - name: main
+              script:
+                image: busybox
+                source: |
+                  echo "{{ inputs.parameters.foo }}"
+                resources:
+                  requests:
+                    memory: 100Gi
+                    cpu: "1.5"
+                  limits:
+                    memory: 10Gi
+                    cpu: 1000m
+        """
+    )
     diagnoses_logger(diagnoses)
 
     assert (
         IsPartialModel(
             {
-                "code": "VAR002",
+                "code": "VAR201",
                 "loc": ("spec", "templates", 0, "script", "source"),
-                "input": "{{ inputs.parameters.foo }}",
+                "input": "inputs.parameters.foo",
             }
         )
         in diagnoses
@@ -52,29 +74,6 @@ def test_analyze_template(diagnoses_logger):
         )
         in diagnoses
     )
-
-
-MANIFEST_INVALID_REFERENCE = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  name: test
-spec:
-  entrypoint: main
-  templates:
-    - name: main
-      script:
-        image: busybox
-        source: |
-          echo "{{ inputs.parameters.foo }}"
-        resources:
-          requests:
-            memory: 100Gi
-            cpu: "1.5"
-          limits:
-            memory: 10Gi
-            cpu: 1000m
-"""
 
 
 def test_check_input_artifacts(diagnoses_logger):

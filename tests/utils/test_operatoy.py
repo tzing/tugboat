@@ -1,14 +1,7 @@
 import pytest
-from dirty_equals import IsPartialDict
-from pydantic import BaseModel
 
-from tugboat.references.context import ReferenceCollection
 from tugboat.schemas import Parameter
-from tugboat.utils.operator import (
-    check_model_fields_references,
-    find_duplicate_names,
-    prepend_loc,
-)
+from tugboat.utils.operator import find_duplicate_names, prepend_loc
 
 
 class TestPrependLoc:
@@ -62,81 +55,3 @@ class TestFindDuplicateNames:
             Parameter(name="name-1"),
         ]
         assert list(find_duplicate_names(items)) == [(0, "name-1"), (2, "name-1")]
-
-
-class TestCheckModelFieldsReferences:
-
-    def test_picked(self):
-        class Nested(BaseModel):
-            foo: str
-
-        class Model(BaseModel):
-            bar: list[Nested]
-            baz: str
-            qax: int
-            qux: Nested
-
-        model = Model.model_validate(
-            {
-                "baz": "leorm",
-                "qax": 42,
-                "qux": {"foo": "{{ error"},
-                "bar": [
-                    {"foo": "bar"},
-                    {"foo": "{{ valid }}"},
-                    {"foo": "{{ invalid }}"},
-                ],
-            }
-        )
-
-        refs = ReferenceCollection()
-        refs.add(("valid",))
-
-        assert list(check_model_fields_references(model, refs)) == [
-            {
-                "code": "VAR002",
-                "fix": "{{ valid }}",
-                "input": "{{ invalid }}",
-                "loc": ("bar", 2, "foo"),
-                "msg": "The used reference 'invalid' is invalid.",
-                "summary": "Invalid reference",
-                "ctx": {
-                    "reference": {
-                        "found": ("invalid",),
-                        "found:str": "invalid",
-                        "closest": ("valid",),
-                        "closest:str": "valid",
-                    }
-                },
-            },
-            {
-                "code": "VAR001",
-                "input": "{{ error",
-                "loc": ("qux", "foo"),
-                "msg": "Invalid syntax near '{{ error': expect closing tag '}}'",
-                "summary": "Syntax error",
-            },
-        ]
-
-    def test_exclude(self):
-
-        class Model(BaseModel):
-            foo: str
-
-        model = Model.model_validate(
-            {
-                "foo": "{{ error",
-            }
-        )
-
-        refs = ReferenceCollection()
-
-        assert list(check_model_fields_references(model, refs)) == [
-            IsPartialDict(
-                {
-                    "code": "VAR001",
-                    "loc": ("foo",),
-                }
-            )
-        ]
-        assert list(check_model_fields_references(model, refs, exclude=["foo"])) == []

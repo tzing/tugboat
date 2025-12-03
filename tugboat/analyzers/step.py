@@ -6,19 +6,13 @@ import typing
 
 from rapidfuzz.process import extractOne
 
+from tugboat.analyzers.template_tag import check_template_tags_recursive
 from tugboat.constraints import accept_none, mutually_exclusive, require_all
 from tugboat.core import get_plugin_manager, hookimpl
 from tugboat.references import get_step_context
 from tugboat.schemas import Arguments
 from tugboat.types import Field
-from tugboat.utils import (
-    check_model_fields_references,
-    check_value_references,
-    find_duplicate_names,
-    join_with_and,
-    join_with_or,
-    prepend_loc,
-)
+from tugboat.utils import find_duplicate_names, join_with_and, join_with_or, prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
@@ -122,9 +116,9 @@ def check_argument_parameter_fields(
             ],
         )
 
-    for diag in check_model_fields_references(param, context.parameters):
+    for diag in check_template_tags_recursive(param, context.parameters):
         match diag["code"]:
-            case "VAR002":
+            case "VAR201":
                 diag["code"] = "STP301"
                 if metadata := diag.get("ctx", {}).get("reference"):
                     ref = metadata["found:str"]
@@ -286,11 +280,11 @@ def check_argument_artifact_fields(
 
         # when it is wrapped, it may be a reference to a parameter or an artifact
         mixed_references = context.parameters + context.artifacts
-        for diag in prepend_loc(
-            ("from",), check_value_references(from_, mixed_references)
+        for diag in check_template_tags_recursive(
+            artifact, mixed_references, include=["from_"]
         ):
             match diag["code"]:
-                case "VAR002":
+                case "VAR201":
                     diag["code"] = "STP302"
                     if metadata := diag.get("ctx", {}).get("reference"):
                         ref = metadata["found:str"]
@@ -302,12 +296,11 @@ def check_argument_artifact_fields(
     # TODO fromExpression
 
     if artifact.raw:
-        for diag in prepend_loc(
-            ("raw", "data"),
-            check_value_references(artifact.raw.data, context.parameters),
+        for diag in check_template_tags_recursive(
+            artifact, context.parameters, include=["raw"]
         ):
             match diag["code"]:
-                case "VAR002":
+                case "VAR201":
                     diag["code"] = "STP303"
                     if metadata := diag.get("ctx", {}).get("reference"):
                         ref = metadata["found:str"]
@@ -458,7 +451,7 @@ def check_fields_references(
     step: Step, template: Template, workflow: WorkflowCompatible
 ) -> Iterable[Diagnosis]:
     ctx = get_step_context(workflow, template, step)
-    yield from check_model_fields_references(
+    yield from check_template_tags_recursive(
         step,
         ctx.parameters,
         exclude=["arguments", "inline", "withItems", "withSequence"],

@@ -149,14 +149,14 @@ Code ``STP`` is used for errors related to the `steps`_ in a `template`_.
 
    Found invalid parameter reference in the step input parameter.
 
-   This rule is a variation of :rule:`VAR002`.
+   This rule is a variation of :rule:`VAR201`.
    It is triggered when a step input parameter references an invalid objective.
 
 .. rule:: STP302 Invalid artifact reference
 
    Found invalid artifact reference in the step input artifact.
 
-   This rule is a variation of :rule:`VAR002`.
+   This rule is a variation of :rule:`VAR201`.
    It is triggered when a step input artifact references an invalid objective.
 
    .. code-block:: yaml

@@ -2,20 +2,12 @@ from __future__ import annotations
 
 import typing
 
-from tugboat.constraints import (
-    accept_none,
-    mutually_exclusive,
-    require_all,
-)
+from tugboat.analyzers.template_tag import check_template_tags_recursive
+from tugboat.constraints import accept_none, mutually_exclusive, require_all
 from tugboat.core import hookimpl
 from tugboat.references import get_workflow_context
 from tugboat.types import Field
-from tugboat.utils import (
-    check_model_fields_references,
-    check_value_references,
-    find_duplicate_names,
-    prepend_loc,
-)
+from tugboat.utils import find_duplicate_names, prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
@@ -76,9 +68,9 @@ def _check_input_parameter(
         fields=["globalName"],
     )
 
-    for diag in check_model_fields_references(param, context.parameters):
+    for diag in check_template_tags_recursive(param, context.parameters):
         match diag["code"]:
-            case "VAR002":
+            case "VAR201":
                 diag["code"] = "TPL201"
                 if metadata := diag.get("ctx", {}).get("reference"):
                     ref = metadata["found:str"]
@@ -236,12 +228,11 @@ def _check_input_artifact(
 
     # field-specific checks
     if artifact.raw:
-        for diag in prepend_loc(
-            ("raw", "data"),
-            check_value_references(artifact.raw.data, context.parameters),
+        for diag in check_template_tags_recursive(
+            artifact, context.parameters, include=["raw"]
         ):
             match diag["code"]:
-                case "VAR002":
+                case "VAR201":
                     diag["code"] = "TPL202"
                     if metadata := diag.get("ctx", {}).get("reference"):
                         ref = metadata["found:str"]

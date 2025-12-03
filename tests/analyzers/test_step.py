@@ -342,34 +342,33 @@ spec:
 
 
 def test_check_fields_references(diagnoses_logger):
-    diagnoses = analyze_yaml_stream(MANIFEST_FIELDS_REFERENCES)
+    diagnoses = analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: exit-handler-step-level-
+        spec:
+          entrypoint: main
+          templates:
+            - name: main
+              steps:
+                - - name: hello
+                    when: "{{ count }} > 0"
+                    template: print-message
+        """
+    )
     diagnoses_logger(diagnoses)
 
     assert (
         IsPartialModel(
             {
-                "code": "VAR002",
+                "code": "VAR202",
                 "loc": ("spec", "templates", 0, "steps", 0, 0, "when"),
             }
         )
         in diagnoses
     )
-
-
-MANIFEST_FIELDS_REFERENCES = """
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: exit-handler-step-level-
-spec:
-  entrypoint: main
-  templates:
-    - name: main
-      steps:
-        - - name: hello
-            when: "{{ count }} > 0"
-            template: print-message
-"""
 
 
 def test_check_inline_template(diagnoses_logger):

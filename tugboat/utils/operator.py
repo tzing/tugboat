@@ -9,16 +9,12 @@ import itertools
 import typing
 from collections.abc import Iterable, Sequence
 
-from pydantic import BaseModel
-
-from tugboat.parsers import parse_template, report_syntax_errors
 from tugboat.types import Diagnosis
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Container, Iterator
+    from collections.abc import Iterator
     from typing import Protocol, Self
 
-    from tugboat.references.context import ReferenceCollection
 
     class _NamedModel(Protocol):
         name: str
@@ -64,91 +60,3 @@ def find_duplicate_names(items: Sequence[NamedModel]) -> Iterator[tuple[int, str
         if len(indices) > 1:
             for idx in indices:
                 yield idx, name
-
-
-def check_value_references(
-    value: str, references: ReferenceCollection
-) -> Iterator[Diagnosis]:
-    """
-    Check the given value for errors that are specific to Argo workflows
-    variables.
-
-    Parameters
-    ----------
-    value : str
-        The value to check.
-    references : ReferenceCollection
-        The current active references.
-
-    Yields
-    ------
-    Diagnosis
-        A diagnosis for each error found.
-    """
-    doc = parse_template(value)
-    yield from report_syntax_errors(doc)
-
-    for node, ref in doc.iter_references():
-        if ref in references:
-            continue
-
-        ref_str = ".".join(ref)
-        metadata = {
-            "found": ref,
-            "found:str": ref_str,
-        }
-
-        closest = references.find_closest(ref)
-        if closest:
-            metadata["closest"] = closest
-            metadata["closest:str"] = ".".join(closest)
-
-        yield {
-            "code": "VAR002",
-            "loc": (),
-            "summary": "Invalid reference",
-            "msg": f"The used reference '{ref_str}' is invalid.",
-            "input": str(node),
-            "fix": node.format(closest),
-            "ctx": {"reference": metadata},
-        }
-
-
-def check_model_fields_references(
-    model: BaseModel, references: ReferenceCollection, *, exclude: Container[str] = ()
-) -> Iterator[Diagnosis]:
-    """
-    Check the fields of the given model for errors that are specific to Argo
-    workflows variables.
-
-    Parameters
-    ----------
-    model : BaseModel
-        The model to check. This function will check all fields of the model
-        that are of type str.
-    references : ReferenceCollection
-        The current active references.
-    exclude : Container[str]
-        The fields to exclude from the check.
-
-    Yields
-    ------
-    Diagnosis
-        A diagnosis for each error found.
-    """
-
-    def _check(item):
-        if isinstance(item, str):
-            yield from check_value_references(item, references)
-
-        elif isinstance(item, BaseModel):
-            for field, value in item:
-                yield from prepend_loc((field,), _check(value))
-
-        elif isinstance(item, Sequence):
-            for idx, child in enumerate(item):
-                yield from prepend_loc((idx,), _check(child))
-
-    for field, value in model:
-        if field not in exclude:
-            yield from prepend_loc((field,), _check(value))

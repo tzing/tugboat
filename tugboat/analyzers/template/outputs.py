@@ -2,15 +2,11 @@ from __future__ import annotations
 
 import typing
 
+from tugboat.analyzers.template_tag import check_template_tags_recursive
 from tugboat.constraints import accept_none, mutually_exclusive, require_all
 from tugboat.core import hookimpl
 from tugboat.references import get_template_context
-from tugboat.utils import (
-    check_model_fields_references,
-    check_value_references,
-    find_duplicate_names,
-    prepend_loc,
-)
+from tugboat.utils import find_duplicate_names, prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
@@ -89,9 +85,9 @@ def _check_output_parameter(
 
         # TODO check expression
 
-    for diag in check_model_fields_references(param, context.parameters):
+    for diag in check_template_tags_recursive(param, context.parameters):
         match diag["code"]:
-            case "VAR002":
+            case "VAR201":
                 if metadata := diag.get("ctx", {}).get("reference"):
                     ref = metadata["found:str"]
                     diag["msg"] = (
@@ -171,11 +167,11 @@ def _check_output_artifact(
         )
 
     if artifact.from_:
-        for diag in prepend_loc(
-            ("from",), check_value_references(artifact.from_, context.artifacts)
+        for diag in check_template_tags_recursive(
+            artifact, context.artifacts, include=["from_"]
         ):
             match diag["code"]:
-                case "VAR002":
+                case "VAR201":
                     if metadata := diag.get("ctx", {}).get("reference"):
                         ref = metadata["found:str"]
                         diag["msg"] = (
