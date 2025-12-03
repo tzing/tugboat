@@ -16,7 +16,7 @@ from tugboat.references import ReferenceCollection
 
 class TestParseArgoTemplateTags:
 
-    def test_pass(self):
+    def test_1(self):
         tree = parse_argo_template_tags(
             """
             Hello {{ inputs.parameters.name }}
@@ -33,6 +33,24 @@ class TestParseArgoTemplateTags:
 
         (bot_name,) = bot_name_tag.find_token("REF")
         assert bot_name == "inputs.parameters['bot']"
+
+    def test_2(self):
+        tree = parse_argo_template_tags(
+            """
+            This is a {sample} document
+            that have some {{= expression{}}} inside.
+            """
+        )
+
+        simple_tags = list(tree.find_data("simple_tag"))
+        assert not simple_tags
+
+        expr_tags = list(tree.find_data("expression_tag"))
+        assert len(expr_tags) == 1
+
+    def test_empty(self):
+        tree = parse_argo_template_tags("")
+        assert tree.children == []
 
     def test_error(self):
         with pytest.raises(lark.exceptions.UnexpectedCharacters):
