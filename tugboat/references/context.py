@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing
 from collections.abc import MutableSet
 
 from pydantic import BaseModel, Field, InstanceOf
@@ -9,6 +10,9 @@ from rapidfuzz.distance.DamerauLevenshtein import (
 from rapidfuzz.distance.DamerauLevenshtein import (
     normalized_distance as dameau_levenshtein_normalized_distance,
 )
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterable
 
 type _TR = tuple[str, ...]
 """Type alias for reference, which is a tuple of strings."""
@@ -39,9 +43,14 @@ class ReferenceCollection(MutableSet[_TR]):
     of :py:data:`AnyStr`.
     """
 
-    def __init__(self):
+    def __init__(self, iterable: Iterable[_TR] = ()):
+        super().__init__()
+
         self._static = set()
         self._dynamic = []
+
+        for item in iterable:
+            self.add(item)
 
     def __iter__(self):
         yield from self._static
