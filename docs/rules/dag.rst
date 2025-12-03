@@ -143,7 +143,7 @@ Code ``DAG`` is used for errors related to the `DAG`_ in a `template`_.
 .. rule:: DAG301 Invalid parameter reference
 
    A task input parameter contains a reference that cannot be resolved.
-   This rule builds on :rule:`VAR002` but narrows the report to the task argument where the typo or mismatch occurs.
+   This rule builds on :rule:`VAR201` but narrows the report to the task argument where the typo or mismatch occurs.
 
 .. rule:: DAG302 Invalid artifact reference
 
@@ -357,7 +357,7 @@ Code ``DAG`` is used for errors related to the `DAG`_ in a `template`_.
 
    .. code-block:: yaml
       :caption: ❌ Example manifest that violates this rule
-      :emphasize-lines: 18
+      :emphasize-lines: 12
 
       apiVersion: argoproj.io/v1alpha1
       kind: Workflow

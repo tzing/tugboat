@@ -123,7 +123,7 @@ The code ``VAR`` identifies potential issues with `workflow variables`_, includi
    When a tag contains only a simple variable name (e.g., ``{{ foo }}``), it is unlikely to be an Argo variable.
 
    .. code-block:: yaml
-      :emphasize-lines: 14
+      :emphasize-lines: 11
 
       apiVersion: argoproj.io/v1alpha1
       kind: Workflow

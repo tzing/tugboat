@@ -160,9 +160,9 @@ For more information on how to use Tugboat, runs its help command:
    rules/manifest-errors
    rules/step
    rules/template
+   rules/variable
    rules/workflow
    rules/workflow-template
-   rules/workflow-variable
 
 .. toctree::
    :hidden:

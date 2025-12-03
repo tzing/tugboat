@@ -8,7 +8,7 @@ Unreleased
 +++++++++++++++++++++++++++++++++++
 
 * New rule set :doc:`rules/dag` to validate DAG templates and their tasks.
-* Redesign :doc:`rules/workflow-variable` to improve validation of Argo workflow variable references:
+* Redesign :doc:`rules/variable` to improve validation of Argo workflow variable references:
 
   * Rule ``VAR001`` has been renamed to :rule:`var101`.
   * Rule ``VAR002`` has been renamed to :rule:`var201`.

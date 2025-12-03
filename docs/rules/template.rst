@@ -177,7 +177,7 @@ Rules
 
    Found invalid parameter reference in the template input parameter.
 
-   This rule is a variation of :rule:`VAR002`.
+   This rule is a variation of :rule:`VAR201`.
    It is triggered when a template input parameter references an invalid objective:
 
    .. code-block:: yaml
