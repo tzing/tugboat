@@ -6,7 +6,7 @@ from dirty_equals import IsPartialDict, IsStr
 
 from tests.dirty_equals import HasSubstring
 from tugboat.analyzers.template_tag import (
-    check_simple_tag_reference,
+    _check_simple_tag_reference,
     check_template_tags,
     parse_argo_template_tags,
     split_expr_membership,
@@ -44,8 +44,7 @@ class TestParseArgoTemplateTags:
 class TestCheckTemplateTags:
 
     def test_pass(self):
-        references = ReferenceCollection()
-        references.add(("inputs", "parameters", "name"))
+        references = ReferenceCollection([("inputs", "parameters", "name")])
 
         diagnoses = list(
             check_template_tags("{{ inputs.parameters.name }}", references)
@@ -103,17 +102,15 @@ class TestCheckTemplateTags:
 class TestCheckSimpleTagReference:
 
     def test_pass(self):
-        references = ReferenceCollection()
-        references.add(("inputs", "parameters", "name"))
+        references = ReferenceCollection([("inputs", "parameters", "name")])
 
-        diagnosis = check_simple_tag_reference("inputs.parameters.name", references)
+        diagnosis = _check_simple_tag_reference("inputs.parameters.name", references)
         assert diagnosis is None
 
     def test_incorrect_format(self):
-        references = ReferenceCollection()
-        references.add(("inputs", "parameters", "name"))
+        references = ReferenceCollection([("inputs", "parameters", "name")])
 
-        diagnosis = check_simple_tag_reference("inputs.parameters['name']", references)
+        diagnosis = _check_simple_tag_reference("inputs.parameters['name']", references)
 
         assert diagnosis == IsPartialDict(
             code="VAR102",
@@ -123,19 +120,18 @@ class TestCheckSimpleTagReference:
 
     def test_syntax_error(self):
         references = ReferenceCollection()
-        diagnosis = check_simple_tag_reference("inputs.parameters['name", references)
+        diagnosis = _check_simple_tag_reference("inputs.parameters['name", references)
         assert diagnosis == IsPartialDict(code="VAR101")
 
     def test_not_a_argo_variable_1(self):
         references = ReferenceCollection()
-        diagnosis = check_simple_tag_reference("inputs", references)
+        diagnosis = _check_simple_tag_reference("inputs", references)
         assert diagnosis == IsPartialDict(code="VAR202")
 
     def test_unknown_variable(self):
-        references = ReferenceCollection()
-        references.add(("demo",))
+        references = ReferenceCollection([("demo",)])
 
-        diagnosis = check_simple_tag_reference("inputs", references)
+        diagnosis = _check_simple_tag_reference("inputs", references)
         assert diagnosis == IsPartialDict(
             code="VAR201",
             fix="demo",

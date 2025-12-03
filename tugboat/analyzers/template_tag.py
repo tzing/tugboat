@@ -101,7 +101,7 @@ def check_template_tags(
     for tag in tree.find_data("simple_tag"):
         (ref_repr,) = tag.find_token("REF")
         ref_repr = typing.cast("Token", ref_repr)
-        if diagnosis := check_simple_tag_reference(ref_repr, references):
+        if diagnosis := _check_simple_tag_reference(ref_repr, references):
             yield diagnosis
 
 
@@ -137,7 +137,7 @@ def transform_lark_error(source: str, e: UnexpectedInput) -> Diagnosis:
     }
 
 
-def check_simple_tag_reference(
+def _check_simple_tag_reference(
     ref_repr: str, references: ReferenceCollection
 ) -> Diagnosis | None:
     # early exit if the reference is known
