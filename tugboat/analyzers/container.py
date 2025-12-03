@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import typing
 
+from tugboat.analyzers.template_tag import check_template_tags_recursive
 from tugboat.constraints import mutually_exclusive, require_all
 from tugboat.core import hookimpl
 from tugboat.references import get_template_context
-from tugboat.utils import check_model_fields_references, prepend_loc
+from tugboat.utils import prepend_loc
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable
@@ -187,9 +188,9 @@ def check_shared_fields(
         }
 
     # check model fields references
-    for diag in check_model_fields_references(node, context.parameters):
+    for diag in check_template_tags_recursive(node, context.parameters):
         match diag["code"]:
-            case "VAR002":
+            case "VAR201":
                 if metadata := diag.get("ctx", {}).get("reference"):
                     ref = metadata["found:str"]
                     diag["msg"] = (
