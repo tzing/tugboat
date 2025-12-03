@@ -152,7 +152,7 @@ spec:
         command: [ python ]
         args:
           - -c
-          - '{{ inputs.parameters.command }}'  # VAR002
+          - '{{ inputs.parameters.command }}'  # VAR201
     - name: script-template
       inputs:
         artifacts:
@@ -161,7 +161,7 @@ spec:
         image: python:alpine3.13
         command: [ python ]
         source: |-
-          print('Hello world, {{ inputs.artifacts.data }}!')  # VAR002
+          print('Hello world, {{ inputs.artifacts.data }}!')  # VAR201
 """
 
 MANIFEST_DUPLICATE_STEP_NAMES = """
@@ -208,7 +208,7 @@ def test_check_input_parameters_1(diagnoses_logger):
                     valueFrom:
                       path: /malformed # M102
                   - name: message # TPL102
-                    value: "{{ workflow.name " # VAR001
+                    value: "{{ workflow.name " # VAR101
                   - name: message-3
                     value: "{{ workflow.invalid}}" #
                   - name: message-4
