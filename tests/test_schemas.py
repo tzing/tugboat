@@ -319,11 +319,12 @@ class TestParseManifest:
 
 def test_with_argo_examples(subtests: pytest.Subtests, argo_example_dir: Path):
     """Make sure our schemas are valid for (almost) all examples from Argo."""
+    workflow_binding_dir = argo_example_dir / "workflow-event-binding"
     EXCLUDES = {
+        # k8s-patch-json-workflow.yaml: duplicate keys
+        argo_example_dir / "k8s-patch-json-workflow.yaml",
         # github-path-filter-workflowtemplate: found parameter value in list type
-        argo_example_dir
-        / "workflow-event-binding"
-        / "github-path-filter-workflowtemplate.yaml"
+        workflow_binding_dir / "github-path-filter-workflowtemplate.yaml",
     }
 
     yaml = ruamel.yaml.YAML()

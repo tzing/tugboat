@@ -254,6 +254,11 @@ class TestAnalyzeYamlStream:
         """
         workflow_binding_dir = argo_example_dir / "workflow-event-binding"
         EXCLUDES = {
+            # missing metadata.name
+            argo_example_dir / "fun-with-gifs.yaml",
+            argo_example_dir / "k8s-jobs.yaml",
+            # invalid yaml
+            argo_example_dir / "k8s-patch-json-workflow.yaml",
             # invalid reference
             workflow_binding_dir / "event-consumer-workflowtemplate.yaml",
             # param value is an object, expected a string
