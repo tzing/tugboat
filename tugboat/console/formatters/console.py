@@ -312,6 +312,8 @@ class Snippet:
 
     def __getitem__(self, lineno: int) -> str:
         """Gets the line at the given 1-based line number."""
+        if lineno > len(self.lines):
+            return ""
         return self.lines[lineno - 1]
 
     def lines_between(self, start: int, last: int) -> Iterator[tuple[int, str]]:

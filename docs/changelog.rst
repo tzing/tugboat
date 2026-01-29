@@ -35,6 +35,11 @@ Unreleased
 
 * Remove :py:mod:`tugboat.utils.pydantic` module
 
+:octicon:`bug` Fixes
+++++++++++++++++++++
+
+* Fix the output crash when the diagnosis source location is at the end of a file.
+
 0.6.2
 -----
 
