@@ -39,6 +39,7 @@ Unreleased
 ++++++++++++++++++++
 
 * Fix the output crash when the diagnosis source location is at the end of a file.
+* Prevent crashes when a diagnostic path references a missing child in an empty mapping or sequence by using the parent collection's source location.
 
 0.6.2
 -----
