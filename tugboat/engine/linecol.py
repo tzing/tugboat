@@ -62,7 +62,7 @@ def get_line_column(
             # navigation failed, use fallback position from parent
             if isinstance(parent_node, CommentedBase):
                 fallback_position = (parent_node.lc.line, parent_node.lc.col)
-            break
+            return fallback_position
 
         if isinstance(current_node, CommentedBase):
             fallback_position = (current_node.lc.line, current_node.lc.col)
