@@ -11,7 +11,7 @@ from tugboat.schemas.basic import Array, Dict
 from tugboat.schemas.manifest import Manifest, Metadata
 from tugboat.schemas.metrics import Metrics
 from tugboat.schemas.template import PodResourceClaim, Template
-from tugboat.schemas.template.container import ContainerTemplate
+from tugboat.schemas.template.container import ContainerTemplate, ResourceRequirements
 
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
@@ -45,6 +45,7 @@ class WorkflowSpec(BaseModel):
     onExit: str | None = None
     parallelism: int | None = None
     podPriorityClassName: str | None = None
+    podResources: ResourceRequirements | None = None
     podSpecPatch: str | None = None
     priority: int | None = None
     resourceClaims: Array[PodResourceClaim] | None = None

@@ -205,6 +205,25 @@ class TestTemplate:
         }
 
 
+class TestPodResources:
+
+    @pytest.mark.parametrize("model", [WorkflowSpec, Template])
+    def test_parse(self, model):
+        data = {"requests": {"cpu": "100m"}, "limits": {"memory": "512Mi"}}
+        spec = model.model_validate({"podResources": data})
+        assert spec.podResources.requests.cpu.value == decimal.Decimal("0.1")
+        assert spec.podResources.limits.memory.value == 536870912
+        assert spec.model_dump(mode="json", exclude_none=True)["podResources"] == data
+        assert model.model_validate({}).podResources is None
+        hash(spec)
+
+    @pytest.mark.parametrize("model", [WorkflowSpec, Template])
+    def test_invalid_quantity(self, model):
+        with pytest.raises(ValidationError) as exc_info:
+            model.model_validate({"podResources": {"limits": {"cpu": "invalid"}}})
+        assert exc_info.value.errors()[0]["loc"] == ("podResources", "limits", "cpu")
+
+
 class TestResourceClaims:
 
     @pytest.mark.parametrize("model", [WorkflowSpec, Template])

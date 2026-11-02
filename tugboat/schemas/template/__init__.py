@@ -22,6 +22,7 @@ from tugboat.schemas.template.container import (
     ContainerNode,
     ContainerSetTemplate,
     ContainerTemplate,
+    ResourceRequirements,
     ScriptTemplate,
 )
 
@@ -87,6 +88,7 @@ class Template(_BaseModel):
     nodeSelector: Dict[str, str] | None = None
     outputs: Arguments | None = None
     parallelism: int | None = None
+    podResources: ResourceRequirements | None = None
     podSpecPatch: str | None = None
     priority: int | None = None
     priorityClassName: str | None = None
