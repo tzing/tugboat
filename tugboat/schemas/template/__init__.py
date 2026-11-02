@@ -11,9 +11,9 @@ __all__ = [
 import functools
 import itertools
 import os
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Array, Dict
@@ -35,6 +35,7 @@ if TYPE_CHECKING:
         "dag",
         "data",
         "http",
+        "plugin",
         "resource",
         "script",
         "steps",
@@ -44,10 +45,17 @@ if TYPE_CHECKING:
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
         "DagTemplate",
+        "Plugin",
         "PodResourceClaim",
         "SuspendTemplate",
         "TemplateRef",
     ]
+
+
+type Plugin = Annotated[Dict[str, Any], Field(min_length=1, max_length=1)]
+"""An Argo `Plugin <https://argo-workflows.readthedocs.io/en/latest/fields/#plugin>`__
+object with exactly one key and a free-form payload.
+"""
 
 
 class _BaseModel(BaseModel):
@@ -88,6 +96,7 @@ class Template(_BaseModel):
     nodeSelector: Dict[str, str] | None = None
     outputs: Arguments | None = None
     parallelism: int | None = None
+    plugin: Plugin | None = None
     podResources: ResourceRequirements | None = None
     podSpecPatch: str | None = None
     priority: int | None = None
@@ -109,7 +118,6 @@ class Template(_BaseModel):
     initContainers: Array[Any] | None = None
     memoize: Any | None = None
     metadata: Any | None = None
-    plugins: Any | None = None
     resource: Any | None = None
     retryStrategy: Any | None = None
     securityContext: Any | None = None
@@ -134,6 +142,8 @@ class Template(_BaseModel):
             return "data"
         if self.http is not None:
             return "http"
+        if self.plugin is not None:
+            return "plugin"
         if self.resource is not None:
             return "resource"
         if self.script is not None:

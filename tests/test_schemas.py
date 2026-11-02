@@ -205,6 +205,26 @@ class TestTemplate:
         }
 
 
+class TestPlugin:
+
+    def test_parse(self):
+        payload = {"custom": {"items": [1, True, None], "message": "hello"}}
+        template = Template.model_validate({"name": "custom", "plugin": payload})
+        assert template.type == "plugin"
+        assert template.model_dump(mode="json", exclude_none=True)["plugin"] == payload
+        hash(template)
+
+    @pytest.mark.parametrize("payload", [{}, {"a": {}, "b": {}}, [], "custom"])
+    def test_invalid_plugin(self, payload):
+        with pytest.raises(ValidationError) as exc_info:
+            Template.model_validate({"plugin": payload})
+        assert exc_info.value.errors()[0]["loc"] == ("plugin",)
+
+    def test_reject_plural(self):
+        with pytest.raises(ValidationError):
+            Template.model_validate({"plugins": {"custom": {}}})
+
+
 class TestPodResources:
 
     @pytest.mark.parametrize("model", [WorkflowSpec, Template])

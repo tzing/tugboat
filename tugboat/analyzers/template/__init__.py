@@ -29,6 +29,7 @@ def analyze_template(template: Template) -> Iterable[Diagnosis]:
             "dag",
             "data",
             "http",
+            "plugin",
             "resource",
             "script",
             "steps",
