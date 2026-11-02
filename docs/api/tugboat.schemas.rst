@@ -27,10 +27,6 @@ tugboat.schemas.basic module
    :members:
    :undoc-members:
 
-   .. py:class:: Array
-
-      A type alias for :py:class:`tuple`, representing an immutable sequence.
-
 tugboat.schemas.cron\_workflow module
 -------------------------------------
 
