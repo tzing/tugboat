@@ -43,6 +43,7 @@ if TYPE_CHECKING:
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
         "DagTemplate",
+        "PodResourceClaim",
         "SuspendTemplate",
         "TemplateRef",
     ]
@@ -50,6 +51,19 @@ if os.getenv("DOCUTILSCONFIG"):
 
 class _BaseModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class PodResourceClaim(_BaseModel):
+    """
+    `PodResourceClaim`_ references a ResourceClaim directly or through a
+    ResourceClaimTemplate.
+
+    .. _PodResourceClaim: https://argo-workflows.readthedocs.io/en/latest/fields/#podresourceclaim
+    """
+
+    name: str
+    resourceClaimName: str | None = None
+    resourceClaimTemplateName: str | None = None
 
 
 class Template(_BaseModel):
@@ -76,6 +90,7 @@ class Template(_BaseModel):
     podSpecPatch: str | None = None
     priority: int | None = None
     priorityClassName: str | None = None
+    resourceClaims: Array[PodResourceClaim] | None = None
     schedulerName: str | None = None
     script: ScriptTemplate | None = None
     serviceAccountName: str | None = None

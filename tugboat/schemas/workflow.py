@@ -10,7 +10,7 @@ from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Array, Dict
 from tugboat.schemas.manifest import Manifest
 from tugboat.schemas.metrics import Metrics
-from tugboat.schemas.template import Template
+from tugboat.schemas.template import PodResourceClaim, Template
 
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
@@ -42,6 +42,7 @@ class WorkflowSpec(BaseModel):
     podPriorityClassName: str | None = None
     podSpecPatch: str | None = None
     priority: int | None = None
+    resourceClaims: Array[PodResourceClaim] | None = None
     schedulerName: str | None = None
     serviceAccountName: str | None = None
     shutdown: str | None = None

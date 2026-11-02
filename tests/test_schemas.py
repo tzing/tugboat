@@ -21,6 +21,7 @@ from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Dict
 from tugboat.schemas.debug import DebugManifest
 from tugboat.schemas.template.container import Quantity
+from tugboat.schemas.workflow import WorkflowSpec
 
 logger = logging.getLogger(__name__)
 
@@ -202,6 +203,55 @@ class TestTemplate:
             "foo": IsInstance(Step),
             "bar": IsInstance(Step),
         }
+
+
+class TestResourceClaims:
+
+    @pytest.mark.parametrize("model", [WorkflowSpec, Template])
+    @pytest.mark.parametrize("source", ["resourceClaimName", "resourceClaimTemplateName"])
+    def test_parse_claim(self, model, source):
+        spec = model.model_validate(
+            {"resourceClaims": [{"name": "accelerator", source: "device-claim"}]}
+        )
+
+        claim = spec.resourceClaims[0]
+        assert claim.name == "accelerator"
+        assert getattr(claim, source) == "device-claim"
+        assert spec.model_dump(exclude_none=True)["resourceClaims"] == (
+            {"name": "accelerator", source: "device-claim"},
+        )
+        hash(claim)
+
+    @pytest.mark.parametrize("model", [WorkflowSpec, Template])
+    @pytest.mark.parametrize(
+        ("claim", "field", "error_type"),
+        [
+            ({"resourceClaimName": "device-claim"}, "name", "missing"),
+            ({"name": 123}, "name", "string_type"),
+            (
+                {"name": "accelerator", "resourceClaimName": 123},
+                "resourceClaimName",
+                "string_type",
+            ),
+            (
+                {"name": "accelerator", "resourceClaimTemplateName": 123},
+                "resourceClaimTemplateName",
+                "string_type",
+            ),
+            (
+                {"name": "accelerator", "unknown": "value"},
+                "unknown",
+                "extra_forbidden",
+            ),
+        ],
+    )
+    def test_invalid_claim(self, model, claim, field, error_type):
+        with pytest.raises(ValidationError) as exc_info:
+            model.model_validate({"resourceClaims": [claim]})
+
+        error = exc_info.value.errors()[0]
+        assert error["loc"] == ("resourceClaims", 0, field)
+        assert error["type"] == error_type
 
 
 class TestWorkflow:
