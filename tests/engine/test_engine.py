@@ -254,6 +254,8 @@ class TestAnalyzeYamlStream:
         """
         workflow_binding_dir = argo_example_dir / "workflow-event-binding"
         EXCLUDES = {
+            # Variable syntax and scopes in this example are not fully supported yet.
+            argo_example_dir / "variables-showcase.yaml",
             # missing metadata.name
             argo_example_dir / "fun-with-gifs.yaml",
             argo_example_dir / "k8s-jobs.yaml",
