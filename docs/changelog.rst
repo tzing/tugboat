@@ -19,6 +19,8 @@ Unreleased
 ++++++++++++++++++++++++++++
 
 * Use JSONPath-like syntax for specifying locations in output reports.
+* Support ``resourceClaims`` and ``podResources`` in workflow specifications and templates, and ``executorPlugins`` in workflow specifications.
+* Support ``plugin`` templates, including validation that exactly one plugin is specified and that the template has only one type.
 
 :octicon:`code-review` API Changes
 ++++++++++++++++++++++++++++++++++
@@ -33,13 +35,27 @@ Unreleased
   * :py:func:`~tugboat.constraints.require_all` accepts an ``accept_empty`` parameter.
   * ``require_non_empty`` and ``require_exactly_one`` have been removed in favor of the expanded functions above.
 
-* Remove :py:mod:`tugboat.utils.pydantic` module
+* Remove the ``tugboat.utils.pydantic`` module.
+* Add the :py:func:`~tugboat.hookspecs.workflow.analyze_task` hook for analyzing individual DAG tasks.
+* Replace ``tugboat.parsers`` and the ``tugboat.utils.check_value_references`` and ``tugboat.utils.check_model_fields_references`` helpers with the template-tag parser and validation helpers in ``tugboat.analyzers.template_tag``.
+* Allow :py:class:`~tugboat.references.ReferenceCollection` to be initialized from an iterable of references.
+* Replace the unsupported ``Template.plugins`` placeholder with ``Template.plugin``.
+
+:octicon:`bug` Fixes
+++++++++++++++++++++
+
+* Handle empty input strings and allow single closing braces within expression tags when parsing template tags.
+* Prevent crashes when a diagnostic path references a missing child in an empty mapping or sequence by using the parent collection's source location.
+* Render inline markup correctly in rule titles and references in the documentation.
+* Fix documentation builds with Sphinx 9 by removing the duplicate ``Array`` definition and using Python 3.13+ for documentation dependencies.
+
+0.6.3
+-----
 
 :octicon:`bug` Fixes
 ++++++++++++++++++++
 
 * Fix the output crash when the diagnosis source location is at the end of a file.
-* Prevent crashes when a diagnostic path references a missing child in an empty mapping or sequence by using the parent collection's source location.
 
 0.6.2
 -----
