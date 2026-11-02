@@ -8,12 +8,16 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Array, Dict
-from tugboat.schemas.manifest import Manifest
+from tugboat.schemas.manifest import Manifest, Metadata
 from tugboat.schemas.metrics import Metrics
-from tugboat.schemas.template import Template
+from tugboat.schemas.template import PodResourceClaim, Template
+from tugboat.schemas.template.container import ContainerTemplate, ResourceRequirements
 
 if os.getenv("DOCUTILSCONFIG"):
     __all__ = [
+        "ExecutorPlugin",
+        "ExecutorPluginSidecar",
+        "ExecutorPluginSpec",
         "WorkflowSpec",
         "WorkflowTemplateRef",
     ]
@@ -34,14 +38,17 @@ class WorkflowSpec(BaseModel):
     automountServiceAccountToken: bool | None = None
     dnsPolicy: str | None = None
     entrypoint: str | None = None
+    executorPlugins: Array[ExecutorPlugin] | None = None
     hostNetwork: bool | None = None
     metrics: Metrics | None = None
     nodeSelector: Dict[str, str] | None = None
     onExit: str | None = None
     parallelism: int | None = None
     podPriorityClassName: str | None = None
+    podResources: ResourceRequirements | None = None
     podSpecPatch: str | None = None
     priority: int | None = None
+    resourceClaims: Array[PodResourceClaim] | None = None
     schedulerName: str | None = None
     serviceAccountName: str | None = None
     shutdown: str | None = None
@@ -73,6 +80,48 @@ class WorkflowSpec(BaseModel):
 
     def __hash__(self):
         return hash((self.arguments, self.templates))
+
+
+class ExecutorPlugin(BaseModel):
+    """
+    `ExecutorPlugin <https://argo-workflows.readthedocs.io/en/latest/fields/#executorplugin>`__
+    configures a workflow-level executor plugin.
+
+    Execution requires the ``ARGO_WORKFLOW_LEVEL_EXECUTOR_PLUGINS`` feature gate.
+    A nonempty plugin list overrides the controller ConfigMap configuration;
+    omission or an empty list preserves the controller fallback.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    metadata: Metadata
+    spec: ExecutorPluginSpec
+
+
+class ExecutorPluginSpec(BaseModel):
+    """
+    `ExecutorPluginSpec <https://argo-workflows.readthedocs.io/en/latest/fields/#executorpluginspec>`__
+    specifies the plugin sidecar.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    sidecar: ExecutorPluginSidecar
+
+
+class ExecutorPluginSidecar(BaseModel):
+    """
+    `ExecutorPluginSidecar <https://argo-workflows.readthedocs.io/en/latest/fields/#executorpluginsidecar>`__
+    configures the plugin container and optional service account token mounting.
+
+    When mounting a token, the service account must be named
+    ``<plugin-name>-executor-plugin``. This runtime constraint is not validated.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    automountServiceAccountToken: bool | None = None
+    container: ContainerTemplate
 
 
 class WorkflowTemplateRef(BaseModel):

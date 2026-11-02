@@ -21,6 +21,7 @@ from tugboat.schemas.arguments import Arguments
 from tugboat.schemas.basic import Dict
 from tugboat.schemas.debug import DebugManifest
 from tugboat.schemas.template.container import Quantity
+from tugboat.schemas.workflow import WorkflowSpec
 
 logger = logging.getLogger(__name__)
 
@@ -204,6 +205,94 @@ class TestTemplate:
         }
 
 
+class TestPlugin:
+
+    def test_parse(self):
+        payload = {"custom": {"items": [1, True, None], "message": "hello"}}
+        template = Template.model_validate({"name": "custom", "plugin": payload})
+        assert template.type == "plugin"
+        assert template.model_dump(mode="json", exclude_none=True)["plugin"] == payload
+        hash(template)
+
+    @pytest.mark.parametrize("payload", [{}, {"a": {}, "b": {}}, [], "custom"])
+    def test_invalid_plugin(self, payload):
+        with pytest.raises(ValidationError) as exc_info:
+            Template.model_validate({"plugin": payload})
+        assert exc_info.value.errors()[0]["loc"] == ("plugin",)
+
+    def test_reject_plural(self):
+        with pytest.raises(ValidationError):
+            Template.model_validate({"plugins": {"custom": {}}})
+
+
+class TestPodResources:
+
+    @pytest.mark.parametrize("model", [WorkflowSpec, Template])
+    def test_parse(self, model):
+        data = {"requests": {"cpu": "100m"}, "limits": {"memory": "512Mi"}}
+        spec = model.model_validate({"podResources": data})
+        assert spec.podResources.requests.cpu.value == decimal.Decimal("0.1")
+        assert spec.podResources.limits.memory.value == 536870912
+        assert spec.model_dump(mode="json", exclude_none=True)["podResources"] == data
+        assert model.model_validate({}).podResources is None
+        hash(spec)
+
+    @pytest.mark.parametrize("model", [WorkflowSpec, Template])
+    def test_invalid_quantity(self, model):
+        with pytest.raises(ValidationError) as exc_info:
+            model.model_validate({"podResources": {"limits": {"cpu": "invalid"}}})
+        assert exc_info.value.errors()[0]["loc"] == ("podResources", "limits", "cpu")
+
+
+class TestResourceClaims:
+
+    @pytest.mark.parametrize("model", [WorkflowSpec, Template])
+    @pytest.mark.parametrize("source", ["resourceClaimName", "resourceClaimTemplateName"])
+    def test_parse_claim(self, model, source):
+        spec = model.model_validate(
+            {"resourceClaims": [{"name": "accelerator", source: "device-claim"}]}
+        )
+
+        claim = spec.resourceClaims[0]
+        assert claim.name == "accelerator"
+        assert getattr(claim, source) == "device-claim"
+        assert spec.model_dump(exclude_none=True)["resourceClaims"] == (
+            {"name": "accelerator", source: "device-claim"},
+        )
+        hash(claim)
+
+    @pytest.mark.parametrize("model", [WorkflowSpec, Template])
+    @pytest.mark.parametrize(
+        ("claim", "field", "error_type"),
+        [
+            ({"resourceClaimName": "device-claim"}, "name", "missing"),
+            ({"name": 123}, "name", "string_type"),
+            (
+                {"name": "accelerator", "resourceClaimName": 123},
+                "resourceClaimName",
+                "string_type",
+            ),
+            (
+                {"name": "accelerator", "resourceClaimTemplateName": 123},
+                "resourceClaimTemplateName",
+                "string_type",
+            ),
+            (
+                {"name": "accelerator", "unknown": "value"},
+                "unknown",
+                "extra_forbidden",
+            ),
+        ],
+    )
+    def test_invalid_claim(self, model, claim, field, error_type):
+        with pytest.raises(ValidationError) as exc_info:
+            model.model_validate({"resourceClaims": [claim]})
+
+        error = exc_info.value.errors()[0]
+        assert error["loc"] == ("resourceClaims", 0, field)
+        assert error["type"] == error_type
+
+
 class TestWorkflow:
 
     def test_template_dict(self):
@@ -348,3 +437,92 @@ def test_with_argo_examples(subtests: pytest.Subtests, argo_example_dir: Path):
                 with subtests.test(path=path, kind=document["kind"]):
                     manifest = model.model_validate(document)
                     hash(manifest)
+
+
+class TestExecutorPlugins:
+    @pytest.fixture
+    def plugin(self):
+        return {
+            "metadata": {"name": "hello", "labels": {"app": "hello"}},
+            "spec": {
+                "sidecar": {
+                    "automountServiceAccountToken": False,
+                    "container": {
+                        "name": "hello",
+                        "image": "python:alpine",
+                        "args": ["server.py"],
+                        "env": [{"name": "PORT", "value": "4356"}],
+                        "resources": {"requests": {"cpu": "100m"}},
+                    },
+                }
+            },
+        }
+
+    @pytest.mark.parametrize("model", [Workflow, WorkflowTemplate, CronWorkflow])
+    def test_consumers(self, model, plugin):
+        spec = {"executorPlugins": [plugin]}
+        manifest = model.model_validate(
+            {
+                "apiVersion": "argoproj.io/v1alpha1",
+                "kind": model.__name__,
+                "metadata": {"name": "example"},
+                "spec": {"workflowSpec": spec} if model is CronWorkflow else spec,
+            }
+        )
+        workflow_spec = (
+            manifest.spec.workflowSpec if model is CronWorkflow else manifest.spec
+        )
+        assert isinstance(workflow_spec.executorPlugins, tuple)
+        parsed = workflow_spec.executorPlugins[0]
+        assert parsed.spec.sidecar.container.env[0].value == "4356"
+        assert parsed.model_dump(mode="json", exclude_unset=True) == plugin
+        assert isinstance(hash(parsed), int)
+        assert isinstance(hash(manifest), int)
+        with pytest.raises(ValidationError, match="frozen"):
+            parsed.spec.sidecar.automountServiceAccountToken = True
+
+    def test_omission_and_empty_list(self, plugin):
+        assert WorkflowSpec().executorPlugins is None
+        assert "executorPlugins" not in WorkflowSpec().model_dump(exclude_unset=True)
+        assert WorkflowSpec(executorPlugins=[]).executorPlugins == ()
+        del plugin["spec"]["sidecar"]["automountServiceAccountToken"]
+        parsed = WorkflowSpec.model_validate({"executorPlugins": [plugin]})
+        sidecar = parsed.executorPlugins[0].spec.sidecar
+        assert sidecar.automountServiceAccountToken is None
+        assert "automountServiceAccountToken" not in sidecar.model_dump(exclude_unset=True)
+
+    @pytest.mark.parametrize(
+        ("path", "value", "error_type"),
+        [
+            (("metadata",), None, "missing"),
+            (("spec",), None, "missing"),
+            (("spec", "sidecar"), None, "missing"),
+            (("spec", "sidecar", "container"), None, "missing"),
+            (("spec", "sidecar", "automountServiceAccountToken"), [], "bool_type"),
+            (("spec", "sidecar", "unknown"), True, "extra_forbidden"),
+            (("spec", "sidecar", "container", "args"), {}, "tuple_type"),
+        ],
+    )
+    def test_invalid_nested_input(self, plugin, path, value, error_type):
+        target = plugin
+        for key in path[:-1]:
+            target = target[key]
+        if error_type == "missing":
+            del target[path[-1]]
+        else:
+            target[path[-1]] = value
+        with pytest.raises(ValidationError) as exc_info:
+            WorkflowSpec.model_validate({"executorPlugins": [plugin]})
+        assert ("executorPlugins", 0, *path) == exc_info.value.errors()[0]["loc"]
+        assert exc_info.value.errors()[0]["type"] == error_type
+
+    def test_official_example(self, argo_example_dir):
+        path = argo_example_dir / "workflow-level-executor-plugin.yaml"
+        with path.open() as fd:
+            document = ruamel.yaml.YAML().load(fd)
+        # Template.plugin is not yet supported; validate the requested field alone.
+        spec = WorkflowSpec.model_validate(
+            {"executorPlugins": document["spec"]["executorPlugins"]}
+        )
+        assert spec.executorPlugins[0].spec.sidecar.container.image
+        assert isinstance(hash(spec.executorPlugins[0]), int)

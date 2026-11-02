@@ -1,8 +1,18 @@
 from tests.dirty_equals import HasSubstring, IsPartialModel
+from tugboat.analyzers.template import analyze_template
 from tugboat.engine import analyze_yaml_stream
+from tugboat.schemas import Template
 
 
 class TestGeneralRules:
+
+    def test_plugin_type(self):
+        template = Template.model_validate({"name": "custom", "plugin": {"custom": {}}})
+        assert list(analyze_template(template)) == []
+        ambiguous = Template.model_validate(
+            {"name": "custom", "plugin": {"custom": {}}, "container": {"image": "busybox"}}
+        )
+        assert any(d["code"] == "M201" for d in analyze_template(ambiguous))
 
     def test_analyze_template(self, diagnoses_logger):
         diagnoses = analyze_yaml_stream(MANIFEST_AMBIGUOUS_TYPE)
