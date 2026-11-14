@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import typing
+from graphlib import CycleError, TopologicalSorter
 
 from rapidfuzz.process import extractOne
 
@@ -21,6 +22,29 @@ if typing.TYPE_CHECKING:
     type WorkflowCompatible = Workflow | WorkflowTemplate
 
 logger = logging.getLogger(__name__)
+
+
+@hookimpl(specname="analyze_template")
+def check_circular_dependencies(template: Template) -> Iterable[Diagnosis]:
+    if not template.dag:
+        return
+
+    # Duplicate names make the graph ambiguous; DAG101 reports these separately.
+    tasks = template.dag.tasks
+    if len(template.task_dict) != len(tasks):
+        return
+
+    graph = TopologicalSorter({task.name: task.dependencies or () for task in tasks})
+    try:
+        graph.prepare()
+    except CycleError as exc:
+        cycle = " -> ".join(repr(name) for name in exc.args[1])
+        yield {
+            "code": "DAG501",
+            "loc": ("dag", "tasks"),
+            "summary": "Circular dependency detected",
+            "msg": f"The DAG contains a circular dependency: {cycle}.",
+        }
 
 
 @hookimpl
@@ -50,6 +74,34 @@ def analyze_task(
             "msg": "Field 'onExit' is deprecated. Please use 'hooks[exit].template' instead.",
             "input": Field("onExit"),
         }
+
+
+@hookimpl(specname="analyze_task")
+def check_dependencies(task: DagTask, template: Template) -> Iterable[Diagnosis]:
+    for idx, dependency in enumerate(task.dependencies or ()):
+        if dependency not in template.task_dict:
+            available_tasks = set(template.task_dict) - {task.name}
+
+            suggestion = None
+            if result := extractOne(dependency, sorted(available_tasks)):
+                suggestion, _, _ = result
+
+            yield {
+                "code": "DAG502",
+                "loc": ("dependencies", idx),
+                "summary": "Unknown dependency",
+                "msg": (
+                    f"""
+                    Task '{dependency}' is not defined in the DAG.
+                    Available tasks: {join_with_or(available_tasks)}
+                    """
+                ),
+                "input": dependency,
+                "fix": suggestion,
+            }
+
+    # TODO: Parse enhanced depends expressions to check their task references.
+    # https://argo-workflows.readthedocs.io/en/latest/enhanced-depends-logic/
 
 
 @hookimpl(specname="analyze_task")

@@ -1,8 +1,126 @@
+import json
+
 import pytest
 from dirty_equals import AnyThing
 
 from tests.dirty_equals import HasSubstring, IsPartialModel
 from tugboat.engine import analyze_yaml_stream
+
+
+def analyze_dependencies(tasks):
+    return analyze_yaml_stream(
+        """
+        apiVersion: argoproj.io/v1alpha1
+        kind: Workflow
+        metadata:
+          generateName: test-
+        spec:
+          entrypoint: main
+          templates:
+            - name: main
+              dag:
+                tasks: TASKS
+            - name: run
+              container:
+                image: alpine
+        """.replace(
+            "TASKS", json.dumps([{"template": "run", **task} for task in tasks])
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    ("tasks", "cycle_names"),
+    [
+        ([{"name": "a", "dependencies": ["a"]}], {"a"}),
+        (
+            [
+                {"name": "a", "dependencies": ["c", "missing"]},
+                {"name": "b", "dependencies": ["a"]},
+                {"name": "c", "dependencies": ["b"]},
+                {"name": "downstream", "dependencies": ["a"]},
+            ],
+            {"a", "b", "c"},
+        ),
+        (
+            [
+                {"name": "root"},
+                {"name": "a", "dependencies": ["b"]},
+                {"name": "b", "dependencies": ["a"]},
+            ],
+            {"a", "b"},
+        ),
+    ],
+)
+def test_circular_dependencies(tasks, cycle_names):
+    diagnoses = analyze_dependencies(tasks)
+    cycles = [diag for diag in diagnoses if diag.code == "DAG501"]
+    assert len(cycles) == 1
+    assert cycles[0].loc == ("spec", "templates", 0, "dag", "tasks")
+    for name in cycle_names:
+        assert f"'{name}'" in cycles[0].msg
+    assert "'downstream'" not in cycles[0].msg
+
+
+@pytest.mark.parametrize(
+    "tasks",
+    [
+        [],
+        [{"name": "a"}],
+        [
+            {"name": "end", "dependencies": ["left", "right"]},
+            {"name": "left", "dependencies": ["root"]},
+            {"name": "right", "dependencies": ["root", "root"]},
+            {"name": "root", "dependencies": []},
+        ],
+        [{"name": "a", "dependencies": ["missing"]}],
+        [
+            {"name": "a", "dependencies": ["a"]},
+            {"name": "a"},
+        ],
+        [
+            {"name": "a", "depends": "b || missing.Succeeded"},
+            {"name": "b", "dependencies": ["a"]},
+        ],
+    ],
+)
+def test_dependencies_without_detectable_cycle(tasks):
+    diagnoses = analyze_dependencies(tasks)
+    assert not any(diag.code == "DAG501" for diag in diagnoses)
+
+
+def test_unknown_dependencies():
+    diagnoses = analyze_dependencies(
+        [
+            {"name": "build"},
+            {"name": "publish", "dependencies": ["build", "biuld"]},
+        ]
+    )
+    unknown = [diag for diag in diagnoses if diag.code == "DAG502"]
+    assert len(unknown) == 1
+    assert (
+        IsPartialModel(
+            loc=("spec", "templates", 0, "dag", "tasks", 1, "dependencies", 1),
+            input="biuld",
+            fix="build",
+        )
+        == unknown[0]
+    )
+
+
+def test_unknown_dependency_without_suggestion():
+    diagnoses = analyze_dependencies([{"name": "a", "dependencies": ["missing"]}])
+    assert IsPartialModel(code="DAG502", input="missing", fix=None) in diagnoses
+
+
+def test_depends_is_not_checked():
+    diagnoses = analyze_dependencies([{"name": "a", "depends": "missing"}])
+    assert not any(diag.code in {"DAG501", "DAG502"} for diag in diagnoses)
+
+
+def test_dependency_must_exist_in_same_dag():
+    diagnoses = analyze_dependencies([{"name": "a", "dependencies": ["run"]}])
+    assert IsPartialModel(code="DAG502", input="run") in diagnoses
 
 
 def test_analyze_task(diagnoses_logger):

@@ -169,6 +169,19 @@ class Template(_BaseModel):
             if step.name
         }
 
+    @functools.cached_property
+    def task_dict(self) -> dict[str, DagTask]:
+        """
+        Task name to task data model mapping.
+
+        .. note::
+
+           Duplicate names will be overwritten and the empty name will be ignored.
+        """
+        if not self.dag:
+            return {}
+        return {task.name: task for task in self.dag.tasks if task.name}
+
 
 # ----------------------------------------------------------------------------
 # dags

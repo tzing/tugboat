@@ -346,6 +346,86 @@ Code ``DAG`` is used for errors related to the `DAG`_ in a `template`_.
                       tasks: []
 
 
+.. DAG5xx DAG reference issues
+
+.. rule:: DAG501 Circular dependency detected
+
+   The DAG contains a circular dependency between tasks.
+   This includes a task listing itself in ``dependencies``.
+   The diagnosis reports one cycle per DAG; fix that cycle and rerun to find any remaining cycles.
+
+   .. admonition:: Known Limitations
+      :class: caution
+
+      Only ``dependencies`` lists are checked. The ``depends`` expression field is not parsed,
+      so cycles involving dependencies declared through ``depends`` are not detected.
+
+   .. note::
+
+      Cycle detection is skipped when task names are missing or duplicated;
+      resolve those name errors first.
+
+   .. code-block:: yaml
+      :emphasize-lines: 13,16,19
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: dag-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            dag:
+              tasks:
+                - name: task-a
+                  template: do-something
+                  dependencies: [task-c]
+                - name: task-b
+                  template: do-something
+                  dependencies: [task-a]
+                - name: task-c
+                  template: do-something
+                  dependencies: [task-b]
+
+          - name: do-something
+            container:
+              image: alpine
+              command: [echo, "Doing something"]
+
+.. rule:: DAG502 Dependency on non-existent task
+
+   A task declares a dependency on another task that does not exist in the same DAG.
+
+   .. admonition:: Known Limitations
+      :class: caution
+
+      Only ``dependencies`` lists are checked. The ``depends`` expression field is not parsed,
+      so references to unknown tasks in ``depends`` are not detected.
+
+   .. code-block:: yaml
+      :emphasize-lines: 13
+
+      apiVersion: argoproj.io/v1alpha1
+      kind: Workflow
+      metadata:
+        generateName: dag-
+      spec:
+        entrypoint: main
+        templates:
+          - name: main
+            dag:
+              tasks:
+                - name: task-a
+                  template: do-something
+                  dependencies: [task-nonexistent]
+
+          - name: do-something
+            container:
+              image: alpine
+              command: [echo, "Doing something"]
+
+
 .. DAG9xx deprecated items
 
 .. rule:: DAG901 Deprecated Field: ``onExit``
