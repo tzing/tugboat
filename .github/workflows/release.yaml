@@ -46,6 +46,6 @@ jobs:
       - name: Create commit for version ${{ steps.bump-version.outputs.version }}
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          branch: main
+          branch: codex/release-0.6.4
           commit_message: "chore: bump to ${{ steps.bump-version.outputs.version }}"
           commit_author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
