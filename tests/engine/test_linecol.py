@@ -185,6 +185,19 @@ class TestGetLineColumn:
         )
         assert get_line_column(doc, (), "") == (0, 0)
 
+    @pytest.mark.parametrize(
+        ("source", "loc"),
+        [
+            ("foo: {}", ("foo", "NumberType", "type")),
+            ("foo: []", ("foo", 0)),
+        ],
+    )
+    @pytest.mark.parametrize("value", [None, Field("type")])
+    def test_missing_child_in_empty_collection(self, source, loc, value):
+        doc = yaml_parser.load(source)
+
+        assert get_line_column(doc, loc, value) == (0, 5)
+
     def test_error(self):
         doc = yaml_parser.load(
             textwrap.dedent(
