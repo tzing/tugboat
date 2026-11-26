@@ -45,9 +45,17 @@ Unreleased
 ++++++++++++++++++++
 
 * Handle empty input strings and allow single closing braces within expression tags when parsing template tags.
+
+0.6.4
+-----
+
+:octicon:`bug` Fixes
+++++++++++++++++++++
+
 * Prevent crashes when a diagnostic path references a missing child in an empty mapping or sequence by using the parent collection's source location.
 * Render inline markup correctly in rule titles and references in the documentation.
 * Fix documentation builds with Sphinx 9 by removing the duplicate ``Array`` definition and using Python 3.13+ for documentation dependencies.
+* Run CI tests with the Python version selected by the test matrix.
 
 0.6.3
 -----
